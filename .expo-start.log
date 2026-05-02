@@ -1,0 +1,10 @@
+
+> iotyk-mobile@1.0.0 start
+> expo start --localhost --port 8081 --clear
+
+Starting project at C:\Users\sp799\Documents\iotyk
+Starting Metro Bundler
+
+warning: Bundler cache is empty, rebuilding (this may take a minute)
+Waiting on http://localhost:8081
+Logs for your project will appear below.
