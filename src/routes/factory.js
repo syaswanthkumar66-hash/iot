@@ -240,12 +240,12 @@ router.delete('/device/:deviceId', requireFactoryAuth, async (req, res) => {
       }
     }
     
-    // Delete device from DB (cascade deletes credentials, pairing tokens, etc. if set up, 
-    // otherwise manually delete)
+    // Delete device from DB (cascade manual cleanup)
     await withTransaction(async (client) => {
       await client.query('DELETE FROM mqtt_credentials WHERE device_id = $1', [device.id]);
       await client.query('DELETE FROM pairing_tokens WHERE device_id = $1', [device.id]);
-      await client.query('DELETE FROM active_sessions WHERE device_id = $1', [device.id]);
+      await client.query('DELETE FROM device_shares WHERE device_id = $1', [device.id]);
+      await client.query('DELETE FROM device_transfers WHERE device_id = $1', [device.id]);
       await client.query('DELETE FROM devices WHERE id = $1', [device.id]);
     });
     
