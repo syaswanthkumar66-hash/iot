@@ -69,25 +69,28 @@
               <div class="detail-group">
                 <h4>Firmware Source</h4>
                 <p class="hint">Downloads a ZIP containing the Arduino sketch, pre-configured <code>config.h</code>, auto-generated WSS certificates, and the pasted EMQX CA certificate.</p>
-                <label class="field-label" for="fwCaCertificate">Paste EMQX CA certificate (Optional)</label>
-                <textarea id="fwCaCertificate" class="textarea-input" placeholder="-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----" rows="4"></textarea>
-                <button id="btnDownloadFirmwareZip" class="btn primary firmware-download">Download Firmware Source (ZIP)</button>
-              </div>
-
-              <div id="flashSection" class="flash-section hidden">
-                <h4>Flash ESP32</h4>
-                <p class="hint">Before flashing, confirm the ESP32 is connected via USB/serial.</p>
                 <div class="flash-row">
                   <strong>Target device:</strong> <span id="flashDeviceId">Unknown</span>
                 </div>
-                <button id="btnCheckEsp32" class="btn secondary">Detect ESP32</button>
-                <button id="btnCompileAndFlash" class="btn primary accent">Auto-Compile & Flash</button>
-                <button id="btnStartFlash" class="btn primary">Flash Manual .bin</button>
+                <div class="action-buttons">
+                  <button id="btnCheckEsp32" class="btn secondary">1. Detect ESP32</button>
+                  <button id="btnCompileAndFlash" class="btn primary accent">2. Auto-Compile & Flash</button>
+                </div>
                 <span id="espStatus" class="status-text">Not detected yet</span>
-                <p class="hint">If this browser supports Web Serial, you can verify that the board is connected and then flash the firmware file directly.</p>
+                
+                <div class="advanced-toggle" onclick="document.getElementById('manualFlashSection').classList.toggle('hidden')">
+                  Show Manual Options (Advanced)
+                </div>
 
-                <label class="field-label" for="firmwareFileInput">Select compiled ESP32 firmware</label>
-                <input id="firmwareFileInput" type="file" accept=".bin" class="file-input">
+                <div id="manualFlashSection" class="manual-flash hidden">
+                  <label class="field-label" for="fwCaCertificate">Override EMQX CA certificate (Optional)</label>
+                  <textarea id="fwCaCertificate" class="textarea-input" placeholder="Leave empty to use server environment variable..." rows="4"></textarea>
+                  
+                  <label class="field-label" for="firmwareFileInput">Manual Firmware (.bin)</label>
+                  <input id="firmwareFileInput" type="file" accept=".bin" class="file-input">
+                  <button id="btnStartFlash" class="btn secondary small">Flash Manual File</button>
+                </div>
+
                 <div id="flashProgressContainer" class="progress-container hidden">
                   <div class="progress-bar" id="flashProgressBar"></div>
                   <span id="flashProgressText" class="progress-label">Select a compiled .bin file and connect ESP32 to flash.</span>

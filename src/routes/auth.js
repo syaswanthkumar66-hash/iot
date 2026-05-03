@@ -140,4 +140,20 @@ router.post('/logout', requireAuth, async (req, res) => {
   }
 });
 
+/**
+ * Public endpoint for the mobile app to fetch the Local Root CA.
+ * This CA is used to verify WSS connections to devices on the local network.
+ */
+router.get('/project-ca', async (req, res) => {
+  try {
+    // We generate a stable CA based on the FACTORY_API_KEY or a separate env var
+    const { generateCertificates } = await import('../utils/certificates.js');
+    const certs = generateCertificates('root-ca-fetch');
+    res.setHeader('Content-Type', 'text/plain');
+    res.send(certs.caCert);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch project CA' });
+  }
+});
+
 export default router;

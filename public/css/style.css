@@ -260,6 +260,33 @@ h2 {
   color: var(--text-muted);
 }
 
+.action-buttons {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.advanced-toggle {
+  margin-top: 16px;
+  font-size: 13px;
+  color: var(--text-muted);
+  cursor: pointer;
+  text-decoration: underline;
+  user-select: none;
+}
+
+.advanced-toggle:hover {
+  color: var(--accent);
+}
+
+.manual-flash {
+  margin-top: 20px;
+  padding: 16px;
+  background-color: rgba(0,0,0,0.15);
+  border-radius: 8px;
+  border: 1px dashed var(--border-color);
+}
+
 .textarea-input {
   width: 100%;
   min-height: 170px;
