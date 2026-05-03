@@ -279,6 +279,9 @@ router.post('/device/:deviceId/compile', requireFactoryAuth, async (req, res) =>
     const device = deviceRes.rows[0];
     const broker = process.env.EMQX_MQTT_HOST || 'xxxx.ala.us-east-1.emqxsl.com';
     const password = decrypt(device.mqtt_password_enc);
+    
+    // Generate or use existing local token (16 chars)
+    const localToken = crypto.randomBytes(8).toString('hex');
 
     // 2. Prepare temporary build directory
     if (!fs.existsSync(path.dirname(tempDir))) fs.mkdirSync(path.dirname(tempDir), { recursive: true });
@@ -298,6 +301,7 @@ router.post('/device/:deviceId/compile', requireFactoryAuth, async (req, res) =>
       broker,
       username: device.mqtt_username,
       password,
+      localToken,
       relayCount: sanitizeRelayCount(device.relay_count)
     });
     fs.writeFileSync(path.join(tempDir, 'config.h'), configContent);
@@ -348,7 +352,7 @@ router.post('/device/:deviceId/compile', requireFactoryAuth, async (req, res) =>
 
 export default router;
 
-function buildFirmwareConfig({ deviceId, namespace, broker, username, password, relayCount = 1 }) {
+function buildFirmwareConfig({ deviceId, namespace, broker, username, password, localToken, relayCount = 1 }) {
   const count = sanitizeRelayCount(relayCount);
   const pins = DEFAULT_RELAY_PINS.slice(0, count);
 
@@ -376,6 +380,7 @@ static const uint8_t RELAY_PINS[RELAY_COUNT] = {${pins.join(', ')}};
 #define FACTORY_DEVICE_NS "${escapeCString(namespace)}"
 #define FACTORY_PERM_MQTT_USER "${escapeCString(username)}"
 #define FACTORY_PERM_MQTT_PASS "${escapeCString(password)}"
+#define FACTORY_LOCAL_TOKEN "${escapeCString(localToken)}"
 
 // --- Local network services ---
 #define LOCAL_HTTP_PORT 80

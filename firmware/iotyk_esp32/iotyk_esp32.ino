@@ -118,9 +118,13 @@ void setup() {
   if (prefs.getString(KEY_DEVICE_ID, "") == "") {
     Serial.println("First boot - seeding NVS with factory values...");
     prefs.putString(KEY_DEVICE_ID, FACTORY_DEVICE_ID);
-    prefs.putString(KEY_DEVICE_NS, FACTORY_DEVICE_NS);
-    prefs.putString(KEY_PERM_USER, FACTORY_PERM_MQTT_USER);
-    prefs.putString(KEY_PERM_PASS, FACTORY_PERM_MQTT_PASS);
+    if (prefs.getString(KEY_PERM_PASS, "") == "" && String(FACTORY_PERM_MQTT_PASS) != "") {
+      prefs.putString(KEY_PERM_USER, FACTORY_PERM_MQTT_USER);
+      prefs.putString(KEY_PERM_PASS, FACTORY_PERM_MQTT_PASS);
+    }
+    if (prefs.getString(KEY_LOCAL_TOKEN, "") == "" && String(FACTORY_LOCAL_TOKEN) != "") {
+      prefs.putString(KEY_LOCAL_TOKEN, FACTORY_LOCAL_TOKEN);
+    }
     Serial.println("NVS seeded successfully.");
   }
 
