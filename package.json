@@ -1,41 +1,42 @@
 {
-  "name": "iotyk-mobile",
+  "name": "iotyk-server",
   "version": "1.0.0",
-  "private": true,
+  "type": "module",
+  "description": "IoTYK Server - Device management and relay control",
   "main": "index.js",
   "scripts": {
-    "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
-    "web": "expo start --web",
-    "lint": "expo lint"
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "keywords": [
+    "iot",
+    "esp32",
+    "mqtt",
+    "relay",
+    "device-management"
+  ],
+  "author": "",
+  "license": "MIT",
   "dependencies": {
-    "@react-native-async-storage/async-storage": "2.2.0",
-    "@react-navigation/native": "^7.1.18",
-    "@react-navigation/native-stack": "^7.3.28",
-    "base-64": "^1.0.0",
-    "buffer": "^6.0.3",
-    "expo": "~55.0.17",
-    "expo-camera": "~55.0.16",
-    "expo-secure-store": "~55.0.13",
-    "expo-status-bar": "~55.0.5",
-    "mqtt": "^4.3.8",
-    "process": "^0.11.10",
-    "react": "19.2.0",
-    "react-native": "0.83.6",
-    "react-native-ble-plx": "^3.5.1",
-    "react-native-gesture-handler": "~2.30.0",
-    "react-native-maps": "1.27.2",
-    "react-native-reanimated": "4.2.1",
-    "react-native-safe-area-context": "~5.6.2",
-    "react-native-screens": "~4.23.0",
-    "react-native-url-polyfill": "^3.0.0",
-    "react-native-worklets": "0.7.4"
+    "archiver": "^6.0.1",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.1.5",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.0",
+    "mqtt": "^5.5.0",
+    "node-cron": "^3.0.3",
+    "node-forge": "^1.4.0",
+    "pg": "^8.11.3",
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
-    "@babel/core": "^7.28.5",
-    "babel-preset-expo": "~55.0.17",
-    "source-map-support": "^0.5.21"
+    "nodemon": "^3.0.2"
+  },
+  "engines": {
+    "node": ">=16.0.0"
   }
 }
