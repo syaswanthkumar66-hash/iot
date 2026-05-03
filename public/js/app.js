@@ -17,7 +17,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const flashDeviceId = document.getElementById('flashDeviceId');
   const espStatus = document.getElementById('espStatus');
   const fwCaCertificateInput = document.getElementById('fwCaCertificate');
-  const fwCaCertificateInput = document.getElementById('fwCaCertificate');
   let currentFlashDeviceId = null;
   let detectedPort = null;
   const factoryApiRoot = '/api/v1/factory';
