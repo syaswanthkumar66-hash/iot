@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IoTYK Factory Admin</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+  <div class="app-container">
+    <header class="app-header">
+      <div class="logo">IoTYK Factory</div>
+      <div class="auth-container">
+        <input type="password" id="factoryKeyInput" placeholder="Factory API Key" value="dev-factory-key">
+      </div>
+    </header>
+
+    <main class="main-content">
+      <section class="control-panel">
+        <div class="card">
+          <h2>Provision New Device</h2>
+          <p class="subtitle">Generates a new ESP32 identity, creates permanent MQTT credentials, and generates a QR code label.</p>
+          <label class="field-label" for="relayCountInput">Switches / Relays</label>
+          <select id="relayCountInput" class="select-input">
+            <option value="1">1 switch</option>
+            <option value="2">2 switches</option>
+            <option value="3">3 switches</option>
+            <option value="4">4 switches</option>
+            <option value="5">5 switches</option>
+            <option value="6">6 switches</option>
+            <option value="7">7 switches</option>
+            <option value="8">8 switches</option>
+          </select>
+          <button id="btnProvision" class="btn primary">Generate Device</button>
+        </div>
+      </section>
+
+      <section id="resultSection" class="result-section hidden">
+        <div class="card result-card">
+          <div class="success-banner">
+            <span class="icon">✓</span>
+            <h3>Device Provisioned Successfully</h3>
+          </div>
+          
+          <div class="details-grid">
+            <div class="detail-group">
+              <h4>Label QR Code</h4>
+              <p class="hint">Print and attach this to the physical device.</p>
+              <div id="qrcode" class="qr-container"></div>
+              <div class="label-info">
+                <strong>ID:</strong> <span id="lblDeviceId"></span><br>
+                <strong>Key:</strong> <span id="lblDeviceKey"></span>
+              </div>
+            </div>
+
+            <div class="detail-group firmware-details">
+              <h4>Firmware Configuration</h4>
+              <p class="hint">Flash these credentials into the ESP32 NVS memory.</p>
+              <div class="code-block">
+                <strong>Device ID:</strong> <span id="fwDeviceId"></span><br>
+                <strong>Relays:</strong> <span id="fwRelayCount"></span><br>
+                <strong>Pins:</strong> <span id="fwRelayPins"></span><br>
+                <strong>Namespace:</strong> <span id="fwNamespace"></span><br><br>
+                <strong>Permanent MQTT:</strong><br>
+                User: <span id="fwPermUser"></span><br>
+                Pass: <span id="fwPermPass"></span>
+              </div>
+              <div class="detail-group">
+                <h4>Firmware Source</h4>
+                <p class="hint">Downloads a ZIP containing the Arduino sketch, pre-configured <code>config.h</code>, auto-generated WSS certificates, and the pasted EMQX CA certificate.</p>
+                <label class="field-label" for="fwCaCertificate">Paste EMQX CA certificate (Optional)</label>
+                <textarea id="fwCaCertificate" class="textarea-input" placeholder="-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----" rows="4"></textarea>
+                <button id="btnDownloadFirmwareZip" class="btn primary firmware-download">Download Firmware Source (ZIP)</button>
+              </div>
+
+              <div id="flashSection" class="flash-section hidden">
+                <h4>Flash ESP32</h4>
+                <p class="hint">Before flashing, confirm the ESP32 is connected via USB/serial.</p>
+                <div class="flash-row">
+                  <strong>Target device:</strong> <span id="flashDeviceId">Unknown</span>
+                </div>
+                <button id="btnCheckEsp32" class="btn secondary">Detect ESP32</button>
+                <button id="btnStartFlash" class="btn primary">Flash firmware to ESP32</button>
+                <span id="espStatus" class="status-text">Not detected yet</span>
+                <p class="hint">If this browser supports Web Serial, you can verify that the board is connected and then flash the firmware file directly.</p>
+
+                <label class="field-label" for="firmwareFileInput">Select compiled ESP32 firmware</label>
+                <input id="firmwareFileInput" type="file" accept=".bin" class="file-input">
+                <button id="btnStartFlash" class="btn primary">Flash firmware to ESP32</button>
+                <div id="flashProgressContainer" class="progress-container hidden">
+                  <div class="progress-bar" id="flashProgressBar"></div>
+                  <span id="flashProgressText" class="progress-label">Select a compiled .bin file and connect ESP32 to flash.</span>
+                </div>
+                <pre id="flashLog" class="code-block flash-log hidden"></pre>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="device-list-section">
+        <div class="card">
+          <div class="card-header">
+            <h2>Provisioned Devices</h2>
+            <button id="btnRefresh" class="btn secondary small">Refresh List</button>
+          </div>
+          <div class="table-container">
+            <table id="deviceTable">
+              <thead>
+                <tr>
+                  <th>Device ID</th>
+                  <th>Namespace</th>
+                  <th>Relays</th>
+                  <th>Created At</th>
+                  <th>Status</th>
+                  <th>Owner</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="deviceTableBody">
+                <!-- Rows injected by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="https://unpkg.com/esptool-js@0.6.0/bundle.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

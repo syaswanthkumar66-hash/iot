@@ -1,0 +1,37 @@
+services:
+  - type: web
+    name: iotyk-api
+    runtime: node
+    region: oregon
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: AES_KEY
+        generateValue: true
+      - key: EMQX_API_URL
+        sync: false
+      - key: EMQX_APP_ID
+        sync: false
+      - key: EMQX_APP_SECRET
+        sync: false
+      - key: EMQX_BROKER_URL
+        sync: false
+      - key: EMQX_MQTT_HOST
+        sync: false
+      - key: EMQX_AUTH_ID
+        sync: false
+      - key: MQTT_SERVICE_USER
+        sync: false
+      - key: MQTT_SERVICE_PASS
+        sync: false
