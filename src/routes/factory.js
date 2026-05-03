@@ -256,6 +256,96 @@ router.delete('/device/:deviceId', requireFactoryAuth, async (req, res) => {
   }
 });
 
+router.post('/device/:deviceId/compile', requireFactoryAuth, async (req, res) => {
+  const { deviceId } = req.params;
+  const emqxCaCert = req.body?.emqx_ca_cert || '';
+  const tempDir = path.join(__dirname, '../../temp_build', `${deviceId}_${Date.now()}`);
+  const arduinoCli = path.join(process.env.HOME || '', 'arduino_cli/bin/arduino-cli');
+
+  try {
+    // 1. Fetch device data
+    const deviceRes = await query(`
+      SELECT d.device_id, d.namespace, COALESCE(d.relay_count, 1) AS relay_count, c.mqtt_username, c.mqtt_password_enc
+      FROM devices d
+      JOIN mqtt_credentials c ON c.device_id = d.id
+      WHERE d.device_id = $1 AND c.cred_type = 'device_permanent' AND c.is_active = true
+      ORDER BY c.created_at DESC LIMIT 1
+    `, [deviceId]);
+
+    if (deviceRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Device not found' });
+    }
+
+    const device = deviceRes.rows[0];
+    const broker = process.env.EMQX_MQTT_HOST || 'xxxx.ala.us-east-1.emqxsl.com';
+    const password = decrypt(device.mqtt_password_enc);
+
+    // 2. Prepare temporary build directory
+    if (!fs.existsSync(path.dirname(tempDir))) fs.mkdirSync(path.dirname(tempDir), { recursive: true });
+    fs.mkdirSync(tempDir, { recursive: true });
+
+    // Copy firmware files
+    const firmwareSrcDir = path.resolve(__dirname, '../../firmware/iotyk_esp32');
+    const files = fs.readdirSync(firmwareSrcDir);
+    for (const file of files) {
+      fs.copyFileSync(path.join(firmwareSrcDir, file), path.join(tempDir, file));
+    }
+
+    // Generate config.h
+    const configContent = buildFirmwareConfig({
+      deviceId: device.device_id,
+      namespace: device.namespace,
+      broker,
+      username: device.mqtt_username,
+      password,
+      relayCount: sanitizeRelayCount(device.relay_count)
+    });
+    fs.writeFileSync(path.join(tempDir, 'config.h'), configContent);
+
+    // Generate certificates.h
+    const certs = generateCertificates(device.device_id);
+    const certsHeader = formatCertificatesHeader(certs, emqxCaCert);
+    fs.writeFileSync(path.join(tempDir, 'certificates.h'), certsHeader);
+
+    // 3. Compile using Arduino CLI
+    // FQBN for ESP32 Dev Module
+    const fqbn = 'esp32:esp32:esp32'; 
+    const compileCmd = `${arduinoCli} compile --fqbn ${fqbn} --output-dir "${tempDir}" "${tempDir}"`;
+
+    console.log(`Starting compilation for ${deviceId}...`);
+    const { exec } = await import('child_process');
+    const { promisify } = await import('util');
+    const execAsync = promisify(exec);
+
+    try {
+      await execAsync(compileCmd, { timeout: 300000 }); // 5 min timeout
+    } catch (compileError) {
+      console.error('Compilation failed:', compileError.stdout || compileError.message);
+      return res.status(500).json({ error: 'Firmware compilation failed', details: compileError.stdout });
+    }
+
+    // 4. Find and return the .bin file
+    const binFile = path.join(tempDir, 'iotyk_esp32.ino.bin');
+    if (!fs.existsSync(binFile)) {
+      return res.status(500).json({ error: 'Compilation finished but .bin file not found' });
+    }
+
+    res.setHeader('Content-Type', 'application/octet-stream');
+    res.setHeader('Content-Disposition', `attachment; filename="${deviceId}.bin"`);
+    res.send(fs.readFileSync(binFile));
+
+    // Cleanup temp directory after sending
+    setTimeout(() => {
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    }, 5000);
+
+  } catch (error) {
+    console.error('Compilation route error:', error);
+    if (!res.headersSent) res.status(500).json({ error: 'Internal server error during compilation' });
+    if (fs.existsSync(tempDir)) fs.rmSync(tempDir, { recursive: true, force: true });
+  }
+});
+
 export default router;
 
 function buildFirmwareConfig({ deviceId, namespace, broker, username, password, relayCount = 1 }) {

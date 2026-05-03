@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnRefresh = document.getElementById('btnRefresh');
   const btnDownloadFirmwareZip = document.getElementById('btnDownloadFirmwareZip');
   const btnCheckEsp32 = document.getElementById('btnCheckEsp32');
+  const btnCompileAndFlash = document.getElementById('btnCompileAndFlash');
   const btnStartFlash = document.getElementById('btnStartFlash');
   const firmwareFileInput = document.getElementById('firmwareFileInput');
   const flashProgress = document.getElementById('flashProgress');
@@ -28,7 +29,8 @@ document.addEventListener('DOMContentLoaded', () => {
   btnRefresh.addEventListener('click', loadDevices);
   btnDownloadFirmwareZip.addEventListener('click', downloadFirmwareZip);
   btnCheckEsp32.addEventListener('click', checkEsp32Connection);
-  btnStartFlash.addEventListener('click', flashEsp32Firmware);
+  btnCompileAndFlash.addEventListener('click', compileAndFlash);
+  btnStartFlash.addEventListener('click', () => flashEsp32Firmware());
 
   async function provisionDevice() {
     btnProvision.disabled = true;
@@ -169,26 +171,83 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  async function flashEsp32Firmware() {
+  async function compileAndFlash() {
+    if (!currentFlashDeviceId) {
+      alert('Please select or generate a device first.');
+      return;
+    }
+
+    if (!detectedPort) {
+      const confirmed = confirm('ESP32 not detected. Connect and detect it now?');
+      if (confirmed) await checkEsp32Connection();
+      if (!detectedPort) return;
+    }
+
+    btnCompileAndFlash.disabled = true;
+    btnCompileAndFlash.textContent = 'Compiling on Server... (1-2 mins)';
+    flashProgressContainer.classList.remove('hidden');
+    flashProgressText.textContent = 'Server is compiling your custom firmware. This takes about 60-90 seconds...';
+    flashProgressBar.style.width = '10%';
+
+    try {
+      const response = await fetch(`${factoryApiRoot}/device/${encodeURIComponent(currentFlashDeviceId)}/compile`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${keyInput.value}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          emqx_ca_cert: fwCaCertificateInput.value.trim()
+        })
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Server-side compilation failed');
+      }
+
+      flashProgressBar.style.width = '30%';
+      flashProgressText.textContent = 'Compilation successful! Downloading .bin...';
+      const blob = await response.blob();
+      const binData = new Uint8Array(await blob.arrayBuffer());
+
+      flashProgressText.textContent = 'Starting flash process...';
+      await flashEsp32Firmware(binData);
+
+    } catch (error) {
+      alert(`Auto-Compile Error: ${error.message}`);
+      flashProgressText.textContent = `Error: ${error.message}`;
+      flashProgressBar.style.width = '0%';
+    } finally {
+      btnCompileAndFlash.disabled = false;
+      btnCompileAndFlash.textContent = 'Auto-Compile & Flash';
+    }
+  }
+
+  async function flashEsp32Firmware(preloadedBin = null) {
     if (!('serial' in navigator)) {
-      alert('Web Serial is not available in this browser. Use a supported browser such as Chrome or Edge.');
+      alert('Web Serial is not available in this browser.');
       return;
     }
 
     if (!window.ESPLoader || !window.Transport) {
-      alert('ESP flashing library is not available. Reload the page and try again.');
+      alert('ESP flashing library is not available.');
       return;
     }
 
-    const firmwareFile = firmwareFileInput.files[0];
-    if (!firmwareFile) {
-      alert('Please select a compiled ESP32 firmware .bin file first.');
-      return;
+    let firmwareData = preloadedBin;
+    if (!firmwareData) {
+      const firmwareFile = firmwareFileInput.files[0];
+      if (!firmwareFile) {
+        alert('Please select a compiled ESP32 firmware .bin file first.');
+        return;
+      }
+      const fileBuffer = await firmwareFile.arrayBuffer();
+      firmwareData = new Uint8Array(fileBuffer);
     }
 
     flashProgressContainer.classList.remove('hidden');
     flashProgressText.textContent = 'Preparing to flash...';
-    flashProgressBar.style.width = '0%';
     flashLog.textContent = '';
     flashLog.classList.remove('hidden');
     setEsp32Status('Preparing flash operation...', false);
@@ -227,9 +286,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const chipName = await esploader.main();
       appendFlashLog(`Connected to ${chipName}`);
       setEsp32Status(`Connected to ${chipName}`, true);
-
-      const fileBuffer = await firmwareFile.arrayBuffer();
-      const firmwareData = new Uint8Array(fileBuffer);
 
       appendFlashLog('Starting flash sequence...');
       flashProgressText.textContent = 'Flashing firmware...';
