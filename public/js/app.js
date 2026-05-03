@@ -3,10 +3,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnRefresh = document.getElementById('btnRefresh');
   const btnDetectLocal = document.getElementById('btnDetectLocal');
   const btnDownloadFirmwareZip = document.getElementById('btnDownloadFirmwareZip');
-  const btnCheckEsp32 = document.getElementById('btnCheckEsp32');
   const btnScanNewUsb = document.getElementById('btnScanNewUsb');
   const btnCompileAndFlash = document.getElementById('btnCompileAndFlash');
   const btnStartFlash = document.getElementById('btnStartFlash');
+  const usbDetailBox = document.getElementById('usbDetailBox');
+  const usbStatusText = document.getElementById('usbStatusText');
   const firmwareFileInput = document.getElementById('firmwareFileInput');
   const flashProgress = document.getElementById('flashProgress');
   const flashProgressContainer = document.getElementById('flashProgressContainer');
@@ -31,7 +32,6 @@ document.addEventListener('DOMContentLoaded', () => {
   btnRefresh.addEventListener('click', loadDevices);
   btnDetectLocal.addEventListener('click', detectLocalDevices);
   btnDownloadFirmwareZip.addEventListener('click', downloadFirmwareZip);
-  btnCheckEsp32.addEventListener('click', checkEsp32Connection);
   btnScanNewUsb.addEventListener('click', () => checkEsp32Connection(true));
   btnCompileAndFlash.addEventListener('click', compileAndFlash);
   btnStartFlash.addEventListener('click', () => flashEsp32Firmware());
@@ -183,54 +183,44 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function checkEsp32Connection(forceRequest = false) {
     if (!('serial' in navigator)) {
-      setEsp32Status('Web Serial is not available in this browser. Please use Chrome or Edge.', false);
+      usbStatusText.textContent = 'Web Serial not supported in this browser.';
+      usbDetailBox.classList.remove('hidden');
       return;
     }
 
-    setEsp32Status(forceRequest ? 'Opening USB selector...' : 'Scanning USB ports...', false);
-
     try {
       let port;
-      
-      if (!forceRequest) {
-        // 1. Check for already authorized ports first
-        let ports = await navigator.serial.getPorts();
-        if (ports.length > 0) {
-          port = ports[0];
-          console.log('Using already authorized port');
-        }
-      }
-
-      // 2. Request new port if none found or if forced
-      if (!port) {
+      if (forceRequest) {
         port = await navigator.serial.requestPort({ filters: [] });
+      } else {
+        const ports = await navigator.serial.getPorts();
+        port = ports.length ? ports[0] : await navigator.serial.requestPort({ filters: [] });
       }
 
-      // 3. Try to open the port to verify communication
       if (!port.readable || !port.writable) {
         await port.open({ baudRate: 115200 });
       }
       
       detectedPort = port;
       const info = port.getInfo();
-      const details = [];
-      if (info.usbVendorId) details.push(`VID: 0x${info.usbVendorId.toString(16).toUpperCase()}`);
-      if (info.usbProductId) details.push(`PID: 0x${info.usbProductId.toString(16).toUpperCase()}`);
+      const vid = info.usbVendorId ? `0x${info.usbVendorId.toString(16).toUpperCase()}` : 'Unknown';
+      const pid = info.usbProductId ? `0x${info.usbProductId.toString(16).toUpperCase()}` : 'Unknown';
       
-      const statusMsg = `Connected: ESP32 Found (${details.join(', ') || 'Generic Serial'})`;
-      setEsp32Status(statusMsg, true);
+      usbStatusText.textContent = `ESP32 Connected (VID:${vid} PID:${pid})`;
+      usbDetailBox.classList.remove('hidden');
       
-      appendFlashLog(`\n[USB] ${statusMsg}`);
-      appendFlashLog(`[USB] Port is ready for flashing.`);
-      flashProgressContainer.classList.remove('hidden');
-      flashProgressText.textContent = 'ESP32 detected. Ready to flash.';
-      flashProgressBar.style.width = '0%';
-
+      appendFlashLog(`\n[USB] Connected to ESP32: VID ${vid}, PID ${pid}`);
     } catch (err) {
-      console.error('USB Detection Error:', err);
-      setEsp32Status(`Detection Failed: ${err.message}`, false);
-      flashProgressText.textContent = 'ESP32 detection failed. Please reconnect and try again.';
+      console.error('USB Error:', err);
+      usbStatusText.textContent = `Error: ${err.message}`;
+      usbDetailBox.classList.remove('hidden');
     }
+  }
+
+  function setEsp32Status(msg, isSuccess) {
+    usbStatusText.textContent = msg;
+    usbStatusText.style.color = isSuccess ? '#34D399' : '#F87171';
+    usbDetailBox.classList.remove('hidden');
   }
 
   async function compileAndFlash() {

@@ -73,11 +73,12 @@
                   <strong>Target device:</strong> <span id="flashDeviceId">Unknown</span>
                 </div>
                 <div class="action-buttons">
-                  <button id="btnCheckEsp32" class="btn secondary">1. Auto-Detect USB</button>
-                  <button id="btnScanNewUsb" class="btn secondary small">Scan for New USB Device</button>
+                  <button id="btnScanNewUsb" class="btn secondary">1. Select ESP32 COM Port</button>
                   <button id="btnCompileAndFlash" class="btn primary accent">2. Auto-Compile & Flash</button>
                 </div>
-                <span id="espStatus" class="status-text">Not detected yet</span>
+                <div id="usbDetailBox" class="status-box hidden">
+                  <strong>Selected Port:</strong> <span id="usbStatusText">None</span>
+                </div>
                 
                 <div class="advanced-toggle" onclick="document.getElementById('manualFlashSection').classList.toggle('hidden')">
                   Show Manual Options (Advanced)
