@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnDetectLocal = document.getElementById('btnDetectLocal');
   const btnDownloadFirmwareZip = document.getElementById('btnDownloadFirmwareZip');
   const btnCheckEsp32 = document.getElementById('btnCheckEsp32');
+  const btnScanNewUsb = document.getElementById('btnScanNewUsb');
   const btnCompileAndFlash = document.getElementById('btnCompileAndFlash');
   const btnStartFlash = document.getElementById('btnStartFlash');
   const firmwareFileInput = document.getElementById('firmwareFileInput');
@@ -31,6 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
   btnDetectLocal.addEventListener('click', detectLocalDevices);
   btnDownloadFirmwareZip.addEventListener('click', downloadFirmwareZip);
   btnCheckEsp32.addEventListener('click', checkEsp32Connection);
+  btnScanNewUsb.addEventListener('click', () => checkEsp32Connection(true));
   btnCompileAndFlash.addEventListener('click', compileAndFlash);
   btnStartFlash.addEventListener('click', () => flashEsp32Firmware());
 
@@ -179,24 +181,28 @@ document.addEventListener('DOMContentLoaded', () => {
     btnDetectLocal.textContent = 'Detect Online Devices';
   }
 
-  async function checkEsp32Connection() {
+  async function checkEsp32Connection(forceRequest = false) {
     if (!('serial' in navigator)) {
       setEsp32Status('Web Serial is not available in this browser. Please use Chrome or Edge.', false);
       return;
     }
 
-    setEsp32Status('Scanning USB ports...', false);
+    setEsp32Status(forceRequest ? 'Opening USB selector...' : 'Scanning USB ports...', false);
 
     try {
-      // 1. Check for already authorized ports first
-      let ports = await navigator.serial.getPorts();
       let port;
       
-      if (ports.length > 0) {
-        port = ports[0];
-        console.log('Using already authorized port');
-      } else {
-        // 2. Request new port if none found
+      if (!forceRequest) {
+        // 1. Check for already authorized ports first
+        let ports = await navigator.serial.getPorts();
+        if (ports.length > 0) {
+          port = ports[0];
+          console.log('Using already authorized port');
+        }
+      }
+
+      // 2. Request new port if none found or if forced
+      if (!port) {
         port = await navigator.serial.requestPort({ filters: [] });
       }
 
