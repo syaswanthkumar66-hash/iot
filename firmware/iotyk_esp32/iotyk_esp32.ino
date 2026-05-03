@@ -5,6 +5,7 @@
 #include "ble_provision.h"
 #include "mqtt_manager.h"
 #include "certificates.h"
+#include "local_server.h"
 
 // --- LED State Machine ---
 enum LedState : uint8_t { LED_OFF, LED_FAST_BLINK, LED_SLOW_BLINK };
@@ -88,6 +89,7 @@ void startWiFi() {
     Serial.println("\nWiFi connected! IP: " + WiFi.localIP().toString());
     stopBLE();
     setupMqtt();
+    setupLocalServer(prefs.getString(KEY_DEVICE_ID, ""));
   } else {
     Serial.println("\nWiFi connection failed. Starting BLE...");
     wifiConnected = false;
@@ -161,6 +163,8 @@ void loop() {
     }
     // Run MQTT loop
     loopMqtt();
+    // Run Local Server loop
+    loopLocalServer();
   }
 
   // Handle commands, state updates, etc.

@@ -381,7 +381,7 @@ static const uint8_t RELAY_PINS[RELAY_COUNT] = {${pins.join(', ')}};
 #define LOCAL_HTTP_PORT 80
 #define LOCAL_WS_PORT 81
 #define LOCAL_WSS_PORT 82
-#define LOCAL_WSS_ENABLED false
+#define LOCAL_WSS_ENABLED true
 #define FIRMWARE_VERSION "1.1.0"
 
 // --- NVS Storage Keys ---
