@@ -182,7 +182,7 @@ router.post('/device/:deviceId/generate-firmware', requireFactoryAuth, async (re
     archive.append(certsHeader, { name: 'certificates.h' });
 
     // Append firmware directory
-    const firmwareDir = path.resolve(__dirname, '../../firmware/iotyk_esp32');
+    const firmwareDir = path.resolve(__dirname, '../../../../firmware/iotyk_esp32');
     if (fs.existsSync(firmwareDir)) {
       archive.directory(firmwareDir, false);
     }
