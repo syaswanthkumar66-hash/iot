@@ -275,19 +275,57 @@ h2 {
   user-select: none;
 }
 
-.status-box {
-  margin-top: 14px;
-  padding: 12px 16px;
-  background-color: rgba(0,0,0,0.2);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  font-size: 14px;
-  color: var(--text-main);
+.device-card {
+  margin-top: 20px;
+  background-color: rgba(56, 189, 248, 0.05);
+  border: 1px solid var(--accent);
+  border-radius: 12px;
+  overflow: hidden;
+  animation: slideUp 0.3s ease-out;
 }
 
-.status-box strong {
-  color: var(--accent);
+.device-card-header {
+  padding: 12px 16px;
+  background-color: rgba(56, 189, 248, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid rgba(56, 189, 248, 0.2);
+}
+
+.pulse-indicator {
+  width: 10px;
+  height: 10px;
+  background-color: var(--success);
+  border-radius: 50%;
+  box-shadow: 0 0 0 rgba(52, 211, 153, 0.4);
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(52, 211, 153, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+}
+
+.device-card-body {
+  padding: 16px;
+}
+
+.info-tag {
+  font-family: monospace;
+  font-size: 13px;
+}
+
+.info-tag span:first-child {
+  color: var(--text-muted);
   margin-right: 8px;
+}
+
+.btn.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: grayscale(1);
 }
 
 .manual-flash {

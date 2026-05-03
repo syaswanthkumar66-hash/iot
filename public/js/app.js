@@ -204,13 +204,17 @@ document.addEventListener('DOMContentLoaded', () => {
       const vid = info.usbVendorId ? `0x${info.usbVendorId.toString(16).toUpperCase()}` : 'Unknown';
       const pid = info.usbProductId ? `0x${info.usbProductId.toString(16).toUpperCase()}` : 'Unknown';
       
-      usbStatusText.textContent = `ESP32 Connected (VID:${vid} PID:${pid})`;
+      usbStatusText.textContent = `VID:${vid} PID:${pid}`;
       usbDetailBox.classList.remove('hidden');
       
-      appendFlashLog(`\n[USB] Connected to ESP32: VID ${vid}, PID ${pid}`);
+      // Enable Flash Button
+      btnCompileAndFlash.disabled = false;
+      btnCompileAndFlash.classList.remove('disabled');
+      
+      appendFlashLog(`\n[USB] Hardware Linked: VID ${vid}, PID ${pid}`);
     } catch (err) {
       console.error('USB Error:', err);
-      usbStatusText.textContent = `Error: ${err.message}`;
+      usbStatusText.textContent = `Selection Canceled: ${err.message}`;
       usbDetailBox.classList.remove('hidden');
     }
   }

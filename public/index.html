@@ -73,11 +73,19 @@
                   <strong>Target device:</strong> <span id="flashDeviceId">Unknown</span>
                 </div>
                 <div class="action-buttons">
-                  <button id="btnScanNewUsb" class="btn secondary">1. Select ESP32 COM Port</button>
-                  <button id="btnCompileAndFlash" class="btn primary accent">2. Auto-Compile & Flash</button>
+                  <button id="btnScanNewUsb" class="btn primary">1. Select ESP32 COM Port</button>
+                  <button id="btnCompileAndFlash" class="btn primary accent disabled" disabled>2. Auto-Compile & Flash</button>
                 </div>
-                <div id="usbDetailBox" class="status-box hidden">
-                  <strong>Selected Port:</strong> <span id="usbStatusText">None</span>
+
+                <div id="usbDetailBox" class="device-card hidden">
+                  <div class="device-card-header">
+                    <span class="pulse-indicator"></span>
+                    <strong>ESP32 Hardware Linked</strong>
+                    <span class="status-badge status-online">READY</span>
+                  </div>
+                  <div class="device-card-body">
+                    <div class="info-tag"><span>USB ID:</span> <span id="usbStatusText">Scanning...</span></div>
+                  </div>
                 </div>
                 
                 <div class="advanced-toggle" onclick="document.getElementById('manualFlashSection').classList.toggle('hidden')">
