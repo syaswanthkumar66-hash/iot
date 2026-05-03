@@ -33,18 +33,35 @@ document.addEventListener('DOMContentLoaded', () => {
   btnDetectLocal.addEventListener('click', detectLocalDevices);
   btnDownloadFirmwareZip.addEventListener('click', downloadFirmwareZip);
   btnScanNewUsb.addEventListener('click', async () => {
+    // 1. Immediate check for API support
+    if (!navigator.serial) {
+      alert('ERROR: Your browser is blocking USB access. \n\nReason: You must use HTTPS (https://...) and Google Chrome or Edge.');
+      return;
+    }
+
     try {
-      if (!('serial' in navigator)) {
-        alert('Web Serial is NOT supported on this browser/connection. Please use HTTPS and Chrome/Edge.');
-        return;
-      }
-      const port = await navigator.serial.requestPort({ filters: [] });
+      // 2. Open the selection window with filters for common ESP32 chips
+      const port = await navigator.serial.requestPort({ 
+        filters: [
+          { usbVendorId: 0x10c4 }, // CP210x
+          { usbVendorId: 0x1a86 }, // CH340
+          { usbVendorId: 0x0403 }, // FTDI
+          { usbVendorId: 0x303a }, // ESP32-S2/S3
+          { usbVendorId: 0x2341 }  // Arduino/Generic
+        ] 
+      });
+
       if (port) {
         detectedPort = port;
-        checkEsp32Connection(false); // Update UI with selected port
+        // Wait 100ms for browser to authorize then update UI
+        setTimeout(() => checkEsp32Connection(false), 100);
       }
     } catch (err) {
-      console.log('User canceled or browser blocked port selection:', err);
+      if (err.name === 'NotFoundError') {
+        alert('No device was selected. Please click the button again and pick your COM port.');
+      } else {
+        console.error('USB Selection Failed:', err);
+      }
     }
   });
   
