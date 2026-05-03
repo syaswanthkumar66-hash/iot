@@ -29,11 +29,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const factoryApiRoot = '/api/v1/factory';
 
   // Load initial devices
-  loadDevices();
+  if (keyInput && keyInput.value) {
+    loadDevices();
+  }
 
-  btnProvision.addEventListener('click', provisionDevice);
-  btnRefresh.addEventListener('click', loadDevices);
-  btnDetectLocal.addEventListener('click', detectLocalDevices);
+  if (btnProvision) btnProvision.addEventListener('click', provisionDevice);
+  if (btnRefresh) btnRefresh.addEventListener('click', loadDevices);
+  
   btnDownloadFirmwareZip.addEventListener('click', downloadFirmwareZip);
   
   // 1. Hardware Lifecycle Listeners (Google Best Practice)
