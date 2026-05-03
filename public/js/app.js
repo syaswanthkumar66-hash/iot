@@ -35,6 +35,44 @@ document.addEventListener('DOMContentLoaded', () => {
   btnDetectLocal.addEventListener('click', detectLocalDevices);
   btnDownloadFirmwareZip.addEventListener('click', downloadFirmwareZip);
   
+  // 1. Hardware Lifecycle Listeners (Google Best Practice)
+  if (navigator.serial) {
+    navigator.serial.addEventListener('connect', (e) => {
+      console.log('Hardware Plugged In:', e.target);
+      // Automatically attempt to link if this was a known device
+      detectedPort = e.target;
+      checkEsp32Connection(false);
+    });
+
+    navigator.serial.addEventListener('disconnect', (e) => {
+      console.log('Hardware Unplugged:', e.target);
+      if (detectedPort === e.target) {
+        detectedPort = null;
+        globalUsbStatus.textContent = 'DISCONNECTED';
+        globalUsbStatus.className = 'status-badge status-offline';
+        btnGlobalConnectUsb.textContent = 'Connect USB';
+        usbDetailBox.classList.add('hidden');
+        btnCompileAndFlash.disabled = true;
+        btnCompileAndFlash.classList.add('disabled');
+      }
+    });
+
+    // 2. Auto-Link Previously Authorized Devices
+    async function autoLinkDevices() {
+      try {
+        const ports = await navigator.serial.getPorts();
+        if (ports.length > 0) {
+          console.log('Found authorized devices:', ports.length);
+          detectedPort = ports[0];
+          checkEsp32Connection(false);
+        }
+      } catch (err) {
+        console.error('Auto-link failed:', err);
+      }
+    }
+    autoLinkDevices();
+  }
+
   async function handleUsbConnect() {
     if (!navigator.serial) {
       alert('ERROR: Your browser is blocking USB access. \n\nReason: You must use HTTPS (https://...) and Google Chrome or Edge.');
@@ -375,7 +413,10 @@ document.addEventListener('DOMContentLoaded', () => {
       flashProgressText.textContent = 'Connecting to ESP32 bootloader...';
       const chipName = await esploader.main();
       appendFlashLog(`Connected to ${chipName}`);
-      setEsp32Status(`Connected to ${chipName}`, true);
+      
+      // Update UI with real chip name
+      usbStatusText.textContent = `${chipName} Linked`;
+      usbReadyBadge.classList.remove('hidden');
 
       appendFlashLog('Starting flash sequence...');
       flashProgressText.textContent = 'Flashing firmware...';
@@ -390,29 +431,33 @@ document.addEventListener('DOMContentLoaded', () => {
         reportProgress: (fileIndex, written, total) => {
           const percent = total ? (written / total) * 100 : 0;
           flashProgressBar.style.width = `${percent.toFixed(1)}%`;
-          flashProgressText.textContent = `Flashing firmware: ${percent.toFixed(1)}%`;
+          flashProgressText.textContent = `Flashing: ${percent.toFixed(1)}%`;
         }
       });
 
-      appendFlashLog('Firmware flash complete. Resetting device...');
+      appendFlashLog('\n[SUCCESS] Firmware flash complete!');
       flashProgressText.textContent = 'Firmware flash completed successfully.';
       flashProgressBar.style.width = '100%';
+      
+      // Google Practice: Explicit Hard Reset and Signal Clear
       await esploader.after('hard_reset');
-      setEsp32Status('Firmware flashed successfully!', true);
+      
     } catch (error) {
       console.error(error);
       const message = error?.message || String(error);
       flashProgressText.textContent = `Flash failed: ${message}`;
       flashProgressBar.style.width = '0%';
-      appendFlashLog(`Error: ${message}`);
-      setEsp32Status(`Flash failed: ${message}`, false);
+      appendFlashLog(`\n[ERROR] ${message}`);
     } finally {
       if (port) {
         try {
+          // Ensure signals are cleared before closing
+          await port.setSignals({ dataTerminalReady: false, requestToSend: false });
           await port.close();
         } catch (_err) {}
       }
-      detectedPort = null;
+      // Re-detect to keep the UI synced
+      setTimeout(() => autoLinkDevices(), 500);
     }
   }
 
