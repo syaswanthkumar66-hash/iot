@@ -73,24 +73,27 @@ document.addEventListener('DOMContentLoaded', () => {
     autoLinkDevices();
   }
 
-  async function handleUsbConnect() {
+  function handleUsbConnect() {
     if (!navigator.serial) {
-      alert('ERROR: Your browser is blocking USB access. \n\nReason: You must use HTTPS (https://...) and Google Chrome or Edge.');
+      alert('USB access is blocked. Please ensure you are using HTTPS and Google Chrome or Edge.');
       return;
     }
-    try {
-      const port = await navigator.serial.requestPort({ filters: [] });
-      if (port) {
-        detectedPort = port;
-        setTimeout(() => checkEsp32Connection(false), 100);
-      }
-    } catch (err) {
-      console.log('Selection canceled');
-    }
+
+    // Direct Browser Trigger (No delays, no async wrapper)
+    navigator.serial.requestPort({ filters: [] })
+      .then(port => {
+        if (port) {
+          detectedPort = port;
+          checkEsp32Connection(false);
+        }
+      })
+      .catch(err => {
+        console.log('Selection canceled or blocked:', err);
+      });
   }
 
-  btnGlobalConnectUsb.addEventListener('click', handleUsbConnect);
-  btnScanNewUsb.addEventListener('click', handleUsbConnect);
+  btnGlobalConnectUsb.onclick = handleUsbConnect;
+  btnScanNewUsb.onclick = handleUsbConnect;
   
   btnCompileAndFlash.addEventListener('click', compileAndFlash);
   btnStartFlash.addEventListener('click', () => flashEsp32Firmware());
