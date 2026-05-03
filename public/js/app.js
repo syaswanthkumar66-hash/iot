@@ -74,23 +74,35 @@ document.addEventListener('DOMContentLoaded', () => {
     autoLinkDevices();
   }
 
-  function handleUsbConnect() {
+  async function handleUsbConnect() {
     if (!navigator.serial) {
       alert('USB access is blocked. Please ensure you are using HTTPS and Google Chrome or Edge.');
       return;
     }
 
-    // Direct Browser Trigger (No delays, no async wrapper)
-    navigator.serial.requestPort({ filters: [] })
-      .then(port => {
-        if (port) {
-          detectedPort = port;
-          checkEsp32Connection(false);
+    try {
+      // 1. Ask browser for ANY serial device (No filters, just like your snippet)
+      const port = await navigator.serial.requestPort();
+      
+      if (port) {
+        detectedPort = port;
+        const baudRate = parseInt(baudRateSelect.value || '115200');
+        
+        // 2. Open the connection
+        if (!port.readable || !port.writable) {
+          await port.open({ baudRate: baudRate });
         }
-      })
-      .catch(err => {
-        console.log('Selection canceled or blocked:', err);
-      });
+        
+        alert("Successfully connected!");
+        checkEsp32Connection(false); // Update UI
+      }
+    } catch (error) {
+      console.error("Connection error:", error);
+      // Only alert if it's not a user cancel
+      if (error.name !== 'NotFoundError') {
+        alert("Failed to connect. See console for details.");
+      }
+    }
   }
 
   btnGlobalConnectUsb.onclick = handleUsbConnect;
