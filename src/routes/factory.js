@@ -173,7 +173,7 @@ router.post('/device/:deviceId/generate-firmware', requireFactoryAuth, async (re
     });
 
     res.setHeader('Content-Type', 'application/zip');
-    res.setHeader('Content-Disposition', \`attachment; filename="\${device.device_id}_firmware.zip"\`);
+    res.setHeader('Content-Disposition', `attachment; filename="${device.device_id}_firmware.zip"`);
 
     archive.pipe(res);
 
