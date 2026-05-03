@@ -10,6 +10,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const usbStatusText = document.getElementById('usbStatusText');
   const usbReadyBadge = document.getElementById('usbReadyBadge');
   const usbPulse = document.getElementById('usbPulse');
+  const btnGlobalConnectUsb = document.getElementById('btnGlobalConnectUsb');
+  const globalUsbStatus = document.getElementById('globalUsbStatus');
   const firmwareFileInput = document.getElementById('firmwareFileInput');
   const flashProgressContainer = document.getElementById('flashProgressContainer');
   const flashProgressBar = document.getElementById('flashProgressBar');
@@ -32,30 +34,25 @@ document.addEventListener('DOMContentLoaded', () => {
   btnRefresh.addEventListener('click', loadDevices);
   btnDetectLocal.addEventListener('click', detectLocalDevices);
   btnDownloadFirmwareZip.addEventListener('click', downloadFirmwareZip);
-  btnScanNewUsb.addEventListener('click', async () => {
-    // 1. Immediate check for API support
+  
+  async function handleUsbConnect() {
     if (!navigator.serial) {
       alert('ERROR: Your browser is blocking USB access. \n\nReason: You must use HTTPS (https://...) and Google Chrome or Edge.');
       return;
     }
-
     try {
-      // 2. Open the selection window without filters (matches Google test site)
       const port = await navigator.serial.requestPort({ filters: [] });
-
       if (port) {
         detectedPort = port;
-        // Wait 100ms for browser to authorize then update UI
         setTimeout(() => checkEsp32Connection(false), 100);
       }
     } catch (err) {
-      if (err.name === 'NotFoundError') {
-        alert('No device was selected. Please click the button again and pick your COM port.');
-      } else {
-        console.error('USB Selection Failed:', err);
-      }
+      console.log('Selection canceled');
     }
-  });
+  }
+
+  btnGlobalConnectUsb.addEventListener('click', handleUsbConnect);
+  btnScanNewUsb.addEventListener('click', handleUsbConnect);
   
   btnCompileAndFlash.addEventListener('click', compileAndFlash);
   btnStartFlash.addEventListener('click', () => flashEsp32Firmware());
@@ -235,6 +232,11 @@ document.addEventListener('DOMContentLoaded', () => {
       usbDetailBox.classList.remove('hidden');
       usbReadyBadge.classList.remove('hidden');
       usbPulse.classList.remove('hidden');
+      
+      // Update Global Status
+      globalUsbStatus.textContent = 'CONNECTED';
+      globalUsbStatus.className = 'status-badge status-online';
+      btnGlobalConnectUsb.textContent = 'Change USB';
       
       // Enable Flash Button
       btnCompileAndFlash.disabled = false;

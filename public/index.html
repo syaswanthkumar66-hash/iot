@@ -114,14 +114,19 @@
       </section>
 
       <section class="device-list-section">
-        <div class="card">
-          <div class="card-header">
-            <h2>Provisioned Devices</h2>
-            <div class="header-actions">
-              <button id="btnDetectLocal" class="btn secondary small">Detect Online Devices</button>
-              <button id="btnRefresh" class="btn secondary small">Refresh List</button>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <h3>Connected Devices</h3>
+            <div class="stat-value" id="countConnected">0</div>
+          </div>
+          <div class="stat-card">
+            <h3>Hardware Link</h3>
+            <div class="stat-value usb-link-area">
+              <button id="btnGlobalConnectUsb" class="btn primary small">Connect USB</button>
+              <span id="globalUsbStatus" class="status-badge status-offline">DISCONNECTED</span>
             </div>
           </div>
+        </div>
           <div class="table-container">
             <table id="deviceTable">
               <thead>

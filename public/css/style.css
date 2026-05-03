@@ -317,15 +317,24 @@ h2 {
   font-size: 13px;
 }
 
-.info-tag span:first-child {
-  color: var(--text-muted);
-  margin-right: 8px;
+.usb-link-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-top: 5px;
 }
 
-.btn.disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  filter: grayscale(1);
+.status-badge.status-offline {
+  background-color: rgba(248, 113, 113, 0.1);
+  color: #F87171;
+  border: 1px solid rgba(248, 113, 113, 0.2);
+}
+
+.status-badge.status-online {
+  background-color: rgba(52, 211, 153, 0.1);
+  color: #34D399;
+  border: 1px solid rgba(52, 211, 153, 0.2);
 }
 
 .manual-flash {
