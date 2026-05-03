@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
   const btnProvision = document.getElementById('btnProvision');
   const btnRefresh = document.getElementById('btnRefresh');
+  const btnDetectLocal = document.getElementById('btnDetectLocal');
   const btnDownloadFirmwareZip = document.getElementById('btnDownloadFirmwareZip');
   const btnCheckEsp32 = document.getElementById('btnCheckEsp32');
   const btnCompileAndFlash = document.getElementById('btnCompileAndFlash');
@@ -27,6 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   btnProvision.addEventListener('click', provisionDevice);
   btnRefresh.addEventListener('click', loadDevices);
+  btnDetectLocal.addEventListener('click', detectLocalDevices);
   btnDownloadFirmwareZip.addEventListener('click', downloadFirmwareZip);
   btnCheckEsp32.addEventListener('click', checkEsp32Connection);
   btnCompileAndFlash.addEventListener('click', compileAndFlash);
@@ -141,6 +143,40 @@ document.addEventListener('DOMContentLoaded', () => {
       btnDownloadFirmwareZip.disabled = false;
       btnDownloadFirmwareZip.textContent = 'Download Firmware Source (ZIP)';
     }
+  }
+
+  async function detectLocalDevices() {
+    const rows = document.querySelectorAll('#deviceTableBody tr');
+    if (rows.length === 0) return;
+
+    btnDetectLocal.disabled = true;
+    btnDetectLocal.textContent = 'Detecting...';
+
+    const scanPromises = Array.from(rows).map(async (row) => {
+      const deviceId = row.dataset.deviceId;
+      const statusCell = row.querySelector('.status-cell');
+      if (!deviceId || !statusCell) return;
+
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 2000);
+
+        // Try to fetch info from the .local address
+        const response = await fetch(`http://${deviceId}.local/info`, { 
+          signal: controller.signal,
+          mode: 'no-cors' 
+        });
+        
+        statusCell.innerHTML = '<span class="status-badge status-online">Local</span>';
+        clearTimeout(timeoutId);
+      } catch (err) {
+        // Keep original
+      }
+    });
+
+    await Promise.all(scanPromises);
+    btnDetectLocal.disabled = false;
+    btnDetectLocal.textContent = 'Detect Online Devices';
   }
 
   async function checkEsp32Connection() {
@@ -359,12 +395,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const statusText = device.is_online ? 'Online' : 'Offline';
         const owner = device.owner_email || '<span style="color:#8EA0B3">Unpaired</span>';
 
+        tr.dataset.deviceId = device.device_id;
         tr.innerHTML = `
           <td><strong>${device.device_id}</strong></td>
           <td style="font-family:monospace; color:#8EA0B3">${device.namespace}</td>
           <td>${device.relay_count || 1}</td>
           <td>${date}</td>
-          <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+          <td class="status-cell"><span class="status-badge ${statusClass}">${statusText}</span></td>
           <td>${owner}</td>
           <td></td>
         `;
