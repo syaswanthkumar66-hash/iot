@@ -5,8 +5,8 @@
   "description": "IoTYK Server - Device management and relay control",
   "main": "index.js",
   "scripts": {
-    "start": "node src/index.js",
-    "dev": "nodemon src/index.js",
+    "start": "node server/src/index.js",
+    "dev": "nodemon server/src/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
