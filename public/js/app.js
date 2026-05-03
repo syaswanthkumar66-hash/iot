@@ -40,16 +40,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     try {
-      // 2. Open the selection window with filters for common ESP32 chips
-      const port = await navigator.serial.requestPort({ 
-        filters: [
-          { usbVendorId: 0x10c4 }, // CP210x
-          { usbVendorId: 0x1a86 }, // CH340
-          { usbVendorId: 0x0403 }, // FTDI
-          { usbVendorId: 0x303a }, // ESP32-S2/S3
-          { usbVendorId: 0x2341 }  // Arduino/Generic
-        ] 
-      });
+      // 2. Open the selection window without filters (matches Google test site)
+      const port = await navigator.serial.requestPort({ filters: [] });
 
       if (port) {
         detectedPort = port;
