@@ -32,7 +32,22 @@ document.addEventListener('DOMContentLoaded', () => {
   btnRefresh.addEventListener('click', loadDevices);
   btnDetectLocal.addEventListener('click', detectLocalDevices);
   btnDownloadFirmwareZip.addEventListener('click', downloadFirmwareZip);
-  btnScanNewUsb.addEventListener('click', () => checkEsp32Connection(true));
+  btnScanNewUsb.addEventListener('click', async () => {
+    try {
+      if (!('serial' in navigator)) {
+        alert('Web Serial is NOT supported on this browser/connection. Please use HTTPS and Chrome/Edge.');
+        return;
+      }
+      const port = await navigator.serial.requestPort({ filters: [] });
+      if (port) {
+        detectedPort = port;
+        checkEsp32Connection(false); // Update UI with selected port
+      }
+    } catch (err) {
+      console.log('User canceled or browser blocked port selection:', err);
+    }
+  });
+  
   btnCompileAndFlash.addEventListener('click', compileAndFlash);
   btnStartFlash.addEventListener('click', () => flashEsp32Firmware());
 
