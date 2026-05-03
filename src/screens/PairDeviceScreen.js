@@ -25,14 +25,11 @@ export default function PairDeviceScreen({ navigation, route }) {
   const canSubmit = deviceId.trim().length > 0 && deviceKey.trim().length > 0;
 
   async function submit() {
-    const ok = await actions.pairDevice(deviceId.trim(), deviceKey.trim());
-    if (ok) {
-      setSuccess(true);
-      // Brief success flash then navigate to Dashboard
-      setTimeout(() => {
-        navigation.navigate('Dashboard');
-      }, 1200);
-    }
+    // Navigate to BLEProvision where it will pair the device AND provision the WiFi and MQTT credentials
+    navigation.navigate('BLEProvision', {
+      device_id: deviceId.trim(),
+      device_key: deviceKey.trim()
+    });
   }
 
   return (
@@ -60,17 +57,8 @@ export default function PairDeviceScreen({ navigation, route }) {
             <Text style={styles.qrBadgeText}>Filled from QR scan</Text>
           </View>
         )}
-
-        {/* Success state */}
-        {success ? (
-          <View style={[commonStyles.card, styles.successCard]}>
-            <Text style={styles.successIcon}>✓</Text>
-            <Text style={styles.successTitle}>Device Added!</Text>
-            <Text style={styles.successSub}>Redirecting to dashboard…</Text>
-          </View>
-        ) : (
-          <View style={[commonStyles.card, styles.form]}>
-            <Text style={commonStyles.label}>Device ID</Text>
+        <View style={[commonStyles.card, styles.form]}>
+          <Text style={commonStyles.label}>Device ID</Text>
             <TextInput
               autoCapitalize="none"
               autoCorrect={false}
@@ -108,8 +96,7 @@ export default function PairDeviceScreen({ navigation, route }) {
             ) : null}
 
             <PrimaryButton
-              label="Add Device"
-              loading={state.pairLoading}
+              label="Next"
               disabled={!canSubmit}
               onPress={submit}
             />
@@ -125,7 +112,6 @@ export default function PairDeviceScreen({ navigation, route }) {
               </TouchableOpacity>
             )}
           </View>
-        )}
       </ScrollView>
     </SafeAreaView>
   );
