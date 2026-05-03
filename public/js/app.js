@@ -181,28 +181,48 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function checkEsp32Connection() {
     if (!('serial' in navigator)) {
-      setEsp32Status('Web Serial is not available in this browser. Connect ESP32 and flash manually.', false);
+      setEsp32Status('Web Serial is not available in this browser. Please use Chrome or Edge.', false);
       return;
     }
 
+    setEsp32Status('Scanning USB ports...', false);
+
     try {
-      const ports = await navigator.serial.getPorts();
-      const port = ports.length ? ports[0] : await navigator.serial.requestPort({ filters: [] });
+      // 1. Check for already authorized ports first
+      let ports = await navigator.serial.getPorts();
+      let port;
+      
+      if (ports.length > 0) {
+        port = ports[0];
+        console.log('Using already authorized port');
+      } else {
+        // 2. Request new port if none found
+        port = await navigator.serial.requestPort({ filters: [] });
+      }
+
+      // 3. Try to open the port to verify communication
       if (!port.readable || !port.writable) {
         await port.open({ baudRate: 115200 });
       }
+      
       detectedPort = port;
-
       const info = port.getInfo();
-      const portInfo = [];
-      if (info.usbVendorId) portInfo.push(`vendor:${info.usbVendorId}`);
-      if (info.usbProductId) portInfo.push(`product:${info.usbProductId}`);
-      setEsp32Status(`ESP32 detected (${portInfo.join(', ') || 'serial port acquired'})`, true);
+      const details = [];
+      if (info.usbVendorId) details.push(`VID: 0x${info.usbVendorId.toString(16).toUpperCase()}`);
+      if (info.usbProductId) details.push(`PID: 0x${info.usbProductId.toString(16).toUpperCase()}`);
+      
+      const statusMsg = `Connected: ESP32 Found (${details.join(', ') || 'Generic Serial'})`;
+      setEsp32Status(statusMsg, true);
+      
+      appendFlashLog(`\n[USB] ${statusMsg}`);
+      appendFlashLog(`[USB] Port is ready for flashing.`);
       flashProgressContainer.classList.remove('hidden');
       flashProgressText.textContent = 'ESP32 detected. Ready to flash.';
       flashProgressBar.style.width = '0%';
-    } catch (error) {
-      setEsp32Status(`ESP32 detection failed: ${error.message}`, false);
+
+    } catch (err) {
+      console.error('USB Detection Error:', err);
+      setEsp32Status(`Detection Failed: ${err.message}`, false);
       flashProgressText.textContent = 'ESP32 detection failed. Please reconnect and try again.';
     }
   }
