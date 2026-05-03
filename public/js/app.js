@@ -8,6 +8,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnStartFlash = document.getElementById('btnStartFlash');
   const usbDetailBox = document.getElementById('usbDetailBox');
   const usbStatusText = document.getElementById('usbStatusText');
+  const usbReadyBadge = document.getElementById('usbReadyBadge');
+  const usbPulse = document.getElementById('usbPulse');
   const firmwareFileInput = document.getElementById('firmwareFileInput');
   const flashProgressContainer = document.getElementById('flashProgressContainer');
   const flashProgressBar = document.getElementById('flashProgressBar');
@@ -204,18 +206,26 @@ document.addEventListener('DOMContentLoaded', () => {
       const vid = info.usbVendorId ? `0x${info.usbVendorId.toString(16).toUpperCase()}` : 'Unknown';
       const pid = info.usbProductId ? `0x${info.usbProductId.toString(16).toUpperCase()}` : 'Unknown';
       
-      usbStatusText.textContent = `VID:${vid} PID:${pid}`;
+      usbStatusText.textContent = `Linked (VID:${vid} PID:${pid})`;
+      usbStatusText.style.color = '#34D399';
       usbDetailBox.classList.remove('hidden');
+      usbReadyBadge.classList.remove('hidden');
+      usbPulse.classList.remove('hidden');
       
       // Enable Flash Button
       btnCompileAndFlash.disabled = false;
       btnCompileAndFlash.classList.remove('disabled');
       
-      appendFlashLog(`\n[USB] Hardware Linked: VID ${vid}, PID ${pid}`);
+      appendFlashLog(`\n[USB] Hardware Linked Successfully: VID ${vid}, PID ${pid}`);
     } catch (err) {
       console.error('USB Error:', err);
-      usbStatusText.textContent = `Selection Canceled: ${err.message}`;
-      usbDetailBox.classList.remove('hidden');
+      if (err.name !== 'NotFoundError' && err.name !== 'AbortError') {
+        usbStatusText.textContent = `Error: ${err.message}`;
+        usbStatusText.style.color = '#F87171';
+        usbDetailBox.classList.remove('hidden');
+        usbReadyBadge.classList.add('hidden');
+        usbPulse.classList.add('hidden');
+      }
     }
   }
 

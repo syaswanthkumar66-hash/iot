@@ -79,12 +79,12 @@
 
                 <div id="usbDetailBox" class="device-card hidden">
                   <div class="device-card-header">
-                    <span class="pulse-indicator"></span>
-                    <strong>ESP32 Hardware Linked</strong>
-                    <span class="status-badge status-online">READY</span>
+                    <span id="usbPulse" class="pulse-indicator hidden"></span>
+                    <strong>ESP32 Hardware Connection</strong>
+                    <span id="usbReadyBadge" class="status-badge status-online hidden">READY</span>
                   </div>
                   <div class="device-card-body">
-                    <div class="info-tag"><span>USB ID:</span> <span id="usbStatusText">Scanning...</span></div>
+                    <div class="info-tag"><span>Status:</span> <span id="usbStatusText">Not detected yet</span></div>
                   </div>
                 </div>
                 
