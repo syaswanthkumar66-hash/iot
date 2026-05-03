@@ -381,13 +381,6 @@ document.addEventListener('DOMContentLoaded', () => {
     flashLog.scrollTop = flashLog.scrollHeight;
   }
 
-  function setEsp32Status(message, success) {
-    espStatus.textContent = message;
-    espStatus.style.color = success ? '#34D399' : '#F97316';
-  }
-
-
-
   async function loadDevices() {
     try {
       const response = await fetch(`${factoryApiRoot}/devices`, {
