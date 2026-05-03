@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const usbPulse = document.getElementById('usbPulse');
   const btnGlobalConnectUsb = document.getElementById('btnGlobalConnectUsb');
   const globalUsbStatus = document.getElementById('globalUsbStatus');
+  const baudRateSelect = document.getElementById('baudRate');
   const firmwareFileInput = document.getElementById('firmwareFileInput');
   const flashProgressContainer = document.getElementById('flashProgressContainer');
   const flashProgressBar = document.getElementById('flashProgressBar');
@@ -259,8 +260,9 @@ document.addEventListener('DOMContentLoaded', () => {
         port = ports.length ? ports[0] : await navigator.serial.requestPort({ filters: [] });
       }
 
+      const baudRate = parseInt(baudRateSelect.value || '115200');
       if (!port.readable || !port.writable) {
-        await port.open({ baudRate: 115200 });
+        await port.open({ baudRate: baudRate });
       }
       
       detectedPort = port;
@@ -384,12 +386,14 @@ document.addEventListener('DOMContentLoaded', () => {
     setEsp32Status('Preparing flash operation...', false);
 
     let port = detectedPort;
+    const baudRate = parseInt(baudRateSelect.value || '115200');
+    
     try {
       if (!port) {
         port = await navigator.serial.requestPort({ filters: [] });
       }
       if (!port.readable || !port.writable) {
-        await port.open({ baudRate: 115200 });
+        await port.open({ baudRate: baudRate });
       }
 
       const transport = new Transport(port, true);

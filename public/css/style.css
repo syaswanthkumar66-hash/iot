@@ -23,6 +23,26 @@ body {
   line-height: 1.5;
 }
 
+.select-input {
+  padding: 6px 10px;
+  background-color: rgba(255,255,255,0.05);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-main);
+  font-size: 13px;
+  outline: none;
+}
+
+.select-input:focus {
+  border-color: var(--accent);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .app-container {
   max-width: 1200px;
   margin: 0 auto;

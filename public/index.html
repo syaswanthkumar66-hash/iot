@@ -122,7 +122,13 @@
           <div class="stat-card">
             <h3>Hardware Link</h3>
             <div class="stat-value usb-link-area">
-              <button id="btnGlobalConnectUsb" class="btn primary small">Connect USB</button>
+              <div class="header-actions">
+                <select id="baudRate" class="select-input small">
+                  <option value="9600">9600 Baud</option>
+                  <option value="115200" selected>115200 Baud</option>
+                </select>
+                <button id="btnGlobalConnectUsb" class="btn primary small">Connect USB</button>
+              </div>
               <span id="globalUsbStatus" class="status-badge status-offline">DISCONNECTED</span>
             </div>
           </div>
