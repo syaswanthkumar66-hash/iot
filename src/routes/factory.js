@@ -260,7 +260,8 @@ router.delete('/device/:deviceId', requireFactoryAuth, async (req, res) => {
 router.post('/device/:deviceId/compile', requireFactoryAuth, async (req, res) => {
   const { deviceId } = req.params;
   const emqxCaCert = req.body?.emqx_ca_cert || '';
-  const tempDir = path.join(__dirname, '../../temp_build', `${deviceId}_${Date.now()}`);
+  const tempBaseDir = path.join(__dirname, '../../temp_build', `${deviceId}_${Date.now()}`);
+  const tempDir = path.join(tempBaseDir, 'iotyk_esp32'); // Directory name MUST match .ino filename for Arduino CLI
 
   // Resolve arduino-cli binary — works on Linux (Render), macOS, and Windows
   const homeDir = process.env.HOME || process.env.USERPROFILE || '';
@@ -291,7 +292,7 @@ router.post('/device/:deviceId/compile', requireFactoryAuth, async (req, res) =>
     const localToken = crypto.randomBytes(8).toString('hex');
 
     // 2. Prepare temporary build directory
-    if (!fs.existsSync(path.dirname(tempDir))) fs.mkdirSync(path.dirname(tempDir), { recursive: true });
+    if (!fs.existsSync(tempBaseDir)) fs.mkdirSync(tempBaseDir, { recursive: true });
     fs.mkdirSync(tempDir, { recursive: true });
 
     // Copy firmware files (skip subdirectories like __pycache__)
@@ -351,7 +352,7 @@ router.post('/device/:deviceId/compile', requireFactoryAuth, async (req, res) =>
 
     // Cleanup temp directory after sending
     setTimeout(() => {
-      fs.rmSync(tempDir, { recursive: true, force: true });
+      fs.rmSync(tempBaseDir, { recursive: true, force: true });
     }, 5000);
 
   } catch (error) {
@@ -359,7 +360,7 @@ router.post('/device/:deviceId/compile', requireFactoryAuth, async (req, res) =>
     if (!res.headersSent) {
       res.status(500).json({ error: 'Internal server error during compilation', details: error.message });
     }
-    if (fs.existsSync(tempDir)) fs.rmSync(tempDir, { recursive: true, force: true });
+    if (fs.existsSync(tempBaseDir)) fs.rmSync(tempBaseDir, { recursive: true, force: true });
   }
 });
 
