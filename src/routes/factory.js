@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { v4 as uuidv4 } from 'uuid';
+import crypto from 'crypto';
 import { query, withTransaction } from '../db/connection.js';
 import { hashPassword, encrypt, decrypt, generateMqttPassword } from '../utils/crypto.js';
 import { emqxAdmin } from '../services/emqxAdmin.js';
@@ -321,6 +322,7 @@ router.post('/device/:deviceId/compile', requireFactoryAuth, async (req, res) =>
     const { promisify } = await import('util');
     const execAsync = promisify(exec);
 
+
     try {
       await execAsync(compileCmd, { timeout: 300000 }); // 5 min timeout
     } catch (compileError) {
@@ -355,6 +357,8 @@ export default router;
 function buildFirmwareConfig({ deviceId, namespace, broker, username, password, localToken, relayCount = 1 }) {
   const count = sanitizeRelayCount(relayCount);
   const pins = DEFAULT_RELAY_PINS.slice(0, count);
+  // Generate a random local token if not supplied (e.g., for ZIP / config.h download routes)
+  const token = localToken || crypto.randomBytes(8).toString('hex');
 
   return `#ifndef IOTYK_CONFIG_H
 #define IOTYK_CONFIG_H
@@ -380,7 +384,7 @@ static const uint8_t RELAY_PINS[RELAY_COUNT] = {${pins.join(', ')}};
 #define FACTORY_DEVICE_NS "${escapeCString(namespace)}"
 #define FACTORY_PERM_MQTT_USER "${escapeCString(username)}"
 #define FACTORY_PERM_MQTT_PASS "${escapeCString(password)}"
-#define FACTORY_LOCAL_TOKEN "${escapeCString(localToken)}"
+#define FACTORY_LOCAL_TOKEN "${escapeCString(token)}"
 
 // --- Local network services ---
 #define LOCAL_HTTP_PORT 80
