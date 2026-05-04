@@ -279,6 +279,8 @@ router.post('/device/:deviceId/compile', requireFactoryAuth, async (req, res) =>
   } else if (fs.existsSync(homeCliPath)) {
     arduinoCli = homeCliPath;
   }
+  
+  console.log(`[Factory] Resolved arduino-cli path: ${arduinoCli}`);
 
   try {
     // 1. Fetch device data

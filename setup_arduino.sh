@@ -11,10 +11,10 @@ mkdir -p "$BIN_DIR"
 
 export PATH="$BIN_DIR:$PATH"
 
-if command -v arduino-cli &> /dev/null; then
-    echo "Arduino CLI already installed."
+if [ -f "$BIN_DIR/arduino-cli" ] || [ -f "$BIN_DIR/arduino-cli.exe" ]; then
+    echo "Arduino CLI already installed in project directory."
 else
-    echo "Installing Arduino CLI..."
+    echo "Installing Arduino CLI to $BIN_DIR..."
     curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | BINDIR="$BIN_DIR" sh
 fi
 
