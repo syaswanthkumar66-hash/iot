@@ -280,6 +280,7 @@ router.post('/device/:deviceId/compile', requireFactoryAuth, async (req, res) =>
     arduinoCli = homeCliPath;
   }
   
+  const arduinoConfig = path.join(projectRoot, 'arduino-cli.yaml');
   console.log(`[Factory] Resolved arduino-cli path: ${arduinoCli}`);
 
   try {
@@ -336,7 +337,7 @@ router.post('/device/:deviceId/compile', requireFactoryAuth, async (req, res) =>
     // 3. Compile using Arduino CLI
     // FQBN for ESP32 Dev Module
     const fqbn = 'esp32:esp32:esp32'; 
-    const compileCmd = `${arduinoCli} compile --fqbn ${fqbn} --output-dir "${tempDir}" "${tempDir}"`;
+    const compileCmd = `${arduinoCli} --config-file "${arduinoConfig}" compile --fqbn ${fqbn} --output-dir "${tempDir}" "${tempDir}"`;
 
     console.log(`Starting compilation for ${deviceId}...`);
     const { exec } = await import('child_process');
