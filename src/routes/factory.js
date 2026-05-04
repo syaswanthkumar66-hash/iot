@@ -261,7 +261,13 @@ router.post('/device/:deviceId/compile', requireFactoryAuth, async (req, res) =>
   const { deviceId } = req.params;
   const emqxCaCert = req.body?.emqx_ca_cert || '';
   const tempDir = path.join(__dirname, '../../temp_build', `${deviceId}_${Date.now()}`);
-  const arduinoCli = path.join(process.env.HOME || '', 'arduino_cli/bin/arduino-cli');
+
+  // Resolve arduino-cli binary — works on Linux (Render), macOS, and Windows
+  const homeDir = process.env.HOME || process.env.USERPROFILE || '';
+  const isWin   = process.platform === 'win32';
+  const cliExe  = isWin ? 'arduino-cli.exe' : 'arduino-cli';
+  const defaultCliPath = path.join(homeDir, 'arduino_cli', 'bin', cliExe);
+  const arduinoCli = fs.existsSync(defaultCliPath) ? defaultCliPath : cliExe; // fallback to PATH
 
   try {
     // 1. Fetch device data
@@ -288,11 +294,13 @@ router.post('/device/:deviceId/compile', requireFactoryAuth, async (req, res) =>
     if (!fs.existsSync(path.dirname(tempDir))) fs.mkdirSync(path.dirname(tempDir), { recursive: true });
     fs.mkdirSync(tempDir, { recursive: true });
 
-    // Copy firmware files
+    // Copy firmware files (skip subdirectories like __pycache__)
     const firmwareSrcDir = path.resolve(__dirname, '../../firmware/iotyk_esp32');
     const files = fs.readdirSync(firmwareSrcDir);
     for (const file of files) {
-      fs.copyFileSync(path.join(firmwareSrcDir, file), path.join(tempDir, file));
+      const srcPath = path.join(firmwareSrcDir, file);
+      if (!fs.statSync(srcPath).isFile()) continue; // skip directories
+      fs.copyFileSync(srcPath, path.join(tempDir, file));
     }
 
     // Generate config.h
@@ -326,8 +334,9 @@ router.post('/device/:deviceId/compile', requireFactoryAuth, async (req, res) =>
     try {
       await execAsync(compileCmd, { timeout: 300000 }); // 5 min timeout
     } catch (compileError) {
-      console.error('Compilation failed:', compileError.stdout || compileError.message);
-      return res.status(500).json({ error: 'Firmware compilation failed', details: compileError.stdout });
+      const details = compileError.stdout || compileError.stderr || compileError.message;
+      console.error('Compilation failed:', details);
+      return res.status(500).json({ error: 'Firmware compilation failed', details });
     }
 
     // 4. Find and return the .bin file
@@ -347,7 +356,9 @@ router.post('/device/:deviceId/compile', requireFactoryAuth, async (req, res) =>
 
   } catch (error) {
     console.error('Compilation route error:', error);
-    if (!res.headersSent) res.status(500).json({ error: 'Internal server error during compilation' });
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Internal server error during compilation', details: error.message });
+    }
     if (fs.existsSync(tempDir)) fs.rmSync(tempDir, { recursive: true, force: true });
   }
 });
