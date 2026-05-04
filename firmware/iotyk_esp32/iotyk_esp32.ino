@@ -1,196 +1,158 @@
 #include <WiFi.h>
 #include <Preferences.h>
-#include <BLEDevice.h>
 #include "config.h"
-#include "ble_provision.h"
 #include "mqtt_manager.h"
-#include "certificates.h"
+#include "ble_provision.h"
 #include "local_server.h"
 
-// --- LED State Machine ---
-enum LedState : uint8_t { LED_OFF, LED_FAST_BLINK, LED_SLOW_BLINK };
+Preferences prefs;
 volatile LedState ledState = LED_OFF;
 
-// --- Global Variables ---
-Preferences prefs;
-bool wifiConnected = false;
-unsigned long lastWifiCheck = 0;
-
-// --- Function Declarations ---
+// Forward declarations
 void startWiFi();
-void applyLED();
-void onMqttFullyConnected();
-void onMqttDisconnected();
 String getBleName();
+String getDeviceMac();
 
-// --- LED Control ---
-void applyLED() {
-  static unsigned long lastToggle = 0;
-  static bool ledLevel = false;
-  unsigned long interval = 0;
+// --- Application Logic ---
 
-  switch (ledState) {
-    case LED_FAST_BLINK:
-      interval = 200;
-      break;
-    case LED_SLOW_BLINK:
-      interval = 1000;
-      break;
-    case LED_OFF:
-    default:
-      digitalWrite(LED_PIN, LOW);
-      return;
-  }
+void handleCommand(String cmdJson) {
+  StaticJsonDocument<256> doc;
+  DeserializationError error = deserializeJson(doc, cmdJson);
+  if (error) return;
 
-  if (millis() - lastToggle >= interval) {
-    ledLevel = !ledLevel;
-    digitalWrite(LED_PIN, ledLevel ? HIGH : LOW);
-    lastToggle = millis();
+  if (doc.containsKey("relay")) {
+    int relayIndex = doc["relay"];
+    bool state = doc["state"];
+    if (relayIndex >= 0 && relayIndex < RELAY_COUNT) {
+      digitalWrite(RELAY_PINS[relayIndex], RELAY_ACTIVE_LOW ? !state : state);
+      // Broadcast state update
+      broadcastLocalState();
+      publishState(getCurrentStateJson());
+    }
   }
 }
 
-// --- MQTT Callbacks ---
+String getCurrentStateJson() {
+  StaticJsonDocument<256> doc;
+  doc["id"] = FACTORY_DEVICE_ID;
+  JsonArray relays = doc.createNestedArray("relays");
+  for (int i = 0; i < RELAY_COUNT; i++) {
+    bool state = digitalRead(RELAY_PINS[i]);
+    relays.add(RELAY_ACTIVE_LOW ? !state : state);
+  }
+  String out;
+  serializeJson(doc, out);
+  return out;
+}
+
+// --- Status Callbacks ---
+
 void onMqttFullyConnected() {
   ledState = LED_SLOW_BLINK;
-  Serial.println("Both MQTT connected - SLOW BLINK");
 }
 
 void onMqttDisconnected() {
-  ledState = LED_FAST_BLINK;
-  Serial.println("MQTT disconnected - FAST BLINK");
+  if (WiFi.status() == WL_CONNECTED) {
+    ledState = LED_FAST_BLINK;
+  }
 }
 
-// --- WiFi ---
+// --- Network Helpers ---
+
+String getBleName() {
+  String mac = getDeviceMac();
+  return "IoTYK-" + mac.substring(mac.length() - 4);
+}
+
+String getDeviceMac() {
+  return WiFi.macAddress();
+}
+
 void startWiFi() {
-  ledState = LED_FAST_BLINK;
   String ssid = prefs.getString(KEY_WIFI_SSID, "");
   String pass = prefs.getString(KEY_WIFI_PASS, "");
 
   if (ssid == "") {
-    Serial.println("No WiFi credentials. Starting BLE provisioning...");
-    startBLEProvisioning(prefs.getString(KEY_DEVICE_ID, ""));
+    Serial.println("No WiFi credentials. Staying in BLE mode.");
     return;
   }
 
-  Serial.print("Connecting to WiFi: ");
-  Serial.println(ssid);
+  Serial.println("Connecting to WiFi: " + ssid);
   WiFi.begin(ssid.c_str(), pass.c_str());
-
-  int attempts = 0;
-  while (WiFi.status() != WL_CONNECTED && attempts < 40) {
-    applyLED(); // Update LED during blocking wait
-    delay(250);
-    Serial.print(".");
-    attempts++;
-  }
-
-  if (WiFi.status() == WL_CONNECTED) {
-    wifiConnected = true;
-    Serial.println("\nWiFi connected! IP: " + WiFi.localIP().toString());
-    stopBLE();
-    setupMqtt();
-    setupLocalServer(prefs.getString(KEY_DEVICE_ID, ""));
-  } else {
-    Serial.println("\nWiFi connection failed. Starting BLE...");
-    wifiConnected = false;
-    startBLEProvisioning(prefs.getString(KEY_DEVICE_ID, ""));
-  }
+  ledState = LED_FAST_BLINK;
 }
 
-// --- BLE Name Helper ---
-String getBleName() {
-  return "IoTYK-" + prefs.getString(KEY_DEVICE_ID, "UNKNOWN");
-}
+// --- Setup & Loop ---
 
-// --- Setup ---
 void setup() {
   Serial.begin(115200);
-  delay(100);
+  Serial.println("\n--- IoTYK ESP32 Starting ---");
 
+  // Init Hardware
   pinMode(LED_PIN, OUTPUT);
-  digitalWrite(LED_PIN, LOW);
-  ledState = LED_OFF;
+  for (int i = 0; i < RELAY_COUNT; i++) {
+    pinMode(RELAY_PINS[i], OUTPUT);
+    digitalWrite(RELAY_PINS[i], RELAY_ACTIVE_LOW ? HIGH : LOW); // Start OFF
+  }
 
-  // Initialize NVS
+  // Init NVS
   prefs.begin(NVS_NAMESPACE, false);
 
-  // Seed NVS with factory values if first boot
-  if (prefs.getString(KEY_DEVICE_ID, "") == "") {
-    Serial.println("First boot - seeding NVS with factory values...");
+  // Check if we need to load factory values (first boot or after factory reset)
+  if (prefs.getString(KEY_DEVICE_ID, "") == "" && String(FACTORY_DEVICE_ID) != "") {
+    Serial.println("Applying Factory Identity...");
     prefs.putString(KEY_DEVICE_ID, FACTORY_DEVICE_ID);
-    if (prefs.getString(KEY_PERM_PASS, "") == "" && String(FACTORY_PERM_MQTT_PASS) != "") {
-      prefs.putString(KEY_PERM_USER, FACTORY_PERM_MQTT_USER);
-      prefs.putString(KEY_PERM_PASS, FACTORY_PERM_MQTT_PASS);
-    }
-    if (prefs.getString(KEY_LOCAL_TOKEN, "") == "" && String(FACTORY_LOCAL_TOKEN) != "") {
-      prefs.putString(KEY_LOCAL_TOKEN, FACTORY_LOCAL_TOKEN);
-    }
-    Serial.println("NVS seeded successfully.");
+    prefs.putString(KEY_DEVICE_NS, FACTORY_DEVICE_NS);
+    prefs.putString(KEY_PERM_USER, FACTORY_PERM_MQTT_USER);
+    prefs.putString(KEY_PERM_PASS, FACTORY_PERM_MQTT_PASS);
+    prefs.putString(KEY_LOCAL_TOKEN, FACTORY_LOCAL_TOKEN);
   }
 
-  Serial.println("Device ID: " + prefs.getString(KEY_DEVICE_ID, ""));
-  Serial.println("Namespace: " + prefs.getString(KEY_DEVICE_NS, ""));
+  String deviceId = prefs.getString(KEY_DEVICE_ID, "Unknown");
+  Serial.println("Device ID: " + deviceId);
 
-  // Check if WiFi credentials exist
-  if (prefs.getString(KEY_WIFI_SSID, "") != "") {
-    startWiFi();
-  } else {
-    ledState = LED_OFF;
-    startBLEProvisioning(prefs.getString(KEY_DEVICE_ID, ""));
-  }
+  // Start BLE for provisioning
+  startBLEProvisioning(deviceId);
+
+  // Start WiFi
+  startWiFi();
+
+  // Setup MQTT
+  setupMqtt();
+
+  // Setup Local Server (WSS)
+  setupLocalServer(deviceId);
 }
 
-// --- Main Loop ---
 void loop() {
-  // Apply LED state FIRST
-  applyLED();
+  // LED Logic
+  static unsigned long lastBlink = 0;
+  int interval = 0;
+  if (ledState == LED_FAST_BLINK) interval = 200;
+  else if (ledState == LED_SLOW_BLINK) interval = 1000;
 
-  // Handle WiFi reconnection
-  if (WiFi.status() != WL_CONNECTED) {
-    if (wifiConnected) {
-      wifiConnected = false;
-      Serial.println("WiFi disconnected!");
-      ledState = LED_FAST_BLINK;
-    }
-    // If no WiFi and not provisioned, mirror BLE connection state
-    if (!wifiConnected && prefs.getString(KEY_WIFI_SSID, "") == "") {
-      if (deviceConnected) {
-        ledState = LED_FAST_BLINK;
-      } else {
-        ledState = LED_OFF;
-      }
+  if (interval > 0) {
+    if (millis() - lastBlink > interval) {
+      digitalWrite(LED_PIN, !digitalRead(LED_PIN));
+      lastBlink = millis();
     }
   } else {
-    if (!wifiConnected) {
-      wifiConnected = true;
-      Serial.println("WiFi reconnected!");
-    }
-    // Run MQTT loop
-    loopMqtt();
-    // Run Local Server loop
-    loopLocalServer();
+    digitalWrite(LED_PIN, LOW);
   }
 
-  // Handle commands, state updates, etc.
-  delay(10);
-}
+  // WiFi Connection Watchdog
+  static unsigned long lastWiFiCheck = 0;
+  if (millis() - lastWiFiCheck > 10000) {
+    if (WiFi.status() == WL_CONNECTED) {
+      if (ledState == LED_OFF) ledState = LED_FAST_BLINK;
+    } else {
+      // If we were slow blinking (fully connected) but lost WiFi
+      if (ledState == LED_SLOW_BLINK) ledState = LED_FAST_BLINK;
+    }
+    lastWiFiCheck = millis();
+  }
 
-// --- Command Handler (called from mqtt_manager) ---
-void handleCommand(String cmdJson) {
-  Serial.println("Command received: " + cmdJson);
-  // Parse and handle relay commands, etc.
-  // After state change:
-  // publishState(getCurrentStateJson());
-}
-
-// --- State JSON (called from mqtt_manager) ---
-String getCurrentStateJson() {
-  StaticJsonDocument<200> doc;
-  doc["online"] = true;
-  doc["wifi"] = wifiConnected;
-  doc["mqtt_perm"] = mqttPerm.connected();
-  doc["mqtt_temp"] = mqttTemp.connected();
-  String output;
-  serializeJson(doc, output);
-  return output;
+  // Sub-systems
+  loopMqtt();
+  loopLocalServer();
 }

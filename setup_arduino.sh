@@ -3,16 +3,18 @@
 
 set -e
 
-ARDUINO_DIR="$HOME/arduino_cli"
+# Get the project root directory
+PROJECT_ROOT=$(pwd)
+ARDUINO_DIR="$PROJECT_ROOT/arduino_cli"
 BIN_DIR="$ARDUINO_DIR/bin"
 mkdir -p "$BIN_DIR"
 
 export PATH="$BIN_DIR:$PATH"
 
-if command -v arduino-cli &> /dev/null; then
-    echo "Arduino CLI already installed."
+if [ -f "$BIN_DIR/arduino-cli" ] || [ -f "$BIN_DIR/arduino-cli.exe" ]; then
+    echo "Arduino CLI already installed in project directory."
 else
-    echo "Installing Arduino CLI..."
+    echo "Installing Arduino CLI to $BIN_DIR..."
     curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | BINDIR="$BIN_DIR" sh
 fi
 
@@ -33,5 +35,6 @@ fi
 echo "Installing libraries..."
 arduino-cli lib install "ArduinoJson" || echo "ArduinoJson already installed or failed"
 arduino-cli lib install "PubSubClient" || echo "PubSubClient already installed or failed"
+arduino-cli lib install "WebSockets" || echo "WebSockets already installed or failed"
 
 echo "Arduino environment ready!"

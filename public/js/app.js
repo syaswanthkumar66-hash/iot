@@ -344,7 +344,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (!response.ok) {
         const err = await response.json();
-        throw new Error(err.error || 'Server-side compilation failed');
+        const detail = err.details ? `\n\nDetails:\n${err.details}` : '';
+        throw new Error((err.error || 'Server-side compilation failed') + detail);
       }
 
       flashProgressBar.style.width  = '30%';
