@@ -33,5 +33,6 @@ fi
 echo "Installing libraries..."
 arduino-cli lib install "ArduinoJson" || echo "ArduinoJson already installed or failed"
 arduino-cli lib install "PubSubClient" || echo "PubSubClient already installed or failed"
+arduino-cli lib install "WebSockets" || echo "WebSockets already installed or failed"
 
 echo "Arduino environment ready!"
