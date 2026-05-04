@@ -1,133 +1,207 @@
 document.addEventListener('DOMContentLoaded', () => {
-  const btnProvision = document.getElementById('btnProvision');
-  const btnRefresh = document.getElementById('btnRefresh');
-  const btnDetectLocal = document.getElementById('btnDetectLocal');
-  const btnDownloadFirmwareZip = document.getElementById('btnDownloadFirmwareZip');
-  const btnScanNewUsb = document.getElementById('btnScanNewUsb');
-  const btnCompileAndFlash = document.getElementById('btnCompileAndFlash');
-  const btnStartFlash = document.getElementById('btnStartFlash');
-  const usbDetailBox = document.getElementById('usbDetailBox');
-  const usbStatusText = document.getElementById('usbStatusText');
-  const usbReadyBadge = document.getElementById('usbReadyBadge');
-  const usbPulse = document.getElementById('usbPulse');
-  const btnGlobalConnectUsb = document.getElementById('btnGlobalConnectUsb');
-  const globalUsbStatus = document.getElementById('globalUsbStatus');
-  const baudRateSelect = document.getElementById('baudRate');
-  const firmwareFileInput = document.getElementById('firmwareFileInput');
-  const flashProgressContainer = document.getElementById('flashProgressContainer');
-  const flashProgressBar = document.getElementById('flashProgressBar');
-  const flashProgressText = document.getElementById('flashProgressText');
-  const flashLog = document.getElementById('flashLog');
-  const keyInput = document.getElementById('factoryKeyInput');
-  const relayCountInput = document.getElementById('relayCountInput');
-  const resultSection = document.getElementById('resultSection');
-  const flashSection = document.getElementById('flashSection');
-  const flashDeviceId = document.getElementById('flashDeviceId');
-  const fwCaCertificateInput = document.getElementById('fwCaCertificate');
+
+  // ─── Element References ──────────────────────────────────────────────────
+  const btnProvision          = document.getElementById('btnProvision');
+  const btnRefresh            = document.getElementById('btnRefresh');
+  const btnDownloadFirmwareZip= document.getElementById('btnDownloadFirmwareZip');
+  const btnScanNewUsb         = document.getElementById('btnScanNewUsb');
+  const btnCompileAndFlash    = document.getElementById('btnCompileAndFlash');
+  const btnStartFlash         = document.getElementById('btnStartFlash');
+  const btnGlobalConnectUsb   = document.getElementById('btnGlobalConnectUsb');
+  const globalUsbStatus       = document.getElementById('globalUsbStatus');
+  const usbDeviceList         = document.getElementById('usbDeviceList');
+  const usbDetailBox          = document.getElementById('usbDetailBox');
+  const usbStatusText         = document.getElementById('usbStatusText');
+  const usbReadyBadge         = document.getElementById('usbReadyBadge');
+  const usbPulse              = document.getElementById('usbPulse');
+  const baudRateSelect        = document.getElementById('baudRate');
+  const firmwareFileInput     = document.getElementById('firmwareFileInput');
+  const flashProgressContainer= document.getElementById('flashProgressContainer');
+  const flashProgressBar      = document.getElementById('flashProgressBar');
+  const flashProgressText     = document.getElementById('flashProgressText');
+  const flashLog              = document.getElementById('flashLog');
+  const keyInput              = document.getElementById('factoryKeyInput');
+  const relayCountInput       = document.getElementById('relayCountInput');
+  const resultSection         = document.getElementById('resultSection');
+  const flashSection          = document.getElementById('flashSection');
+  const flashDeviceId         = document.getElementById('flashDeviceId');
+  const fwCaCertificateInput  = document.getElementById('fwCaCertificate');
+
   let currentFlashDeviceId = null;
-  let detectedPort = null;
-  const factoryApiRoot = '/api/v1/factory';
+  let detectedPort         = null;
+  const factoryApiRoot     = '/api/v1/factory';
 
-  // Load initial devices
-  if (keyInput && keyInput.value) {
-    loadDevices();
-  }
+  // ─── Startup ─────────────────────────────────────────────────────────────
+  loadDevices();
 
-  if (btnProvision) btnProvision.addEventListener('click', provisionDevice);
-  if (btnRefresh) btnRefresh.addEventListener('click', loadDevices);
-  
+  // ─── Button Listeners ────────────────────────────────────────────────────
+  btnProvision.addEventListener('click', provisionDevice);
+  btnRefresh.addEventListener('click', loadDevices);
   btnDownloadFirmwareZip.addEventListener('click', downloadFirmwareZip);
-  
-  // 1. Hardware Lifecycle Listeners (Google Best Practice)
-  if (navigator.serial) {
+  btnCompileAndFlash.addEventListener('click', compileAndFlash);
+  btnStartFlash.addEventListener('click', () => flashEsp32Firmware());
+  btnGlobalConnectUsb.addEventListener('click', handleUsbConnect);
+  btnScanNewUsb.addEventListener('click', handleUsbConnect);
+
+  // ─── Web Serial: Check browser support ───────────────────────────────────
+  if (!('serial' in navigator)) {
+    globalUsbStatus.textContent = 'NOT SUPPORTED';
+    globalUsbStatus.className   = 'status-badge status-offline';
+    btnGlobalConnectUsb.disabled = true;
+    btnGlobalConnectUsb.title    = 'Use Chrome or Edge over HTTPS';
+    btnScanNewUsb.disabled       = true;
+    console.warn('Web Serial API not supported. Use Chrome/Edge over HTTPS.');
+  } else {
+    // Auto-link previously authorised ports on page load (no prompt needed)
+    autoLinkDevices();
+
+    // React to plug / unplug events
     navigator.serial.addEventListener('connect', (e) => {
-      console.log('Hardware Plugged In:', e.target);
-      // Automatically attempt to link if this was a known device
-      detectedPort = e.target;
-      checkEsp32Connection(false);
+      console.log('[USB] Device plugged in:', e.target);
+      autoLinkDevices();
     });
 
     navigator.serial.addEventListener('disconnect', (e) => {
-      console.log('Hardware Unplugged:', e.target);
+      console.log('[USB] Device unplugged:', e.target);
       if (detectedPort === e.target) {
         detectedPort = null;
-        globalUsbStatus.textContent = 'DISCONNECTED';
-        globalUsbStatus.className = 'status-badge status-offline';
-        btnGlobalConnectUsb.textContent = 'Connect USB';
-        usbDetailBox.classList.add('hidden');
-        btnCompileAndFlash.disabled = true;
-        btnCompileAndFlash.classList.add('disabled');
       }
+      autoLinkDevices(); // refresh list — may now be empty
     });
-
-    // 2. Auto-Link Previously Authorized Devices
-    async function autoLinkDevices() {
-      try {
-        const ports = await navigator.serial.getPorts();
-        if (ports.length > 0) {
-          console.log('Found authorized devices:', ports.length);
-          detectedPort = ports[0];
-          checkEsp32Connection(false);
-        }
-      } catch (err) {
-        console.error('Auto-link failed:', err);
-      }
-    }
-    autoLinkDevices();
   }
 
+  // ─── autoLinkDevices ─────────────────────────────────────────────────────
+  // Reads already-authorised ports (no browser prompt). Updates the global
+  // status badge and the USB device list panel.
+  async function autoLinkDevices() {
+    if (!('serial' in navigator)) return;
+    try {
+      const ports = await navigator.serial.getPorts();
+      renderUsbDeviceList(ports);
+
+      if (ports.length > 0) {
+        // Use the first port as the active one for flashing
+        detectedPort = ports[0];
+        await updateUsbStatusUI(detectedPort, true);
+      } else {
+        detectedPort = null;
+        setGlobalUsbDisconnected();
+      }
+    } catch (err) {
+      console.error('[USB] Auto-link failed:', err);
+    }
+  }
+
+  // ─── Render the list of known USB devices in the sidebar card ────────────
+  function renderUsbDeviceList(ports) {
+    if (!usbDeviceList) return;
+    if (ports.length === 0) {
+      usbDeviceList.innerHTML = '<em>No authorised devices</em>';
+      return;
+    }
+    usbDeviceList.innerHTML = ports.map((p, i) => {
+      const info = p.getInfo();
+      const vid  = info.usbVendorId  ? `VID:0x${info.usbVendorId.toString(16).toUpperCase()}`  : 'VID:—';
+      const pid  = info.usbProductId ? `PID:0x${info.usbProductId.toString(16).toUpperCase()}` : 'PID:—';
+      const active = (detectedPort === p) ? ' ✔ active' : '';
+      return `<div style="padding:2px 0">📟 Port ${i + 1}: ${vid} ${pid}${active}</div>`;
+    }).join('');
+  }
+
+  // ─── handleUsbConnect (called on button click — user gesture required) ───
   async function handleUsbConnect() {
-    if (!navigator.serial) {
-      alert('USB access is blocked. Please ensure you are using HTTPS and Google Chrome or Edge.');
+    if (!('serial' in navigator)) {
+      alert('Web Serial is not supported.\nUse Google Chrome or Edge and open the page over HTTPS.');
       return;
     }
 
     try {
-      // 1. Ask browser for ANY serial device (No filters, just like your snippet)
+      // requestPort() MUST be called inside a click handler
       const port = await navigator.serial.requestPort();
-      
-      if (port) {
-        detectedPort = port;
-        const baudRate = parseInt(baudRateSelect.value || '115200');
-        
-        // 2. Open the connection
-        if (!port.readable || !port.writable) {
-          await port.open({ baudRate: baudRate });
-        }
-        
-        alert("Successfully connected!");
-        checkEsp32Connection(false); // Update UI
+      detectedPort = port;
+
+      const baudRate = parseInt(baudRateSelect?.value || '115200', 10);
+
+      // Open the port only if it is not already open
+      if (!port.readable) {
+        await port.open({ baudRate });
       }
-    } catch (error) {
-      console.error("Connection error:", error);
-      // Only alert if it's not a user cancel
-      if (error.name !== 'NotFoundError') {
-        alert("Failed to connect. See console for details.");
+
+      await updateUsbStatusUI(port, true);
+      // Refresh the device list to include the newly authorised port
+      autoLinkDevices();
+
+    } catch (err) {
+      // NotFoundError = user clicked Cancel — not an error we care about
+      if (err.name !== 'NotFoundError') {
+        console.error('[USB] Connect error:', err);
+        alert(`USB connection failed: ${err.message}`);
       }
     }
   }
 
-  btnGlobalConnectUsb.onclick = handleUsbConnect;
-  btnScanNewUsb.onclick = handleUsbConnect;
-  
-  btnCompileAndFlash.addEventListener('click', compileAndFlash);
-  btnStartFlash.addEventListener('click', () => flashEsp32Firmware());
+  // ─── updateUsbStatusUI ───────────────────────────────────────────────────
+  async function updateUsbStatusUI(port, connected) {
+    if (!connected || !port) {
+      setGlobalUsbDisconnected();
+      return;
+    }
 
+    const info = port.getInfo();
+    const vid  = info.usbVendorId  ? `0x${info.usbVendorId.toString(16).toUpperCase()}`  : 'Unknown';
+    const pid  = info.usbProductId ? `0x${info.usbProductId.toString(16).toUpperCase()}` : 'Unknown';
+    const label = `VID:${vid}  PID:${pid}`;
+
+    // Global header badge
+    globalUsbStatus.textContent = 'CONNECTED';
+    globalUsbStatus.className   = 'status-badge status-online';
+    btnGlobalConnectUsb.textContent = 'Change USB';
+
+    // Inline USB detail box (inside result section)
+    if (usbStatusText) {
+      usbStatusText.textContent  = `Linked (${label})`;
+      usbStatusText.style.color  = '#34D399';
+    }
+    if (usbDetailBox)  usbDetailBox.classList.remove('hidden');
+    if (usbReadyBadge) usbReadyBadge.classList.remove('hidden');
+    if (usbPulse)      usbPulse.classList.remove('hidden');
+
+    // Enable flash button
+    btnCompileAndFlash.disabled = false;
+    btnCompileAndFlash.classList.remove('disabled');
+
+    appendFlashLog(`[USB] Linked — ${label}`);
+  }
+
+  function setGlobalUsbDisconnected() {
+    globalUsbStatus.textContent = 'DISCONNECTED';
+    globalUsbStatus.className   = 'status-badge status-offline';
+    btnGlobalConnectUsb.textContent = 'Connect USB';
+
+    if (usbDetailBox)  usbDetailBox.classList.add('hidden');
+    if (usbReadyBadge) usbReadyBadge.classList.add('hidden');
+    if (usbPulse)      usbPulse.classList.add('hidden');
+
+    btnCompileAndFlash.disabled = true;
+    btnCompileAndFlash.classList.add('disabled');
+
+    if (usbDeviceList) usbDeviceList.innerHTML = '<em>No authorised devices</em>';
+  }
+
+  // ─── Provision Device ────────────────────────────────────────────────────
   async function provisionDevice() {
-    btnProvision.disabled = true;
+    btnProvision.disabled    = true;
     btnProvision.textContent = 'Generating...';
     resultSection.classList.add('hidden');
 
     try {
       const response = await fetch(`${factoryApiRoot}/device`, {
-        method: 'POST',
+        method : 'POST',
         headers: {
-          'Authorization': `Bearer ${keyInput.value}`,
-          'Content-Type': 'application/json'
+          'Authorization' : `Bearer ${keyInput.value}`,
+          'Content-Type'  : 'application/json'
         },
-        body: JSON.stringify({
-          relay_count: Number(relayCountInput.value || 1)
-        })
+        body: JSON.stringify({ relay_count: Number(relayCountInput.value || 1) })
       });
 
       if (!response.ok) {
@@ -137,80 +211,85 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const data = await response.json();
       displayResult(data);
-      loadDevices(); // Refresh list
+      loadDevices();
     } catch (error) {
       alert(`Error: ${error.message}`);
     } finally {
-      btnProvision.disabled = false;
+      btnProvision.disabled    = false;
       btnProvision.textContent = 'Generate Device';
     }
   }
 
+  // ─── Display Result ──────────────────────────────────────────────────────
   function displayResult(data) {
     const { qr_data, firmware_config } = data;
 
     const qrContainer = document.getElementById('qrcode');
-    qrContainer.innerHTML = ''; // Clear previous
-    const qrPayload = JSON.stringify(qr_data);
-
+    qrContainer.innerHTML = '';
     new QRCode(qrContainer, {
-      text: qrPayload,
-      width: 150,
-      height: 150,
-      colorDark : '#000000',
-      colorLight : '#ffffff',
-      correctLevel : QRCode.CorrectLevel.H
+      text        : JSON.stringify(qr_data),
+      width       : 150,
+      height      : 150,
+      colorDark   : '#000000',
+      colorLight  : '#ffffff',
+      correctLevel: QRCode.CorrectLevel.H
     });
 
-    document.getElementById('lblDeviceId').textContent = qr_data.device_id;
+    document.getElementById('lblDeviceId').textContent  = qr_data.device_id;
     document.getElementById('lblDeviceKey').textContent = qr_data.device_key;
 
-    document.getElementById('fwDeviceId').textContent = firmware_config.device_id;
+    document.getElementById('fwDeviceId').textContent   = firmware_config.device_id;
     document.getElementById('fwRelayCount').textContent = firmware_config.relay_count;
-    document.getElementById('fwRelayPins').textContent = (firmware_config.relay_pins || []).join(', ');
-    document.getElementById('fwNamespace').textContent = firmware_config.namespace;
-    document.getElementById('fwPermUser').textContent = firmware_config.permanent_mqtt.username;
-    document.getElementById('fwPermPass').textContent = firmware_config.permanent_mqtt.password;
+    document.getElementById('fwRelayPins').textContent  = (firmware_config.relay_pins || []).join(', ');
+    document.getElementById('fwNamespace').textContent  = firmware_config.namespace;
+    document.getElementById('fwPermUser').textContent   = firmware_config.permanent_mqtt.username;
+    document.getElementById('fwPermPass').textContent   = firmware_config.permanent_mqtt.password;
+
     flashDeviceId.textContent = firmware_config.device_id;
-    currentFlashDeviceId = firmware_config.device_id;
+    currentFlashDeviceId      = firmware_config.device_id;
 
     setEsp32Status('Not detected yet', false);
     flashProgressContainer.classList.add('hidden');
     flashProgressBar.style.width = '0%';
-    flashProgressText.textContent = 'Select a compiled .bin file and connect ESP32 to flash.';
-    fwCaCertificateInput.value = '';
+    flashProgressText.textContent = 'Connect ESP32 and click Auto-Compile & Flash.';
+    if (fwCaCertificateInput) fwCaCertificateInput.value = '';
 
     resultSection.classList.remove('hidden');
-    flashSection.classList.remove('hidden');
+    if (flashSection) flashSection.classList.remove('hidden');
   }
 
+  // ─── Download Firmware ZIP ───────────────────────────────────────────────
   async function downloadFirmwareZip() {
-    if (!currentFlashDeviceId) return;
+    if (!currentFlashDeviceId) {
+      alert('No device selected. Provision or select a device first.');
+      return;
+    }
 
-    btnDownloadFirmwareZip.disabled = true;
+    btnDownloadFirmwareZip.disabled    = true;
     btnDownloadFirmwareZip.textContent = 'Generating ZIP...';
 
     try {
-      const response = await fetch(`${factoryApiRoot}/device/${encodeURIComponent(currentFlashDeviceId)}/generate-firmware`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${keyInput.value}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          emqx_ca_cert: fwCaCertificateInput.value.trim()
-        })
-      });
+      const response = await fetch(
+        `${factoryApiRoot}/device/${encodeURIComponent(currentFlashDeviceId)}/generate-firmware`,
+        {
+          method : 'POST',
+          headers: {
+            'Authorization': `Bearer ${keyInput.value}`,
+            'Content-Type' : 'application/json'
+          },
+          body: JSON.stringify({ emqx_ca_cert: fwCaCertificateInput?.value.trim() || '' })
+        }
+      );
 
       if (!response.ok) {
         const err = await response.json();
-        throw new Error(err.error || 'Failed to download firmware zip');
+        throw new Error(err.error || 'Failed to generate firmware ZIP');
       }
 
       const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
       a.download = `${currentFlashDeviceId}_firmware.zip`;
       document.body.appendChild(a);
       a.click();
@@ -219,105 +298,20 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (error) {
       alert(`Error: ${error.message}`);
     } finally {
-      btnDownloadFirmwareZip.disabled = false;
+      btnDownloadFirmwareZip.disabled    = false;
       btnDownloadFirmwareZip.textContent = 'Download Firmware Source (ZIP)';
     }
   }
 
-  async function detectLocalDevices() {
-    const rows = document.querySelectorAll('#deviceTableBody tr');
-    if (rows.length === 0) return;
-
-    btnDetectLocal.disabled = true;
-    btnDetectLocal.textContent = 'Detecting...';
-
-    const scanPromises = Array.from(rows).map(async (row) => {
-      const deviceId = row.dataset.deviceId;
-      const statusCell = row.querySelector('.status-cell');
-      if (!deviceId || !statusCell) return;
-
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 2000);
-
-        // Try to fetch info from the .local address
-        const response = await fetch(`http://${deviceId}.local/info`, { 
-          signal: controller.signal,
-          mode: 'no-cors' 
-        });
-        
-        statusCell.innerHTML = '<span class="status-badge status-online">Local</span>';
-        clearTimeout(timeoutId);
-      } catch (err) {
-        // Keep original
-      }
-    });
-
-    await Promise.all(scanPromises);
-    btnDetectLocal.disabled = false;
-    btnDetectLocal.textContent = 'Detect Online Devices';
-  }
-
-  async function checkEsp32Connection(forceRequest = false) {
-    if (!('serial' in navigator)) {
-      usbStatusText.textContent = 'Web Serial not supported in this browser.';
-      usbDetailBox.classList.remove('hidden');
-      return;
-    }
-
-    try {
-      let port;
-      if (forceRequest) {
-        port = await navigator.serial.requestPort({ filters: [] });
-      } else {
-        const ports = await navigator.serial.getPorts();
-        port = ports.length ? ports[0] : await navigator.serial.requestPort({ filters: [] });
-      }
-
-      const baudRate = parseInt(baudRateSelect.value || '115200');
-      if (!port.readable || !port.writable) {
-        await port.open({ baudRate: baudRate });
-      }
-      
-      detectedPort = port;
-      const info = port.getInfo();
-      const vid = info.usbVendorId ? `0x${info.usbVendorId.toString(16).toUpperCase()}` : 'Unknown';
-      const pid = info.usbProductId ? `0x${info.usbProductId.toString(16).toUpperCase()}` : 'Unknown';
-      
-      usbStatusText.textContent = `Linked (VID:${vid} PID:${pid})`;
-      usbStatusText.style.color = '#34D399';
-      usbDetailBox.classList.remove('hidden');
-      usbReadyBadge.classList.remove('hidden');
-      usbPulse.classList.remove('hidden');
-      
-      // Update Global Status
-      globalUsbStatus.textContent = 'CONNECTED';
-      globalUsbStatus.className = 'status-badge status-online';
-      btnGlobalConnectUsb.textContent = 'Change USB';
-      
-      // Enable Flash Button
-      btnCompileAndFlash.disabled = false;
-      btnCompileAndFlash.classList.remove('disabled');
-      
-      appendFlashLog(`\n[USB] Hardware Linked Successfully: VID ${vid}, PID ${pid}`);
-    } catch (err) {
-      console.error('USB Error:', err);
-      if (err.name !== 'NotFoundError' && err.name !== 'AbortError') {
-        usbStatusText.textContent = `Error: ${err.message}`;
-        usbStatusText.style.color = '#F87171';
-        usbDetailBox.classList.remove('hidden');
-        usbReadyBadge.classList.add('hidden');
-        usbPulse.classList.add('hidden');
-      }
-    }
-  }
-
+  // ─── setEsp32Status (inline box helper) ─────────────────────────────────
   function setEsp32Status(msg, isSuccess) {
+    if (!usbStatusText) return;
     usbStatusText.textContent = msg;
     usbStatusText.style.color = isSuccess ? '#34D399' : '#F87171';
-    usbDetailBox.classList.remove('hidden');
+    if (usbDetailBox) usbDetailBox.classList.remove('hidden');
   }
 
+  // ─── Compile & Flash ─────────────────────────────────────────────────────
   async function compileAndFlash() {
     if (!currentFlashDeviceId) {
       alert('Please select or generate a device first.');
@@ -325,193 +319,183 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (!detectedPort) {
-      const confirmed = confirm('ESP32 not detected. Connect and detect it now?');
-      if (confirmed) await checkEsp32Connection();
-      if (!detectedPort) return;
+      alert('No ESP32 connected. Click "Select ESP32 COM Port" first.');
+      return;
     }
 
-    btnCompileAndFlash.disabled = true;
-    btnCompileAndFlash.textContent = 'Compiling on Server... (1-2 mins)';
+    btnCompileAndFlash.disabled    = true;
+    btnCompileAndFlash.textContent = 'Compiling on Server… (1-2 mins)';
     flashProgressContainer.classList.remove('hidden');
-    flashProgressText.textContent = 'Server is compiling your custom firmware. This takes about 60-90 seconds...';
-    flashProgressBar.style.width = '10%';
+    flashProgressText.textContent = 'Server is compiling your custom firmware…';
+    flashProgressBar.style.width  = '10%';
 
     try {
-      const response = await fetch(`${factoryApiRoot}/device/${encodeURIComponent(currentFlashDeviceId)}/compile`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${keyInput.value}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          emqx_ca_cert: fwCaCertificateInput.value.trim()
-        })
-      });
+      const response = await fetch(
+        `${factoryApiRoot}/device/${encodeURIComponent(currentFlashDeviceId)}/compile`,
+        {
+          method : 'POST',
+          headers: {
+            'Authorization': `Bearer ${keyInput.value}`,
+            'Content-Type' : 'application/json'
+          },
+          body: JSON.stringify({ emqx_ca_cert: fwCaCertificateInput?.value.trim() || '' })
+        }
+      );
 
       if (!response.ok) {
         const err = await response.json();
         throw new Error(err.error || 'Server-side compilation failed');
       }
 
-      flashProgressBar.style.width = '30%';
-      flashProgressText.textContent = 'Compilation successful! Downloading .bin...';
-      const blob = await response.blob();
+      flashProgressBar.style.width  = '30%';
+      flashProgressText.textContent = 'Compilation successful! Downloading .bin…';
+
+      const blob    = await response.blob();
       const binData = new Uint8Array(await blob.arrayBuffer());
 
-      flashProgressText.textContent = 'Starting flash process...';
+      flashProgressText.textContent = 'Starting flash process…';
       await flashEsp32Firmware(binData);
 
     } catch (error) {
-      alert(`Auto-Compile Error: ${error.message}`);
+      alert(`Compile error: ${error.message}`);
       flashProgressText.textContent = `Error: ${error.message}`;
-      flashProgressBar.style.width = '0%';
+      flashProgressBar.style.width  = '0%';
     } finally {
-      btnCompileAndFlash.disabled = false;
+      btnCompileAndFlash.disabled    = false;
       btnCompileAndFlash.textContent = 'Auto-Compile & Flash';
     }
   }
 
+  // ─── Flash ESP32 Firmware ────────────────────────────────────────────────
   async function flashEsp32Firmware(preloadedBin = null) {
     if (!('serial' in navigator)) {
-      alert('Web Serial is not available in this browser.');
+      alert('Web Serial is not available. Use Chrome or Edge over HTTPS.');
       return;
     }
 
     if (!window.ESPLoader || !window.Transport) {
-      alert('ESP flashing library is not available.');
+      alert('ESP flashing library failed to load. Check your internet connection and reload.');
       return;
     }
 
     let firmwareData = preloadedBin;
     if (!firmwareData) {
-      const firmwareFile = firmwareFileInput.files[0];
-      if (!firmwareFile) {
-        alert('Please select a compiled ESP32 firmware .bin file first.');
-        return;
-      }
-      const fileBuffer = await firmwareFile.arrayBuffer();
-      firmwareData = new Uint8Array(fileBuffer);
+      const file = firmwareFileInput.files[0];
+      if (!file) { alert('Select a .bin firmware file first.'); return; }
+      firmwareData = new Uint8Array(await file.arrayBuffer());
     }
 
     flashProgressContainer.classList.remove('hidden');
-    flashProgressText.textContent = 'Preparing to flash...';
+    flashProgressText.textContent = 'Preparing to flash…';
     flashLog.textContent = '';
     flashLog.classList.remove('hidden');
-    setEsp32Status('Preparing flash operation...', false);
+    setEsp32Status('Preparing flash operation…', false);
 
     let port = detectedPort;
-    const baudRate = parseInt(baudRateSelect.value || '115200');
-    
+    const baudRate = parseInt(baudRateSelect?.value || '115200', 10);
+
     try {
       if (!port) {
-        port = await navigator.serial.requestPort({ filters: [] });
+        port = await navigator.serial.requestPort();
       }
-      if (!port.readable || !port.writable) {
-        await port.open({ baudRate: baudRate });
+      if (!port.readable) {
+        await port.open({ baudRate });
       }
 
       const transport = new Transport(port, true);
       const terminal = {
-        clean() {
-          flashLog.textContent = '';
-        },
-        writeLine(data) {
-          appendFlashLog(data);
-        },
-        write(data) {
-          appendFlashLog(data);
-        }
+        clean()          { flashLog.textContent = ''; },
+        writeLine(data)  { appendFlashLog(data); },
+        write(data)      { appendFlashLog(data); }
       };
 
-      const esploader = new ESPLoader({
-        transport,
-        baudrate: 115200,
-        terminal,
-        debugLogging: false
-      });
+      const esploader = new ESPLoader({ transport, baudrate: 115200, terminal, debugLogging: false });
 
-      appendFlashLog('Connecting to ESP32 bootloader...');
-      flashProgressText.textContent = 'Connecting to ESP32 bootloader...';
+      appendFlashLog('Connecting to ESP32 bootloader…');
+      flashProgressText.textContent = 'Connecting to ESP32 bootloader…';
+
       const chipName = await esploader.main();
-      appendFlashLog(`Connected to ${chipName}`);
-      
-      // Update UI with real chip name
-      usbStatusText.textContent = `${chipName} Linked`;
-      usbReadyBadge.classList.remove('hidden');
+      appendFlashLog(`Connected to: ${chipName}`);
+      if (usbStatusText) usbStatusText.textContent = `${chipName} — Ready`;
+      if (usbReadyBadge) usbReadyBadge.classList.remove('hidden');
 
-      appendFlashLog('Starting flash sequence...');
-      flashProgressText.textContent = 'Flashing firmware...';
+      appendFlashLog('Flashing firmware…');
+      flashProgressText.textContent = 'Flashing firmware…';
 
       await esploader.writeFlash({
-        fileArray: [{ data: firmwareData, address: 0x1000 }],
-        flashMode: 'dio',
-        flashFreq: '40m',
-        flashSize: '4MB',
-        eraseAll: false,
-        compress: true,
+        fileArray    : [{ data: firmwareData, address: 0x1000 }],
+        flashMode    : 'dio',
+        flashFreq    : '40m',
+        flashSize    : '4MB',
+        eraseAll     : false,
+        compress     : true,
         reportProgress: (fileIndex, written, total) => {
-          const percent = total ? (written / total) * 100 : 0;
-          flashProgressBar.style.width = `${percent.toFixed(1)}%`;
-          flashProgressText.textContent = `Flashing: ${percent.toFixed(1)}%`;
+          const pct = total ? (written / total) * 100 : 0;
+          flashProgressBar.style.width  = `${pct.toFixed(1)}%`;
+          flashProgressText.textContent = `Flashing: ${pct.toFixed(1)}%`;
         }
       });
 
       appendFlashLog('\n[SUCCESS] Firmware flash complete!');
-      flashProgressText.textContent = 'Firmware flash completed successfully.';
-      flashProgressBar.style.width = '100%';
-      
-      // Google Practice: Explicit Hard Reset and Signal Clear
+      flashProgressText.textContent = 'Flash completed successfully ✓';
+      flashProgressBar.style.width  = '100%';
+
       await esploader.after('hard_reset');
-      
+
     } catch (error) {
-      console.error(error);
       const message = error?.message || String(error);
       flashProgressText.textContent = `Flash failed: ${message}`;
-      flashProgressBar.style.width = '0%';
+      flashProgressBar.style.width  = '0%';
       appendFlashLog(`\n[ERROR] ${message}`);
+      console.error('[Flash]', error);
     } finally {
       if (port) {
         try {
-          // Ensure signals are cleared before closing
           await port.setSignals({ dataTerminalReady: false, requestToSend: false });
           await port.close();
-        } catch (_err) {}
+        } catch (_) {}
       }
-      // Re-detect to keep the UI synced
-      setTimeout(() => autoLinkDevices(), 500);
+      // Refresh the authorised port list after flash
+      setTimeout(autoLinkDevices, 500);
     }
   }
 
   function appendFlashLog(message) {
+    if (!flashLog) return;
     flashLog.textContent += `${message}\n`;
     flashLog.scrollTop = flashLog.scrollHeight;
   }
 
+  // ─── Load Devices List ───────────────────────────────────────────────────
   async function loadDevices() {
     try {
       const response = await fetch(`${factoryApiRoot}/devices`, {
-        headers: {
-          'Authorization': `Bearer ${keyInput.value}`
-        }
+        headers: { 'Authorization': `Bearer ${keyInput.value}` }
       });
 
+      if (response.status === 401) {
+        console.warn('Factory API: Unauthorized — check your API key.');
+        return;
+      }
       if (!response.ok) return;
 
-      const data = await response.json();
+      const data  = await response.json();
       const tbody = document.getElementById('deviceTableBody');
+      const count = document.getElementById('countConnected');
       tbody.innerHTML = '';
+      if (count) count.textContent = data.devices.length;
 
       data.devices.forEach(device => {
-        const tr = document.createElement('tr');
-        const date = new Date(device.created_at).toLocaleString();
+        const tr          = document.createElement('tr');
+        const date        = new Date(device.created_at).toLocaleString();
         const statusClass = device.is_online ? 'status-online' : 'status-offline';
-        const statusText = device.is_online ? 'Online' : 'Offline';
-        const owner = device.owner_email || '<span style="color:#8EA0B3">Unpaired</span>';
+        const statusText  = device.is_online ? 'Online'        : 'Offline';
+        const owner       = device.owner_email || '<span style="color:#8EA0B3">Unpaired</span>';
 
         tr.dataset.deviceId = device.device_id;
         tr.innerHTML = `
           <td><strong>${device.device_id}</strong></td>
-          <td style="font-family:monospace; color:#8EA0B3">${device.namespace}</td>
+          <td style="font-family:monospace;color:#8EA0B3">${device.namespace}</td>
           <td>${device.relay_count || 1}</td>
           <td>${date}</td>
           <td class="status-cell"><span class="status-badge ${statusClass}">${statusText}</span></td>
@@ -520,21 +504,19 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
 
         const actionCell = tr.querySelector('td:last-child');
-        const flashButton = document.createElement('button');
-        flashButton.className = 'btn secondary small';
-        flashButton.textContent = 'Flash';
-        flashButton.addEventListener('click', () => openFlashPanel(device));
-        actionCell.appendChild(flashButton);
 
-        const deleteButton = document.createElement('button');
-        deleteButton.className = 'btn small';
-        deleteButton.style.backgroundColor = 'transparent';
-        deleteButton.style.color = '#F87171';
-        deleteButton.style.border = '1px solid #F87171';
-        deleteButton.style.marginLeft = '8px';
-        deleteButton.textContent = 'Delete';
-        deleteButton.addEventListener('click', () => deleteDevice(device.device_id));
-        actionCell.appendChild(deleteButton);
+        const flashBtn = document.createElement('button');
+        flashBtn.className   = 'btn secondary small';
+        flashBtn.textContent = 'Flash';
+        flashBtn.addEventListener('click', () => openFlashPanel(device));
+        actionCell.appendChild(flashBtn);
+
+        const delBtn = document.createElement('button');
+        delBtn.className = 'btn small';
+        Object.assign(delBtn.style, { backgroundColor:'transparent', color:'#F87171', border:'1px solid #F87171', marginLeft:'8px' });
+        delBtn.textContent = 'Delete';
+        delBtn.addEventListener('click', () => deleteDevice(device.device_id));
+        actionCell.appendChild(delBtn);
 
         tbody.appendChild(tr);
       });
@@ -544,52 +526,53 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // ─── Open Flash Panel (from device list row) ─────────────────────────────
   function openFlashPanel(device) {
     currentFlashDeviceId = device.device_id;
     flashDeviceId.textContent = device.device_id;
-    document.getElementById('lblDeviceId').textContent = device.device_id;
+
+    document.getElementById('lblDeviceId').textContent  = device.device_id;
     document.getElementById('lblDeviceKey').textContent = 'Already provisioned';
-    document.getElementById('fwDeviceId').textContent = device.device_id;
+    document.getElementById('fwDeviceId').textContent   = device.device_id;
     document.getElementById('fwRelayCount').textContent = device.relay_count || 1;
-    document.getElementById('fwRelayPins').textContent = 'Auto-generated';
-    document.getElementById('fwNamespace').textContent = device.namespace;
-    document.getElementById('fwPermUser').textContent = 'Hidden';
-    document.getElementById('fwPermPass').textContent = 'Hidden';
+    document.getElementById('fwRelayPins').textContent  = 'Auto-generated';
+    document.getElementById('fwNamespace').textContent  = device.namespace;
+    document.getElementById('fwPermUser').textContent   = 'Hidden';
+    document.getElementById('fwPermPass').textContent   = 'Hidden';
 
     setEsp32Status('Not checked yet', false);
-    fwCaCertificateInput.value = '';
+    if (fwCaCertificateInput) fwCaCertificateInput.value = '';
 
     resultSection.classList.remove('hidden');
-    flashSection.classList.remove('hidden');
+    if (flashSection) flashSection.classList.remove('hidden');
+
+    resultSection.scrollIntoView({ behavior: 'smooth' });
   }
 
+  // ─── Delete Device ────────────────────────────────────────────────────────
   async function deleteDevice(deviceId) {
-    if (!confirm(`Are you sure you want to delete device ${deviceId}? This cannot be undone.`)) {
-      return;
-    }
+    if (!confirm(`Delete device ${deviceId}? This cannot be undone.`)) return;
 
     try {
-      const response = await fetch(`${factoryApiRoot}/device/${encodeURIComponent(deviceId)}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${keyInput.value}`
-        }
-      });
+      const response = await fetch(
+        `${factoryApiRoot}/device/${encodeURIComponent(deviceId)}`,
+        { method: 'DELETE', headers: { 'Authorization': `Bearer ${keyInput.value}` } }
+      );
 
       if (!response.ok) {
         const err = await response.json();
         throw new Error(err.error || 'Failed to delete device');
       }
 
-      // Hide flash panel if we deleted the currently selected device
       if (currentFlashDeviceId === deviceId) {
         resultSection.classList.add('hidden');
-        flashSection.classList.add('hidden');
+        if (flashSection) flashSection.classList.add('hidden');
       }
 
-      loadDevices(); // Refresh list
+      loadDevices();
     } catch (error) {
       alert(`Error: ${error.message}`);
     }
   }
+
 });

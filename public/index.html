@@ -4,8 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>IoTYK Factory Admin</title>
+  <meta name="description" content="IoTYK Factory Admin Dashboard - Provision and flash ESP32 devices">
   <link rel="stylesheet" href="css/style.css">
+  <!-- QR Code library -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <!-- esptool-js: use UMD build so ESPLoader & Transport are on window -->
+  <script src="https://unpkg.com/esptool-js@0.4.3/bundle.js"></script>
 </head>
 <body>
   <div class="app-container">
@@ -17,6 +21,8 @@
     </header>
 
     <main class="main-content">
+
+      <!-- ── Provision New Device ── -->
       <section class="control-panel">
         <div class="card">
           <h2>Provision New Device</h2>
@@ -36,14 +42,16 @@
         </div>
       </section>
 
+      <!-- ── Result Section (shown after provisioning or clicking Flash) ── -->
       <section id="resultSection" class="result-section hidden">
         <div class="card result-card">
           <div class="success-banner">
             <span class="icon">✓</span>
             <h3>Device Provisioned Successfully</h3>
           </div>
-          
+
           <div class="details-grid">
+            <!-- QR Code -->
             <div class="detail-group">
               <h4>Label QR Code</h4>
               <p class="hint">Print and attach this to the physical device.</p>
@@ -54,6 +62,7 @@
               </div>
             </div>
 
+            <!-- Firmware Details -->
             <div class="detail-group firmware-details">
               <h4>Firmware Configuration</h4>
               <p class="hint">Flash these credentials into the ESP32 NVS memory.</p>
@@ -66,62 +75,80 @@
                 User: <span id="fwPermUser"></span><br>
                 Pass: <span id="fwPermPass"></span>
               </div>
-              <div class="detail-group">
-                <h4>Firmware Source</h4>
-                <p class="hint">Downloads a ZIP containing the Arduino sketch, pre-configured <code>config.h</code>, auto-generated WSS certificates, and the pasted EMQX CA certificate.</p>
-                <div class="flash-row">
-                  <strong>Target device:</strong> <span id="flashDeviceId">Unknown</span>
-                </div>
-                <div class="action-buttons">
-                  <button id="btnScanNewUsb" class="btn primary">1. Select ESP32 COM Port</button>
-                  <button id="btnCompileAndFlash" class="btn primary accent disabled" disabled>2. Auto-Compile & Flash</button>
-                </div>
-
-                <div id="usbDetailBox" class="device-card hidden">
-                  <div class="device-card-header">
-                    <span id="usbPulse" class="pulse-indicator hidden"></span>
-                    <strong>ESP32 Hardware Connection</strong>
-                    <span id="usbReadyBadge" class="status-badge status-online hidden">READY</span>
-                  </div>
-                  <div class="device-card-body">
-                    <div class="info-tag"><span>Status:</span> <span id="usbStatusText">Not detected yet</span></div>
-                  </div>
-                </div>
-                
-                <div class="advanced-toggle" onclick="document.getElementById('manualFlashSection').classList.toggle('hidden')">
-                  Show Manual Options (Advanced)
-                </div>
-
-                <div id="manualFlashSection" class="manual-flash hidden">
-                  <label class="field-label" for="fwCaCertificate">Override EMQX CA certificate (Optional)</label>
-                  <textarea id="fwCaCertificate" class="textarea-input" placeholder="Leave empty to use server environment variable..." rows="4"></textarea>
-                  
-                  <label class="field-label" for="firmwareFileInput">Manual Firmware (.bin)</label>
-                  <input id="firmwareFileInput" type="file" accept=".bin" class="file-input">
-                  <button id="btnStartFlash" class="btn secondary small">Flash Manual File</button>
-                </div>
-
-                <div id="flashProgressContainer" class="progress-container hidden">
-                  <div class="progress-bar" id="flashProgressBar"></div>
-                  <span id="flashProgressText" class="progress-label">Select a compiled .bin file and connect ESP32 to flash.</span>
-                </div>
-                <pre id="flashLog" class="code-block flash-log hidden"></pre>
-
-              </div>
             </div>
           </div>
+
+          <!-- ── Flash Section ── -->
+          <div id="flashSection">
+            <h4>Firmware Source &amp; Flashing</h4>
+            <p class="hint">Downloads a ZIP containing the Arduino sketch, pre-configured <code>config.h</code>, auto-generated WSS certificates.</p>
+
+            <div class="flash-row">
+              <strong>Target device:</strong> <span id="flashDeviceId">Unknown</span>
+            </div>
+
+            <!-- EMQX CA cert override -->
+            <label class="field-label" for="fwCaCertificate">Override EMQX CA Certificate (Optional)</label>
+            <textarea id="fwCaCertificate" class="textarea-input" placeholder="Leave empty to use server environment variable..." rows="4"></textarea>
+
+            <!-- Download ZIP -->
+            <div class="action-buttons" style="margin-top:12px;">
+              <button id="btnDownloadFirmwareZip" class="btn secondary">Download Firmware Source (ZIP)</button>
+            </div>
+
+            <!-- USB Flash actions -->
+            <div class="action-buttons" style="margin-top:10px;">
+              <button id="btnScanNewUsb" class="btn primary">1. Select ESP32 COM Port</button>
+              <button id="btnCompileAndFlash" class="btn primary accent disabled" disabled>2. Auto-Compile &amp; Flash</button>
+            </div>
+
+            <!-- USB Status Card -->
+            <div id="usbDetailBox" class="device-card hidden" style="margin-top:12px;">
+              <div class="device-card-header">
+                <span id="usbPulse" class="pulse-indicator hidden"></span>
+                <strong>ESP32 Hardware Connection</strong>
+                <span id="usbReadyBadge" class="status-badge status-online hidden">READY</span>
+              </div>
+              <div class="device-card-body">
+                <div class="info-tag"><span>Status:</span> <span id="usbStatusText">Not detected yet</span></div>
+              </div>
+            </div>
+
+            <!-- Manual flash toggle -->
+            <div class="advanced-toggle" onclick="document.getElementById('manualFlashSection').classList.toggle('hidden')">
+              Show Manual Options (Advanced)
+            </div>
+
+            <div id="manualFlashSection" class="manual-flash hidden">
+              <label class="field-label" for="firmwareFileInput">Manual Firmware (.bin)</label>
+              <input id="firmwareFileInput" type="file" accept=".bin" class="file-input">
+              <button id="btnStartFlash" class="btn secondary small">Flash Manual File</button>
+            </div>
+
+            <!-- Flash Progress -->
+            <div id="flashProgressContainer" class="progress-container hidden">
+              <div class="progress-bar" id="flashProgressBar"></div>
+              <span id="flashProgressText" class="progress-label">Select a compiled .bin file and connect ESP32 to flash.</span>
+            </div>
+            <pre id="flashLog" class="code-block flash-log hidden"></pre>
+          </div>
+          <!-- ── /Flash Section ── -->
+
         </div>
       </section>
 
+      <!-- ── Device List ── -->
       <section class="device-list-section">
         <div class="stats-grid">
           <div class="stat-card">
             <div class="stat-card-header">
-              <h3>Connected Devices</h3>
+              <h3>Provisioned Devices</h3>
               <button id="btnRefresh" class="btn secondary ultra-small">Refresh</button>
             </div>
             <div class="stat-value" id="countConnected">0</div>
           </div>
+
+          <!-- Global USB Link Card -->
           <div class="stat-card">
             <h3>Hardware Link</h3>
             <div class="stat-value usb-link-area">
@@ -133,33 +160,35 @@
                 <button id="btnGlobalConnectUsb" class="btn primary small">Connect USB</button>
               </div>
               <span id="globalUsbStatus" class="status-badge status-offline">DISCONNECTED</span>
+              <!-- Connected USB device list -->
+              <div id="usbDeviceList" style="margin-top:8px; font-size:0.8rem; color:#8EA0B3;"></div>
             </div>
           </div>
         </div>
-          <div class="table-container">
-            <table id="deviceTable">
-              <thead>
-                <tr>
-                  <th>Device ID</th>
-                  <th>Namespace</th>
-                  <th>Relays</th>
-                  <th>Created At</th>
-                  <th>Status</th>
-                  <th>Owner</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody id="deviceTableBody">
-                <!-- Rows injected by JS -->
-              </tbody>
-            </table>
-          </div>
+
+        <div class="table-container">
+          <table id="deviceTable">
+            <thead>
+              <tr>
+                <th>Device ID</th>
+                <th>Namespace</th>
+                <th>Relays</th>
+                <th>Created At</th>
+                <th>Status</th>
+                <th>Owner</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="deviceTableBody">
+              <!-- Rows injected by JS -->
+            </tbody>
+          </table>
         </div>
       </section>
+
     </main>
   </div>
 
-  <script src="https://unpkg.com/esptool-js@0.6.0/bundle.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
