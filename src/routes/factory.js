@@ -337,7 +337,8 @@ router.post('/device/:deviceId/compile', requireFactoryAuth, async (req, res) =>
     // 3. Compile using Arduino CLI
     // FQBN for ESP32 Dev Module
     const fqbn = 'esp32:esp32:esp32'; 
-    const compileCmd = `${arduinoCli} --config-file "${arduinoConfig}" compile --fqbn ${fqbn} --output-dir "${tempDir}" "${tempDir}"`;
+    // Use --jobs 1 to limit memory usage on Render free tier (512MB)
+    const compileCmd = `${arduinoCli} --config-file "${arduinoConfig}" compile --fqbn ${fqbn} --jobs 1 --output-dir "${tempDir}" "${tempDir}"`;
 
     console.log(`Starting compilation for ${deviceId}...`);
     const { exec } = await import('child_process');
