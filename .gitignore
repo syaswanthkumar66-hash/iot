@@ -5,3 +5,5 @@ node_modules/
 mobile-app/
 *.db
 *.log
+__pycache__/
+temp_build/
