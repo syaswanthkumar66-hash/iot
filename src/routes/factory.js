@@ -264,11 +264,21 @@ router.post('/device/:deviceId/compile', requireFactoryAuth, async (req, res) =>
   const tempDir = path.join(tempBaseDir, 'iotyk_esp32'); // Directory name MUST match .ino filename for Arduino CLI
 
   // Resolve arduino-cli binary — works on Linux (Render), macOS, and Windows
+  const projectRoot = process.cwd();
   const homeDir = process.env.HOME || process.env.USERPROFILE || '';
   const isWin   = process.platform === 'win32';
   const cliExe  = isWin ? 'arduino-cli.exe' : 'arduino-cli';
-  const defaultCliPath = path.join(homeDir, 'arduino_cli', 'bin', cliExe);
-  const arduinoCli = fs.existsSync(defaultCliPath) ? defaultCliPath : cliExe; // fallback to PATH
+  
+  // Try project root first (Render/Docker), then home dir (Local setup), then system PATH
+  const projectCliPath = path.join(projectRoot, 'arduino_cli', 'bin', cliExe);
+  const homeCliPath    = path.join(homeDir, 'arduino_cli', 'bin', cliExe);
+  
+  let arduinoCli = cliExe; // Default to PATH
+  if (fs.existsSync(projectCliPath)) {
+    arduinoCli = projectCliPath;
+  } else if (fs.existsSync(homeCliPath)) {
+    arduinoCli = homeCliPath;
+  }
 
   try {
     // 1. Fetch device data

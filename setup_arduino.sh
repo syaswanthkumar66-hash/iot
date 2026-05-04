@@ -3,7 +3,9 @@
 
 set -e
 
-ARDUINO_DIR="$HOME/arduino_cli"
+# Get the project root directory
+PROJECT_ROOT=$(pwd)
+ARDUINO_DIR="$PROJECT_ROOT/arduino_cli"
 BIN_DIR="$ARDUINO_DIR/bin"
 mkdir -p "$BIN_DIR"
 
