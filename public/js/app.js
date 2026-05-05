@@ -30,7 +30,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const authPanel            = document.getElementById('authPanel');
   const usbStatusBadge       = document.getElementById('usbStatusBadge');
   const globalUsbStatus      = document.getElementById('globalUsbStatus');
-  const globalBleStatus      = document.getElementById('globalBleStatus');
   const authStatusBadge      = document.getElementById('authStatusBadge');
   const detectedTokenEl      = document.getElementById('detectedToken');
   const serialLog            = document.getElementById('serialLog');
@@ -38,14 +37,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const chkAutoscroll        = document.getElementById('chkAutoscroll');
 
   const factoryApiRoot = '/api/v1/factory';
-  const SERVICE_UUID        = "12345678-1234-1234-1234-123456789abc";
-  const CHARACTERISTIC_UUID = "abcdefab-1234-1234-1234-abcdefabcdef";
 
   // ─── State ────────────────────────────────────────────────────────────────
   let currentDeviceData  = null;
   let serialPort         = null;
-  let bleDevice          = null;
-  let bleChar            = null;
   let readLoopActive     = false;
   let sessionToken       = '';     
   let sessionAuthed      = false;  
@@ -78,48 +73,6 @@ document.addEventListener('DOMContentLoaded', () => {
   btnSerialSend.onclick = sendManualInput;
   btnClearLog.onclick = () => serialLog.innerHTML = '';
   serialInput.onkeydown = e => { if (e.key === 'Enter') sendManualInput(); };
-
-  // --- BLE AUTO-DISCOVERY ---
-  const btnScanBle = document.createElement('button');
-  btnScanBle.className = 'btn secondary small';
-  btnScanBle.textContent = '📡 Scan BLE';
-  btnScanBle.onclick = scanBLE;
-  document.querySelector('.usb-btn-group').appendChild(btnScanBle);
-
-  async function scanBLE() {
-    try {
-      logSerial('[BLE] Scanning for IoTYK devices...', 'log-info');
-      const device = await navigator.bluetooth.requestDevice({
-        filters: [{ services: [SERVICE_UUID] }],
-        optionalServices: [SERVICE_UUID]
-      });
-
-      logSerial(`[BLE] Found: ${device.name}. Connecting...`, 'log-ok');
-      const server = await device.gatt.connect();
-      const service = await server.getPrimaryService(SERVICE_UUID);
-      bleChar = await service.getCharacteristic(CHARACTERISTIC_UUID);
-      bleDevice = device;
-
-      device.addEventListener('gattserverdisconnected', onBleDisconnected);
-      
-      globalBleStatus.className = 'status-badge status-online';
-      globalBleStatus.textContent = 'BLE CONNECTED';
-      authPanel?.classList.remove('hidden'); 
-      setAuthState(true); 
-      
-      logSerial(`[BLE] Secure link established with ${device.name}`, 'log-ok');
-    } catch (err) {
-      logSerial(`[BLE] Scan failed: ${err.message}`, 'log-err');
-    }
-  }
-
-  function onBleDisconnected() {
-    globalBleStatus.className = 'status-badge status-offline';
-    globalBleStatus.textContent = 'BLE DISCONNECTED';
-    bleDevice = null;
-    bleChar = null;
-    logSerial('[BLE] Device disconnected.', 'log-warn');
-  }
 
   // ─────────────────────────────────────────────────────────────────────────
   // PROVISIONING & DATA
@@ -192,13 +145,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const tokens = await res.json();
     const packet = `PROVISION:${ssid}|${pass}|${tokens.mqtt_user}|${tokens.mqtt_pass}|${tokens.session_token}|${tokens.device_key}`;
 
-    if (bleChar) {
-      logSerial('[BLE] Writing secure packet...', 'log-info');
-      await bleChar.writeValue(new TextEncoder().encode(packet));
-      logSerial('[BLE] Provisioned!', 'log-ok');
-    } else {
-      await writeSerial(packet);
-    }
+    await writeSerial(packet);
+    logSerial('[USB] Provisioned!', 'log-ok');
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -230,8 +178,49 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function sendCommand(cmd, label) {
     logSerial(`→ ${cmd}`, 'log-tx');
-    if (bleChar) await bleChar.writeValue(new TextEncoder().encode(cmd));
-    else await writeSerial(cmd);
+    await writeSerial(cmd);
+  }
+
+  async function sendManualInput() {
+    const text = serialInput.value.trim();
+    if (!text) return;
+    await writeSerial(text);
+    serialInput.value = '';
+  }
+
+  async function startReadLoop(port) {
+    const decoder = new TextDecoderStream();
+    port.readable.pipeTo(decoder.writable);
+    const reader = decoder.readable.getReader();
+    let buffer = '';
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buffer += value;
+      const lines = buffer.split('\n');
+      buffer = lines.pop();
+      for (const line of lines) {
+        const clean = line.trim();
+        if (clean.includes('Session token:')) onTokenDetected(clean.split(': ')[1]);
+        if (clean === 'AUTH:OK') setAuthState(true);
+        logSerial(`← ${clean}`, 'log-rx');
+      }
+    }
+  }
+
+  function onTokenDetected(token) {
+    sessionToken = token;
+    detectedTokenEl.textContent = token;
+    btnAuthenticate.disabled = false;
+  }
+
+  async function doAuthenticate() {
+    await writeSerial(`AUTH:${sessionToken}`);
+  }
+
+  async function requestReauth() {
+    await writeSerial('CMD:REAUTH');
+    setAuthState(false);
   }
 
   function setAuthState(authed) {
@@ -250,5 +239,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function checkSerialSupport() {
     if (!('serial' in navigator)) alert("Serial not supported");
+  }
+
+  async function confirmHardwareReplacement() {
+    const deviceId = currentDeviceData.device_id;
+    await fetch(`${factoryApiRoot}/device/${deviceId}/replace-hardware`, {
+      method: 'POST', headers: { 'Authorization': `Bearer ${keyInput.value}` }
+    });
+    alert("Hardware replaced record created.");
+  }
+
+  async function downloadFirmwareZip() {
+    window.location.href = `${factoryApiRoot}/device/${currentDeviceData.device_id}/firmware-package?key=${keyInput.value}`;
   }
 });
