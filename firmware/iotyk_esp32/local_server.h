@@ -5,60 +5,48 @@
 #include <ESPmDNS.h>
 #include <Preferences.h>
 #include "config.h"
+#include "certificates.h"
 #include "TinyJson.h"
+#if LOCAL_WSS_ENABLED
+#include "TinyWss.h"
+#endif
 
 extern Preferences prefs;
 extern void handleCommand(String cmdJson);
 extern String getCurrentStateJson();
 
-WiFiServer server(80);
+#if LOCAL_WSS_ENABLED
+// WSS Server on port 82 (standard for IoTYK local secure comms)
+TinyWss localWss(82);
+
+void onWssMessage(String payload) {
+    handleCommand(payload);
+}
+#endif
 
 void setupLocalServer(String deviceId) {
     if (!MDNS.begin(deviceId.c_str())) {
         Serial.println("[mDNS] Error setting up mDNS");
     } else {
-        MDNS.addService("http", "tcp", 80);
+        MDNS.addService("wss", "tcp", 82);
     }
-    server.begin();
+    
+#if LOCAL_WSS_ENABLED
+    // Start Secure WebSocket with own generated certs
+    localWss.begin(LOCAL_WSS_SERVER_CERT, LOCAL_WSS_PRIVATE_KEY);
+    Serial.println("[WSS] Local Secure WebSocket started on port 82");
+#endif
 }
 
 void loopLocalServer() {
-    WiFiClient client = server.available();
-    if (client) {
-        String request = client.readStringUntil('\r');
-        client.flush();
-
-        // Very simple API: GET /api/state or POST /api/cmd
-        if (request.indexOf("/api/state") != -1) {
-            client.println("HTTP/1.1 200 OK");
-            client.println("Content-Type: application/json");
-            client.println("Access-Control-Allow-Origin: *");
-            client.println();
-            client.print(getCurrentStateJson());
-        } 
-        else if (request.indexOf("POST /api/cmd") != -1) {
-            // Read body
-            while(client.available() && client.read() != '\n'); // skip headers
-            String body = client.readString();
-            handleCommand(body);
-            
-            client.println("HTTP/1.1 200 OK");
-            client.println("Access-Control-Allow-Origin: *");
-            client.println();
-            client.print("{\"status\":\"ok\"}");
-        }
-        else {
-            client.println("HTTP/1.1 404 Not Found");
-            client.println();
-        }
-        delay(1);
-        client.stop();
-    }
+#if LOCAL_WSS_ENABLED
+    localWss.handle(onWssMessage);
+#endif
 }
 
 void broadcastLocalState() {
-    // In this zero-dependency version, we don't push via WS. 
-    // The mobile app will poll /api/state or we can implement UDP broadcast.
+    // In this zero-dependency version, the server handles 1 client at a time.
+    // The client (mobile app) will receive updates via the WSS connection.
 }
 
 #endif
