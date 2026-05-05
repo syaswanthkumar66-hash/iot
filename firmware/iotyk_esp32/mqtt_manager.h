@@ -21,7 +21,7 @@ unsigned long lastMqttRetry = 0;
 bool mqttWasConnected = false;
 
 void setupMqtt() {
-    netPerm.setCACert(EMQX_ROOT_CA);
+    netPerm.setCACert(EMQX_MQTT_CA_CERT);
     
     String broker = MQTT_BROKER;
     mqttPerm.setServer(broker, MQTT_PORT);
