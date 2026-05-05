@@ -45,9 +45,22 @@ class MqttBridge {
 
     this.client.on('message', async (topic, message) => {
       try {
-        await this.handleMessage(topic, message);
+        const payload = JSON.parse(message.toString());
+        const deviceId = topic.split('/')[2]; // ns/dev/DEVICE_ID/status
+
+        // 1. Update live status in database
+        if (topic.includes('/status')) {
+          const isOnline = payload.status === 'online';
+          await query(`
+            UPDATE devices 
+            SET is_online = $1, last_seen = NOW(), last_state = $2
+            WHERE device_id = $3
+          `, [isOnline, payload, deviceId]);
+          
+          console.log(`[Bridge] Device ${deviceId} is now ${isOnline ? 'ONLINE' : 'OFFLINE'}`);
+        }
       } catch (err) {
-        console.error(`Error handling MQTT message on ${topic}:`, err);
+        console.error('[Bridge] Error processing message:', err.message);
       }
     });
   }
