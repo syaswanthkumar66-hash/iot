@@ -697,7 +697,7 @@ async function ensureRelayCountColumn() {
 
 function generateFlashingReadme(deviceId = null) {
   const deviceLine = deviceId
-    ? `**Device ID:** \`${deviceId}\``
+    ? `**Device ID:** '${deviceId}'`
     : '**Device ID:** *(generic source — fill in config.h manually)*';
 
   return `# IoTYK ESP32 — Flash Instructions
@@ -709,14 +709,14 @@ ${deviceLine}
 
 | File | Description |
 |------|-------------|
-| \`iotyk_esp32.ino\` | **Main sketch** — open this in Arduino IDE |
-| \`config.h\` | **Device credentials** — pre-filled with your device data |
-| \`certificates.h\` | **TLS certificates** — WSS certs + EMQX CA placeholder |
-| \`TinyMqtt.h\` | **Custom MQTT Engine** — zero-dependency cloud comms |
-| \`TinyJson.h\` | **Custom JSON Engine** — lightweight data parsing |
-| \`TinyWss.h\` | **Custom WSS Engine** — secure local control |
-| \`ble_provision.h\` | BLE WiFi provisioning logic |
-| \`local_server.h\` | Local WebSocket Secure (WSS) server |
+| 'iotyk_esp32.ino' | **Main sketch** — open this in Arduino IDE |
+| 'config.h' | **Device credentials** — pre-filled with your device data |
+| 'certificates.h' | **TLS certificates** — WSS certs + EMQX CA placeholder |
+| 'TinyMqtt.h' | **Custom MQTT Engine** — zero-dependency cloud comms |
+| 'TinyJson.h' | **Custom JSON Engine** — lightweight data parsing |
+| 'TinyWss.h' | **Custom WSS Engine** — secure local control |
+| 'ble_provision.h' | BLE WiFi provisioning logic |
+| 'local_server.h' | Local WebSocket Secure (WSS) server |
 
 ---
 
@@ -731,11 +731,9 @@ Use **Arduino IDE 2.x** or **3.x**.
 
 1. Open Arduino IDE → **File → Preferences**
 2. In **Additional Boards Manager URLs**, add:
-   \`\`\`
-   https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
-   \`\`\`
+   'https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json'
 3. Go to **Tools → Board → Boards Manager**
-4. Search for \`esp32\` → Install **esp32 by Espressif Systems** (version 3.x recommended)
+4. Search for 'esp32' → Install **esp32 by Espressif Systems** (version 3.x recommended)
 
 ---
 
@@ -748,21 +746,21 @@ This firmware is custom-built to have no external dependencies. Do **NOT** insta
 
 ## 🔑 Step 4 — Paste EMQX CA Certificate (Important!)
 
-Open \`certificates.h\` and find this section:
+Open 'certificates.h' and find this section:
 
-\`\`\`
+'''
 static const char EMQX_MQTT_CA_CERT[] PROGMEM = R"EOF(
 -----BEGIN CERTIFICATE-----
 PASTE_EMQX_CA_CERTIFICATE_HERE
 -----END CERTIFICATE-----
 )EOF";
-\`\`\`
+'''
 
-Replace \`PASTE_EMQX_CA_CERTIFICATE_HERE\` with your actual EMQX CA certificate:
+Replace 'PASTE_EMQX_CA_CERTIFICATE_HERE' with your actual EMQX CA certificate:
 1. Log into EMQX Cloud console
 2. Go to: **Deployment → Overview → Connection guide**
-3. Download \`emqxsl-ca.crt\`
-4. Open it in Notepad, copy ALL content between (and including) the \`-----BEGIN\` and \`-----END\` lines
+3. Download 'emqxsl-ca.crt'
+4. Open it in Notepad, copy ALL content between (and including) the '-----BEGIN' and '-----END' lines
 5. Paste it in place of the placeholder
 
 ---
@@ -777,7 +775,7 @@ Replace \`PASTE_EMQX_CA_CERTIFICATE_HERE\` with your actual EMQX CA certificate:
 
 ## 🚀 Step 6 — Upload
 
-1. Open \`iotyk_esp32.ino\` (all .h files auto-load since they're in the same folder)
+1. Open 'iotyk_esp32.ino' (all .h files auto-load since they're in the same folder)
 2. Click **Upload** (→ button)
 3. Wait for "Done uploading"
 
@@ -787,10 +785,10 @@ Replace \`PASTE_EMQX_CA_CERTIFICATE_HERE\` with your actual EMQX CA certificate:
 
 1. Open **Tools → Serial Monitor** (baud: **115200**)
 2. You should see:
-   \`\`\`
+   '''
    --- IoTYK ESP32 Starting ---
    BLE Advertising started. Name: IoTYK-XXXX
-   \`\`\`
+   '''
 3. Open the IoTYK mobile app → scan QR code or enter the pairing key → send WiFi credentials via BLE
 4. Device connects to WiFi, then MQTT → LED slow blinks ✅
 
@@ -809,8 +807,8 @@ Replace \`PASTE_EMQX_CA_CERTIFICATE_HERE\` with your actual EMQX CA certificate:
 ## ❓ Troubleshooting
 
 - **Port not visible**: Install CP2102 or CH340 USB driver for your ESP32 board
-- **Compilation error "library not found"**: Re-check Step 3 library names
-- **MQTT not connecting**: Verify \`certificates.h\` has real EMQX CA cert (not placeholder)
+- **Compilation error 'library not found'**: Re-check Step 3 library names
+- **MQTT not connecting**: Verify 'certificates.h' has real EMQX CA cert (not placeholder)
 - **BLE not visible**: Ensure phone Bluetooth is ON and app has BLE permissions
 `;
 }
