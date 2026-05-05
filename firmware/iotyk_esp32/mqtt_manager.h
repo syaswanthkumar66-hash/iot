@@ -1,71 +1,68 @@
-#ifndef IOTYK_MQTT_H
-#define IOTYK_MQTT_H
+#ifndef MQTT_MANAGER_H
+#define MQTT_MANAGER_H
 
+#include <WiFi.h>
 #include <WiFiClientSecure.h>
-#include <Preferences.h>
-#include "config.h"
-#include "certificates.h"
 #include "TinyMqtt.h"
 #include "TinyJson.h"
+#include "config.h"
+#include "certificates.h"
 
 extern Preferences prefs;
-extern void handleCommand(String cmdJson);
-extern String getCurrentStateJson();
-extern void onMqttFullyConnected();
-extern void onMqttDisconnected();
+WiFiClientSecure net;
+TinyMqtt mqtt(net);
 
-WiFiClientSecure netPerm;
-TinyMqtt mqttPerm(netPerm);
+void setupMQTT(const char* deviceId) {
+    net.setCACert(EMQX_MQTT_CA_CERT);
+    mqtt.setServer(MQTT_HOST, MQTT_PORT);
 
-unsigned long lastMqttRetry = 0;
-bool mqttWasConnected = false;
+    // DUAL-AUTH LOGIC
+    String user = prefs.getString("mqtt_user", "");
+    String pass = prefs.getString("mqtt_pass", "");
 
-void onMqttMessage(String topic, String payload) {
-    handleCommand(payload);
-}
-
-void setupMqtt() {
-    // Fixed: Use the correct CA certificate variable name
-    netPerm.setCACert(EMQX_MQTT_CA_CERT);
-    mqttPerm.setCallback(onMqttMessage);
-    
-    String broker = MQTT_BROKER;
-    mqttPerm.setServer(broker, MQTT_PORT);
-}
-
-void loopMqtt() {
-    if (!mqttPerm.connected()) {
-        if (mqttWasConnected) {
-            onMqttDisconnected();
-            mqttWasConnected = false;
+    if (user != "") {
+        Serial.println("[MQTT] Attempting connection with TEMPORARY credentials...");
+        mqtt.setCredentials(user.c_str(), pass.c_str());
+        if (mqtt.connect(deviceId)) {
+            Serial.println("[MQTT] Connected via TEMPORARY Auth ✅");
+            mqtt.subscribe("iotyk/cmd/" + String(deviceId));
+            return;
         }
-        
-        if (millis() - lastMqttRetry > 10000) {
-            String user = prefs.getString(KEY_PERM_USER, "");
-            String pass = prefs.getString(KEY_PERM_PASS, "");
-            String devId = prefs.getString(KEY_DEVICE_ID, "ESP32-Unknown");
-            
-            if (user != "" && WiFi.status() == WL_CONNECTED) {
-                mqttPerm.setCredentials(devId, user, pass);
-                if (mqttPerm.connect()) {
-                    String ns = prefs.getString(KEY_DEVICE_NS, "default");
-                    mqttPerm.subscribe("iotyk/" + ns + "/cmd");
-                    onMqttFullyConnected();
-                    mqttWasConnected = true;
-                }
-            }
-            lastMqttRetry = millis();
-        }
+        Serial.println("[MQTT] Temporary Auth failed/expired. Falling back...");
+    }
+
+    // FALLBACK TO PERMANENT
+    Serial.println("[MQTT] Attempting connection with PERMANENT credentials...");
+    mqtt.setCredentials(MQTT_USER, MQTT_PASS); // From config.h
+    if (mqtt.connect(deviceId)) {
+        Serial.println("[MQTT] Connected via PERMANENT Auth 🔒");
+        mqtt.subscribe("iotyk/cmd/" + String(deviceId));
     } else {
-        mqttPerm.loop();
+        Serial.println("[MQTT] Critical Failure: Both auth methods failed.");
     }
 }
 
-void publishState(String json) {
-    if (mqttPerm.connected()) {
-        String ns = prefs.getString(KEY_DEVICE_NS, "default");
-        mqttPerm.publish("iotyk/" + ns + "/state", json);
+void loopMQTT() {
+    mqtt.loop();
+    if (!mqtt.connected()) {
+        static unsigned long lastReconnect = 0;
+        if (millis() - lastReconnect > 5000) {
+            setupMQTT(DEVICE_ID);
+            lastReconnect = millis();
+        }
     }
+}
+
+void mqttPublish(String topic, String payload) {
+    mqtt.publish(topic, payload);
+}
+
+void updateMqttCredentials(String newUser, String newPass) {
+    prefs.putString("mqtt_user", newUser);
+    prefs.putString("mqtt_pass", newPass);
+    Serial.println("[MQTT] New credentials saved. Rebooting...");
+    delay(1000);
+    ESP.restart();
 }
 
 #endif
