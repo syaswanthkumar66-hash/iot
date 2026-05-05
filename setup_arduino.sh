@@ -1,6 +1,5 @@
 #!/bin/bash
 # setup_arduino.sh - Pre-cached Arduino environment for Render
-
 set -e
 
 PROJECT_ROOT=$(pwd)
@@ -34,16 +33,13 @@ arduino-cli core update-index
 echo "Installing ESP32 core..."
 arduino-cli core install esp32:esp32
 
-echo "Installing libraries..."
-arduino-cli lib install "ArduinoJson" || true
-arduino-cli lib install "PubSubClient" || true
-arduino-cli lib install "WebSockets" || true
+# Libraries no longer needed due to Zero-Dependency architecture
+echo "Skipping external libraries (using TinyMqtt/TinyJson instead)..."
 
-echo "Pre-caching tools via dummy compile..."
+echo "Pre-caching tools via dummy compile (with Huge App support)..."
 mkdir -p dummy_sketch
 echo "void setup(){} void loop(){}" > dummy_sketch/dummy_sketch.ino
-# This forces ctags, discovery tools, etc. to be downloaded and installed in the build phase
-arduino-cli compile --fqbn esp32:esp32:esp32 dummy_sketch/dummy_sketch.ino
+arduino-cli compile --fqbn esp32:esp32:esp32:PartitionScheme=huge_app dummy_sketch/dummy_sketch.ino
 rm -rf dummy_sketch
 
 echo "Arduino environment ready and fully cached!"

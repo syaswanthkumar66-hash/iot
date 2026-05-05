@@ -1,0 +1,10 @@
+{
+  "additionalFiles": "..\\..,..\\..,..\\..,..\\..,..\\..,..\\..,..\\..,..\\..,..\\..",
+  "builtInToolsFolders": "",
+  "compiler.optimization_flags": "-Os",
+  "customBuildProperties": "build.warn_data_percentage=75",
+  "fqbn": "esp32:esp32:esp32:PartitionScheme=huge_app",
+  "hardwareFolders": "C:\\Users\\sp799\\AppData\\Local\\Arduino15\\packages",
+  "otherLibrariesFolders": "C:\\Users\\sp799\\Documents\\Arduino\\libraries",
+  "sketchLocation": "C:\\Users\\sp799\\Documents\\iotyk\\firmware\\iotyk_esp32"
+}
