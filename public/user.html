@@ -6,7 +6,6 @@
   <title>IoTYK — My Smart Home</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-  <script src="https://unpkg.com/html5-qrcode"></script>
   <style>
     :root {
       --bg: #0f172a; --card: #1e293b; --accent: #38bdf8; --text: #f8fafc;
@@ -67,26 +66,17 @@
     <!-- ── My Devices ── -->
     <div id="userDash" class="hidden">
       <div class="card">
-        <h2>Setup New Device</h2>
-        <p class="hint">Scanning both Camera and Bluetooth for nearby IoTYK hardware...</p>
-        
-        <div id="discoveryPanel" style="display:grid; grid-template-columns: 1fr; gap:15px;">
-          <div id="qrReader" class="hidden" style="width:100%; border-radius:15px; overflow:hidden; border: 2px solid var(--accent);"></div>
-          <button id="btnStartSetup" class="btn btn-primary" style="background:var(--accent); color:#000">🔍 Start Auto-Discovery</button>
-        </div>
-
-        <div id="manualPairing" class="hidden" style="border-top: 1px solid #ffffff10; margin-top:20px; padding-top:20px;">
-          <input type="text" id="pairDeviceId" placeholder="Device ID">
-          <input type="password" id="pairDeviceKey" placeholder="Secret Key">
-          <button id="btnPair" class="btn btn-primary">Claim & Finish Setup</button>
-        </div>
+        <h2>Pair New Device</h2>
+        <p class="hint">Check your device box for the ID and Secret Key.</p>
+        <input type="text" id="pairDeviceId" placeholder="Device ID (e.g. ESP32-XXXX)">
+        <input type="password" id="pairDeviceKey" placeholder="Secret Pairing Key">
+        <button id="btnPair" class="btn btn-primary">Claim Device</button>
       </div>
 
       <h2>My Devices</h2>
       <div id="deviceList">
-        <!-- Devices with toggles injected here -->
+        <!-- Devices injected here -->
       </div>
-    </div>
 
       <!-- Local Control Modal -->
       <div id="localControlModal" class="modal hidden">
