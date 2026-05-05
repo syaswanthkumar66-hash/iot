@@ -2,6 +2,7 @@
 #include <Preferences.h>
 #include <nvs_flash.h>
 #include <esp_task_wdt.h>
+#include <esp_arduino_version.h> // Ensure version macros are loaded
 #include "config.h"
 #include "mqtt_manager.h"
 #include "ble_provision.h"
@@ -37,10 +38,10 @@ void checkPowerScaling() {
 }
 
 void generateSessionToken() {
-  uint8_t buf[16];
+  uint8_t buf[6];
   esp_fill_random(buf, sizeof(buf));
   sessionToken = "";
-  for (int i = 0; i < 16; i++) {
+  for (int i = 0; i < 6; i++) {
     if (buf[i] < 0x10) sessionToken += "0";
     sessionToken += String(buf[i], HEX);
   }
@@ -54,38 +55,12 @@ String getDeviceMac();
 
 void handleCommand(String cmdJson) {
   boostCPU();
-  
-  // Check for "power" command (all relays)
-  String power = TinyJson::getString(cmdJson, "power");
-  if (power != "") {
-    bool state = (power == "on");
-    for (int i = 0; i < RELAY_COUNT; i++) {
-      digitalWrite(RELAY_PINS[i], RELAY_ACTIVE_LOW ? !state : state);
-    }
-    publishState(getCurrentStateJson());
-    return;
-  }
-  
-  // Check for single relay command
   int relayIndex = TinyJson::getInt(cmdJson, "relay");
-  if (relayIndex >= 1 && relayIndex <= RELAY_COUNT) { // 1-based
-    String powerSingle = TinyJson::getString(cmdJson, "power");
-    if (powerSingle != "") {
-      bool state = (powerSingle == "on");
-      digitalWrite(RELAY_PINS[relayIndex - 1], RELAY_ACTIVE_LOW ? !state : state);
-      publishState(getCurrentStateJson());
-      return;
-    }
-  }
-  
-  // Legacy support for "state" key
-  int relayIndexLegacy = TinyJson::getInt(cmdJson, "relay");
-  bool stateLegacy = TinyJson::getBool(cmdJson, "state");
-  if (relayIndexLegacy >= 0 && relayIndexLegacy < RELAY_COUNT) {
-    digitalWrite(RELAY_PINS[relayIndexLegacy], RELAY_ACTIVE_LOW ? !stateLegacy : stateLegacy);
+  bool state = TinyJson::getBool(cmdJson, "state");
+
+  if (relayIndex >= 0 && relayIndex < RELAY_COUNT) {
+    digitalWrite(RELAY_PINS[relayIndex], RELAY_ACTIVE_LOW ? !state : state);
     publishState(getCurrentStateJson());
-  } else {
-    Serial.println("[ERROR] Invalid command format");
   }
 }
 
@@ -119,7 +94,6 @@ void startWiFi() {
 }
 
 String serialBuffer = "";
-const int MAX_SERIAL_BUFFER = 256;
 
 void handleSerialCommand(String line) {
   boostCPU();
@@ -142,21 +116,15 @@ void handleSerialCommand(String line) {
 
     if (line.startsWith("CMD:PROVISION|")) {
       String payload = line.substring(14);
-      String parts[5];
+      String parts[6];
       int partIdx = 0, idx = 0;
-      for (int i = 0; i <= (int)payload.length() && partIdx < 5; i++) {
+      for (int i = 0; i <= (int)payload.length() && partIdx < 6; i++) {
         if (i == (int)payload.length() || payload[i] == '|') {
           parts[partIdx++] = payload.substring(idx, i);
           idx = i + 1;
         }
       }
-      if (partIdx != 5) {
-        Serial.println("[ERROR] Invalid provision format - expected 5 parts");
-        return;
-      }
-      
-      // Trim whitespace
-      for (int i = 0; i < 5; i++) parts[i].trim();
+      if (partIdx < 5) return;
       
       prefs.putString(KEY_DEVICE_ID,   parts[0]);
       prefs.putString(KEY_DEVICE_NS,   parts[1]);
@@ -168,11 +136,9 @@ void handleSerialCommand(String line) {
       delay(500); ESP.restart();
     }
     else if (line == "CMD:FACTORY_RESET") { nvs_flash_erase(); nvs_flash_init(); ESP.restart(); }
-    else if (line == "CMD:CLEAR_NVS") { prefs.clear(); ESP.restart(); }
     else if (line == "CMD:STATUS") {
        Serial.println("--- STATUS ---");
        Serial.println("ID: " + prefs.getString(KEY_DEVICE_ID, "Unset"));
-       Serial.println("Temp: " + String(temperatureRead(), 1) + " C");
        Serial.println("WiFi: " + String(WiFi.status() == WL_CONNECTED ? "OK" : "NO"));
     }
   }
@@ -183,8 +149,8 @@ void setup() {
   Serial.begin(115200);
   delay(100);
   
-  // FIXED: Compatibility for ESP32 Core v3.x.x
-  #if ESP_ARDUINO_VERSION_MAJOR >= 3
+  // AUTO-DETECT ESP32 CORE VERSION
+  #if defined(ESP_ARDUINO_VERSION_MAJOR) && ESP_ARDUINO_VERSION_MAJOR >= 3
     esp_task_wdt_config_t wdt_config = {
         .timeout_ms = WDT_TIMEOUT_SECONDS * 1000,
         .idle_core_mask = 0,
@@ -198,7 +164,7 @@ void setup() {
   #endif
 
   generateSessionToken();
-  Serial.println("\n[INIT] IoTYK Professional Firmware v1.8");
+  Serial.println("\n[INIT] IoTYK Professional Firmware v1.9");
 
   for (int i = 0; i < RELAY_COUNT; i++) {
     pinMode(RELAY_PINS[i], OUTPUT);
@@ -208,6 +174,13 @@ void setup() {
 
   prefs.begin(NVS_NAMESPACE, false);
   
+  if (prefs.getString(KEY_DEVICE_ID, "") == "" && String(FACTORY_DEVICE_ID) != "") {
+      prefs.putString(KEY_DEVICE_ID, FACTORY_DEVICE_ID);
+      prefs.putString(KEY_DEVICE_NS, FACTORY_DEVICE_NS);
+      prefs.putString(KEY_PERM_USER, FACTORY_PERM_MQTT_USER);
+      prefs.putString(KEY_PERM_PASS, FACTORY_PERM_MQTT_PASS);
+      prefs.putString(KEY_LOCAL_TOKEN, FACTORY_LOCAL_TOKEN);
+  }
 
   String devId = prefs.getString(KEY_DEVICE_ID, "Unknown");
   startBLE(devId);
@@ -224,9 +197,7 @@ void loop() {
     char c = Serial.read();
     if (c == '\n' || c == '\r') {
       if (serialBuffer.length() > 0) { handleSerialCommand(serialBuffer); serialBuffer = ""; }
-    } else if (serialBuffer.length() < MAX_SERIAL_BUFFER) { // Prevent buffer overflow
-      serialBuffer += c;
-    }
+    } else { serialBuffer += c; }
   }
 
   loopMqtt();
