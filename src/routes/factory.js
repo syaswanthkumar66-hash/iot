@@ -712,11 +712,11 @@ ${deviceLine}
 | \`iotyk_esp32.ino\` | **Main sketch** — open this in Arduino IDE |
 | \`config.h\` | **Device credentials** — pre-filled with your device data |
 | \`certificates.h\` | **TLS certificates** — WSS certs + EMQX CA placeholder |
-| `TinyMqtt.h` | **Custom MQTT Engine** — zero-dependency cloud comms |
-| `TinyJson.h` | **Custom JSON Engine** — lightweight data parsing |
-| `TinyWss.h` | **Custom WSS Engine** — secure local control |
-| `ble_provision.h` | BLE WiFi provisioning logic |
-| `local_server.h` | Local WebSocket Secure (WSS) server |
+| \`TinyMqtt.h\` | **Custom MQTT Engine** — zero-dependency cloud comms |
+| \`TinyJson.h\` | **Custom JSON Engine** — lightweight data parsing |
+| \`TinyWss.h\` | **Custom WSS Engine** — secure local control |
+| \`ble_provision.h\` | BLE WiFi provisioning logic |
+| \`local_server.h\` | Local WebSocket Secure (WSS) server |
 
 ---
 
@@ -735,7 +735,7 @@ Use **Arduino IDE 2.x** or **3.x**.
    https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
    ```
 3. Go to **Tools → Board → Boards Manager**
-4. Search for `esp32` → Install **esp32 by Espressif Systems** (version 3.x recommended)
+4. Search for \`esp32\` → Install **esp32 by Espressif Systems** (version 3.x recommended)
 
 ---
 
