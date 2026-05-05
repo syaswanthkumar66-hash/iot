@@ -8,15 +8,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnConfirmReplace    = document.getElementById('btnConfirmReplace');
   const btnCancelReplace     = document.getElementById('btnCancelReplace');
   const replacePanel         = document.getElementById('replacePanel');
-  const replaceNotes         = document.getElementById('replaceNotes');
   
-  const btnConnectUsb        = document.getElementById('btnConnectUsb');
   const btnDisconnectUsb     = document.getElementById('btnDisconnectUsb');
   const btnGlobalConnectUsb  = document.getElementById('btnGlobalConnectUsb');
   const btnAuthenticate      = document.getElementById('btnAuthenticate');
   const btnSendCredentials   = document.getElementById('btnSendCredentials');
   const btnCmdStatus         = document.getElementById('btnCmdStatus');
-  const btnStopDevice        = document.getElementById('btnStopDevice');
   const btnClearNvs          = document.getElementById('btnClearNvs');
   const btnFactoryReset      = document.getElementById('btnFactoryReset');
   const btnReauth            = document.getElementById('btnReauth');
@@ -25,28 +22,19 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnClearLog          = document.getElementById('btnClearLog');
   const keyInput             = document.getElementById('factoryKeyInput');
   const relayCountInput      = document.getElementById('relayCountInput');
-  const baudRateSelect       = document.getElementById('baudRate');
   const resultSection        = document.getElementById('resultSection');
   const authPanel            = document.getElementById('authPanel');
-  const usbStatusBadge       = document.getElementById('usbStatusBadge');
   const globalUsbStatus      = document.getElementById('globalUsbStatus');
-  const globalBleStatus      = document.getElementById('globalBleStatus');
   const authStatusBadge      = document.getElementById('authStatusBadge');
   const detectedTokenEl      = document.getElementById('detectedToken');
   const serialLog            = document.getElementById('serialLog');
   const serialInput          = document.getElementById('serialInput');
-  const chkAutoscroll        = document.getElementById('chkAutoscroll');
 
   const factoryApiRoot = '/api/v1/factory';
-  const SERVICE_UUID        = "12345678-1234-1234-1234-123456789abc";
-  const CHARACTERISTIC_UUID = "abcdefab-1234-1234-1234-abcdefabcdef";
 
   // ─── State ────────────────────────────────────────────────────────────────
   let currentDeviceData  = null;
   let serialPort         = null;
-  let bleDevice          = null;
-  let bleChar            = null;
-  let readLoopActive     = false;
   let sessionToken       = '';     
   let sessionAuthed      = false;  
 
@@ -63,72 +51,30 @@ document.addEventListener('DOMContentLoaded', () => {
   btnCancelReplace.onclick = () => replacePanel.classList.add('hidden');
   btnConfirmReplace.onclick = confirmHardwareReplacement;
 
-  btnConnectUsb.onclick = connectSerial;
   btnDisconnectUsb.onclick = disconnectSerial;
   btnGlobalConnectUsb.onclick = connectSerial;
   btnAuthenticate.onclick = doAuthenticate;
   
   btnSendCredentials.onclick = sendCredentialsToDevice;
-  btnCmdStatus.onclick = () => sendCommand('CMD:STATUS', '📋 Fetching status...');
-  btnStopDevice.onclick = () => sendCommand('CMD:STOP_ALL', '⛔ Stopping all connections...');
-  btnClearNvs.onclick = () => sendCommand('CMD:CLEAR_NVS', '🧹 Clearing NVS...');
-  btnFactoryReset.onclick = () => sendCommand('CMD:FACTORY_RESET', '🗑 Factory resetting...');
+  btnCmdStatus.onclick = () => sendCommand('CMD:STATUS');
+  btnClearNvs.onclick = () => sendCommand('CMD:CLEAR_NVS');
+  btnFactoryReset.onclick = () => sendCommand('CMD:FACTORY_RESET');
   btnReauth.onclick = requestReauth;
 
   btnSerialSend.onclick = sendManualInput;
   btnClearLog.onclick = () => serialLog.innerHTML = '';
   serialInput.onkeydown = e => { if (e.key === 'Enter') sendManualInput(); };
 
-  // --- BLE AUTO-DISCOVERY ---
-  const btnScanBle = document.createElement('button');
-  btnScanBle.className = 'btn secondary small';
-  btnScanBle.textContent = '📡 Scan BLE';
-  btnScanBle.onclick = scanBLE;
-  document.querySelector('.usb-btn-group').appendChild(btnScanBle);
-
-  async function scanBLE() {
-    try {
-      logSerial('[BLE] Scanning for IoTYK devices...', 'log-info');
-      const device = await navigator.bluetooth.requestDevice({
-        filters: [{ services: [SERVICE_UUID] }],
-        optionalServices: [SERVICE_UUID]
-      });
-
-      logSerial(`[BLE] Found: ${device.name}. Connecting...`, 'log-ok');
-      const server = await device.gatt.connect();
-      const service = await server.getPrimaryService(SERVICE_UUID);
-      bleChar = await service.getCharacteristic(CHARACTERISTIC_UUID);
-      bleDevice = device;
-
-      device.addEventListener('gattserverdisconnected', onBleDisconnected);
-      
-      globalBleStatus.className = 'status-badge status-online';
-      globalBleStatus.textContent = 'BLE CONNECTED';
-      authPanel?.classList.remove('hidden'); 
-      setAuthState(true); 
-      
-      logSerial(`[BLE] Secure link established with ${device.name}`, 'log-ok');
-    } catch (err) {
-      logSerial(`[BLE] Scan failed: ${err.message}`, 'log-err');
-    }
-  }
-
-  function onBleDisconnected() {
-    globalBleStatus.className = 'status-badge status-offline';
-    globalBleStatus.textContent = 'BLE DISCONNECTED';
-    bleDevice = null;
-    bleChar = null;
-    logSerial('[BLE] Device disconnected.', 'log-warn');
-  }
-
   // ─────────────────────────────────────────────────────────────────────────
-  // PROVISIONING & DATA
+  // API ACTIONS
   // ─────────────────────────────────────────────────────────────────────────
 
   async function loadDevices() {
     try {
-      const res = await fetch(`${factoryApiRoot}/devices`, { headers: { 'Authorization': `Bearer ${keyInput.value}` } });
-      if (!res.ok) return;
+      const res = await fetch(`${factoryApiRoot}/devices`, { 
+        headers: { 'Authorization': `Bearer ${keyInput.value}` } 
+      });
+      if (!res.ok) throw new Error("Auth failed");
       const data = await res.json();
       const tbody = document.getElementById('deviceTableBody');
       tbody.innerHTML = '';
@@ -143,13 +89,38 @@ document.addEventListener('DOMContentLoaded', () => {
           <td>${device.hardware_replace_count}</td>
           <td style="font-size:11px">${device.last_flashed_at ? new Date(device.last_flashed_at).toLocaleString() : 'Never'}</td>
           <td class="table-actions">
-            <button class="btn primary small" onclick="fetchDeviceDetails('${device.device_id}')">Configure</button>
+            <button class="btn primary small" onclick="fetchDeviceDetails('${device.device_id}')">Select</button>
+            <button class="btn danger small" onclick="deleteDevice('${device.device_id}')">Delete</button>
           </td>
         `;
         tbody.appendChild(tr);
       });
-    } catch (err) {}
+    } catch (err) { logSerial("API Error: " + err.message, "log-err"); }
   }
+
+  async function provisionDevice() {
+    try {
+      const res = await fetch(`${factoryApiRoot}/device`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${keyInput.value}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ relay_count: Number(relayCountInput.value) })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      displayResult(data);
+      loadDevices();
+    } catch (err) { alert(err.message); }
+  }
+
+  window.deleteDevice = async (deviceId) => {
+    if (!confirm(`Delete ${deviceId}? This is permanent.`)) return;
+    try {
+      await fetch(`${factoryApiRoot}/device/${deviceId}`, {
+        method: 'DELETE', headers: { 'Authorization': `Bearer ${keyInput.value}` }
+      });
+      loadDevices();
+    } catch (err) { alert(err.message); }
+  };
 
   window.fetchDeviceDetails = async (deviceId) => {
     try {
@@ -157,28 +128,79 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = await res.json();
       const device = data.devices.find(d => d.device_id === deviceId);
       if (device) displayResult({ 
-        qr_data: { device_id: device.device_id, device_key: 'Stored' },
-        firmware_config: { device_id: device.device_id, relay_count: device.relay_count, namespace: device.namespace, permanent_mqtt: { username: '...', password: '...' } }
+        qr_data: { device_id: device.device_id },
+        firmware_config: { device_id: device.device_id }
       });
     } catch (err) {}
   };
 
-  async function provisionDevice() {
-    const res = await fetch(`${factoryApiRoot}/device`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${keyInput.value}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ relay_count: Number(relayCountInput.value) })
-    });
-    const data = await res.json();
-    displayResult(data);
-    loadDevices();
+  function displayResult(data) {
+    currentDeviceData = data.firmware_config;
+    document.getElementById('lblDeviceId').textContent = data.qr_data.device_id;
+    resultSection.classList.remove('hidden');
   }
 
-  function displayResult(data) {
-    const { qr_data, firmware_config } = data;
-    currentDeviceData = firmware_config;
-    document.getElementById('lblDeviceId').textContent = qr_data.device_id;
-    resultSection.classList.remove('hidden');
+  async function confirmHardwareReplacement() {
+    try {
+      const res = await fetch(`${factoryApiRoot}/device/${currentDeviceData.device_id}/replace-hardware`, {
+        method: 'POST', headers: { 'Authorization': `Bearer ${keyInput.value}` }
+      });
+      const data = await res.json();
+      alert("Hardware invalidated. New Master Key generated for this ID.");
+      replacePanel.classList.add('hidden');
+      loadDevices();
+    } catch (err) { alert(err.message); }
+  }
+
+  function downloadFirmwareZip() {
+    window.location.href = `${factoryApiRoot}/device/${currentDeviceData.device_id}/firmware-package?key=${keyInput.value}`;
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // USB SERIAL MONITOR
+  // ─────────────────────────────────────────────────────────────────────────
+
+  async function connectSerial() {
+    try {
+      const port = await navigator.serial.requestPort();
+      await port.open({ baudRate: 115200 });
+      serialPort = port;
+      globalUsbStatus.className = 'status-badge status-online';
+      globalUsbStatus.textContent = 'USB CONNECTED';
+      authPanel.classList.remove('hidden');
+      logSerial("USB Connected at 115200 baud.", "log-info");
+      startReadLoop(port);
+    } catch (err) { logSerial("Connection failed: " + err.message, "log-err"); }
+  }
+
+  async function disconnectSerial() {
+    if (serialPort) { await serialPort.close(); serialPort = null; }
+    globalUsbStatus.className = 'status-badge status-offline';
+    globalUsbStatus.textContent = 'USB DISCONNECTED';
+    authPanel.classList.add('hidden');
+  }
+
+  async function startReadLoop(port) {
+    const decoder = new TextDecoderStream();
+    port.readable.pipeTo(decoder.writable);
+    const reader = decoder.readable.getReader();
+    let buffer = '';
+    try {
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += value;
+        const lines = buffer.split('\n');
+        buffer = lines.pop();
+        for (const line of lines) {
+          const clean = line.trim();
+          if (!clean) continue;
+          if (clean.includes('Session token:')) onTokenDetected(clean.split(': ')[1]);
+          if (clean === 'AUTH:OK') setAuthState(true);
+          logSerial(`← ${clean}`, 'log-rx');
+        }
+      }
+    } catch (err) { logSerial("Read error: " + err.message, "log-err"); }
   }
 
   async function sendCredentialsToDevice() {
@@ -186,39 +208,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const pass = prompt("WiFi Password:");
     if (!ssid) return;
 
-    const res = await fetch(`${factoryApiRoot}/device/${currentDeviceData.device_id}/provision-tokens`, {
-      method: 'POST', headers: { 'Authorization': `Bearer ${keyInput.value}` }
-    });
-    const tokens = await res.json();
-    const packet = `PROVISION:${ssid}|${pass}|${tokens.mqtt_user}|${tokens.mqtt_pass}|${tokens.session_token}|${tokens.device_key}`;
-
-    if (bleChar) {
-      logSerial('[BLE] Writing secure packet...', 'log-info');
-      await bleChar.writeValue(new TextEncoder().encode(packet));
-      logSerial('[BLE] Provisioned!', 'log-ok');
-    } else {
-      await writeSerial(packet);
-    }
-  }
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // SERIAL & HELPERS
-  // ─────────────────────────────────────────────────────────────────────────
-
-  async function connectSerial() {
-    const port = await navigator.serial.requestPort();
-    await port.open({ baudRate: 115200 });
-    serialPort = port;
-    globalUsbStatus.className = 'status-badge status-online';
-    globalUsbStatus.textContent = 'USB CONNECTED';
-    authPanel.classList.remove('hidden');
-    startReadLoop(port);
-  }
-
-  async function disconnectSerial() {
-    if (serialPort) { await serialPort.close(); serialPort = null; }
-    globalUsbStatus.className = 'status-badge status-offline';
-    globalUsbStatus.textContent = 'USB DISCONNECTED';
+    try {
+      const tRes = await fetch(`${factoryApiRoot}/device/${currentDeviceData.device_id}/provision-tokens`, {
+        method: 'POST', headers: { 'Authorization': `Bearer ${keyInput.value}` }
+      });
+      const tData = await tRes.json();
+      const cmd = `CMD:PROVISION|${ssid}|${pass}|${tData.mqtt_user}|${tData.mqtt_pass}|${tData.session_token}|${tData.device_key}`;
+      await writeSerial(cmd);
+      logSerial("Provisioning packet sent via USB.", "log-ok");
+    } catch (err) { alert(err.message); }
   }
 
   async function writeSerial(text) {
@@ -228,10 +226,32 @@ document.addEventListener('DOMContentLoaded', () => {
     writer.releaseLock();
   }
 
-  async function sendCommand(cmd, label) {
+  async function sendCommand(cmd) {
     logSerial(`→ ${cmd}`, 'log-tx');
-    if (bleChar) await bleChar.writeValue(new TextEncoder().encode(cmd));
-    else await writeSerial(cmd);
+    await writeSerial(cmd);
+  }
+
+  function onTokenDetected(token) {
+    sessionToken = token;
+    detectedTokenEl.textContent = token;
+    btnAuthenticate.disabled = false;
+  }
+
+  async function doAuthenticate() {
+    await writeSerial(`AUTH:${sessionToken}`);
+  }
+
+  async function requestReauth() {
+    await writeSerial('CMD:REAUTH');
+    setAuthState(false);
+  }
+
+  async function sendManualInput() {
+    const text = serialInput.value.trim();
+    if (!text) return;
+    await writeSerial(text);
+    serialInput.value = '';
+    logSerial(`→ ${text}`, 'log-tx');
   }
 
   function setAuthState(authed) {
@@ -249,6 +269,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function checkSerialSupport() {
-    if (!('serial' in navigator)) alert("Serial not supported");
+    if (!('serial' in navigator)) alert("Web Serial API not supported in this browser. Please use Chrome or Edge.");
   }
 });
