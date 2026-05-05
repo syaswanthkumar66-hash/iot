@@ -24,6 +24,7 @@ static const uint8_t RELAY_PINS[RELAY_COUNT] = {26};
 #define FACTORY_DEVICE_NS ""
 #define FACTORY_PERM_MQTT_USER ""
 #define FACTORY_PERM_MQTT_PASS ""
+#define FACTORY_LOCAL_TOKEN ""
 
 // --- Local network services ---
 #define LOCAL_HTTP_PORT 80

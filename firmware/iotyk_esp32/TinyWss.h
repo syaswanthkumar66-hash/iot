@@ -12,7 +12,6 @@ private:
     String calculateAcceptKey(String clientKey) {
         String combined = clientKey + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
         uint8_t shaResult[20];
-        
         esp_sha(SHA1, (const unsigned char*)combined.c_str(), combined.length(), shaResult);
         
         size_t outLen;
@@ -56,7 +55,6 @@ public:
                 client.println("Sec-WebSocket-Accept: " + acceptKey);
                 client.println();
 
-                // Simple WebSocket Frame Reader (Zero-Dependency)
                 while (client.connected()) {
                     if (client.available() >= 2) {
                         uint8_t header = client.read();
@@ -71,14 +69,17 @@ public:
                         uint8_t mask[4];
                         if (masked) client.readBytes(mask, 4);
 
-                        String payload = "";
-                        for (uint64_t i = 0; i < payloadLen; i++) {
-                            uint8_t b = client.read();
-                            if (masked) b ^= mask[i % 4];
-                            payload += (char)b;
+                        // Optimized: Process frame into a local buffer
+                        char* payload = (char*)malloc(payloadLen + 1);
+                        if (payload) {
+                            client.readBytes((uint8_t*)payload, payloadLen);
+                            if (masked) {
+                                for (uint64_t i = 0; i < payloadLen; i++) payload[i] ^= mask[i % 4];
+                            }
+                            payload[payloadLen] = '\0';
+                            onMessage(String(payload));
+                            free(payload);
                         }
-                        
-                        if (payload.length() > 0) onMessage(payload);
                     }
                     delay(1);
                 }

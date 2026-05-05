@@ -42,19 +42,24 @@ public:
     bool connect() {
         if (!_client->connect(_host.c_str(), _port)) return false;
 
-        uint8_t pkt[256];
+        uint8_t pkt[512]; // Larger buffer for safety
         int ptr = 0;
         pkt[ptr++] = 0x10; // Connect
-        int lenPos = ptr++; // Placeholder
         
-        pkt[ptr++] = 0x00; pkt[ptr++] = 0x04; pkt[ptr++] = 'M'; pkt[ptr++] = 'Q'; pkt[ptr++] = 'T'; pkt[ptr++] = 'T';
-        pkt[ptr++] = 0x04; // v3.1.1
-        
-        uint8_t flags = 0x02; // Clean session
+        // Protocol
+        uint8_t proto[] = {0x00, 0x04, 'M', 'Q', 'T', 'T', 0x04};
+        uint8_t flags = 0x02;
         if (_user.length()) flags |= 0x80;
         if (_pass.length()) flags |= 0x40;
-        pkt[ptr++] = flags;
 
+        uint16_t payloadLen = 10 + (2 + _clientId.length());
+        if (_user.length()) payloadLen += (2 + _user.length());
+        if (_pass.length()) payloadLen += (2 + _pass.length());
+
+        // Simple single-byte length for CONNECT (usually < 127)
+        pkt[ptr++] = (uint8_t)payloadLen;
+        memcpy(&pkt[ptr], proto, 7); ptr += 7;
+        pkt[ptr++] = flags;
         pkt[ptr++] = (uint8_t)(_keepAlive >> 8); pkt[ptr++] = (uint8_t)(_keepAlive & 0xFF);
 
         auto addString = [&](String s) {
@@ -67,7 +72,6 @@ public:
         if (_user.length()) addString(_user);
         if (_pass.length()) addString(_pass);
 
-        pkt[lenPos] = (uint8_t)(ptr - 2);
         sendBuffer(pkt, ptr);
         _lastPing = millis();
         return true;
@@ -77,26 +81,30 @@ public:
 
     void publish(String topic, String payload) {
         if (!connected()) return;
-        uint8_t pkt[512];
+        uint8_t pkt[1024]; 
         int ptr = 0;
-        pkt[ptr++] = 0x30;
-        pkt[ptr++] = (uint8_t)(2 + topic.length() + payload.length());
+        pkt[ptr++] = 0x30; // Publish
+        
+        uint16_t remain = 2 + topic.length() + payload.length();
+        pkt[ptr++] = (uint8_t)remain; // Works for packets < 128 bytes
+        
         pkt[ptr++] = (uint8_t)(topic.length() >> 8); pkt[ptr++] = (uint8_t)(topic.length() & 0xFF);
         memcpy(&pkt[ptr], topic.c_str(), topic.length()); ptr += topic.length();
         memcpy(&pkt[ptr], payload.c_str(), payload.length()); ptr += payload.length();
+        
         sendBuffer(pkt, ptr);
     }
 
     void subscribe(String topic) {
         if (!connected()) return;
-        uint8_t pkt[128];
+        uint8_t pkt[256];
         int ptr = 0;
         pkt[ptr++] = 0x82;
         pkt[ptr++] = (uint8_t)(2 + 2 + topic.length() + 1);
-        pkt[ptr++] = 0x00; pkt[ptr++] = 0x01;
+        pkt[ptr++] = 0x00; pkt[ptr++] = 0x01; // ID
         pkt[ptr++] = (uint8_t)(topic.length() >> 8); pkt[ptr++] = (uint8_t)(topic.length() & 0xFF);
         memcpy(&pkt[ptr], topic.c_str(), topic.length()); ptr += topic.length();
-        pkt[ptr++] = 0x00;
+        pkt[ptr++] = 0x00; // QoS
         sendBuffer(pkt, ptr);
     }
 
