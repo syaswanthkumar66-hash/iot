@@ -8,6 +8,7 @@
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
     "postinstall": "chmod +x setup_arduino.sh && ./setup_arduino.sh",
+    "db:sync": "node scripts/syncDb.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [

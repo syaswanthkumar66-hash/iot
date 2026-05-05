@@ -11,10 +11,14 @@ const router = Router();
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 min
-  max: 10,
+  max: 20,
   message: { error: 'Too many attempts, please try again later' }
 });
 
+/**
+ * @api {post} /api/v1/auth/register
+ * Creates a new user account.
+ */
 router.post('/register', authLimiter, async (req, res) => {
   const { email, password, name } = req.body;
 
@@ -23,26 +27,33 @@ router.post('/register', authLimiter, async (req, res) => {
   }
 
   try {
-    const existing = await query('SELECT id FROM users WHERE email = $1', [email.toLowerCase()]);
+    const emailNorm = email.toLowerCase().trim();
+    const existing = await query('SELECT id FROM users WHERE email = $1', [emailNorm]);
     if (existing.rows.length > 0) {
       return res.status(400).json({ error: 'Email already registered' });
     }
 
     const hashed = await hashPassword(password);
-    
     const userRes = await query(`
       INSERT INTO users (email, password_hash, name)
       VALUES ($1, $2, $3)
       RETURNING id, email, name
-    `, [email.toLowerCase(), hashed, name]);
+    `, [emailNorm, hashed, name || 'User']);
 
-    res.status(201).json({ message: 'User registered successfully', user: userRes.rows[0] });
+    res.status(201).json({ 
+      message: 'User registered successfully', 
+      user: userRes.rows[0] 
+    });
   } catch (err) {
     console.error('Register error:', err);
     res.status(500).json({ error: 'Registration failed' });
   }
 });
 
+/**
+ * @api {post} /api/v1/auth/login
+ * User login with session and temporary MQTT credentials.
+ */
 router.post('/login', authLimiter, async (req, res) => {
   const { email, password } = req.body;
 
@@ -51,7 +62,7 @@ router.post('/login', authLimiter, async (req, res) => {
   }
 
   try {
-    const userRes = await query('SELECT id, email, password_hash FROM users WHERE email = $1', [email.toLowerCase()]);
+    const userRes = await query('SELECT id, email, password_hash FROM users WHERE email = $1', [email.toLowerCase().trim()]);
     if (userRes.rows.length === 0) {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
@@ -66,7 +77,7 @@ router.post('/login', authLimiter, async (req, res) => {
     const jti = uuidv4();
     const token = jwt.sign(
       { id: user.id, email: user.email, jti },
-      process.env.JWT_SECRET,
+      process.env.JWT_SECRET || 'dev-secret-key',
       { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
     );
 
@@ -112,41 +123,30 @@ router.post('/login', authLimiter, async (req, res) => {
 router.post('/logout', requireAuth, async (req, res) => {
   try {
     await withTransaction(async (client) => {
-      // 1. Invalidate session
       await client.query('UPDATE sessions SET is_active = false WHERE jwt_jti = $1', [req.user.jti]);
-
-      // 2. Find active MQTT credentials for this user
+      
       const credsRes = await client.query(`
         SELECT mqtt_username FROM mqtt_credentials 
         WHERE user_id = $1 AND cred_type = 'user_temp' AND is_active = true
       `, [req.user.id]);
 
-      // 3. Mark inactive
       await client.query(`
         UPDATE mqtt_credentials SET is_active = false 
         WHERE user_id = $1 AND cred_type = 'user_temp'
       `, [req.user.id]);
 
-      // 4. Delete from EMQX
       for (const row of credsRes.rows) {
-        await emqxAdmin.deleteUser(row.mqtt_username).catch(e => console.error('Failed to delete EMQX user on logout', e));
+        await emqxAdmin.deleteUser(row.mqtt_username).catch(e => console.error('EMQX cleanup failed', e));
       }
     });
-
-    res.json({ message: 'Logged out successfully' });
+    res.json({ message: 'Logged out' });
   } catch (err) {
-    console.error('Logout error:', err);
     res.status(500).json({ error: 'Logout failed' });
   }
 });
 
-/**
- * Public endpoint for the mobile app to fetch the Local Root CA.
- * This CA is used to verify WSS connections to devices on the local network.
- */
 router.get('/project-ca', async (req, res) => {
   try {
-    // We generate a stable CA based on the FACTORY_API_KEY or a separate env var
     const { generateCertificates } = await import('../utils/certificates.js');
     const certs = generateCertificates('root-ca-fetch');
     res.setHeader('Content-Type', 'text/plain');
