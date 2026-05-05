@@ -75,7 +75,20 @@
 
       <h2>My Devices</h2>
       <div id="deviceList">
-        <!-- Devices will be injected here -->
+        <!-- Devices injected here -->
+      </div>
+
+      <!-- Local Control Modal -->
+      <div id="localControlModal" class="modal hidden">
+        <div class="card" style="margin-top:20px;">
+          <h2 id="localDeviceTitle">Local Control</h2>
+          <div id="wssStatus" class="status-badge status-offline" style="margin-bottom:15px;">DISCONNECTED</div>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+            <button onclick="sendLocalCommand('RELAY_ON')" class="btn btn-primary">TURN ON</button>
+            <button onclick="sendLocalCommand('RELAY_OFF')" class="btn btn-secondary">TURN OFF</button>
+          </div>
+          <button id="btnCloseLocal" class="btn btn-secondary" style="margin-top:20px;">Close</button>
+        </div>
       </div>
     </div>
   </div>

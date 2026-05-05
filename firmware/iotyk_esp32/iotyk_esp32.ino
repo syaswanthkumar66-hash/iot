@@ -4,6 +4,7 @@
 
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
+#include <ESPmDNS.h>
 #include <Preferences.h>
 #include <esp_task_wdt.h>
 #include "config.h"
@@ -41,6 +42,12 @@ void setup() {
 
         if (WiFi.status() == WL_CONNECTED) {
             setCpuFrequencyMhz(240); 
+            
+            // Setup mDNS discovery (device_id.local)
+            if (MDNS.begin(DEVICE_ID)) {
+                Serial.printf("[mDNS] Responding at http://%s.local\n", DEVICE_ID);
+            }
+
             setupMQTT(DEVICE_ID);
             setupLocalServer(DEVICE_ID);
             setupOTA(DEVICE_ID);
