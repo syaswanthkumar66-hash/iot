@@ -23,6 +23,12 @@ CREATE TABLE IF NOT EXISTS devices (
   last_state JSONB DEFAULT '{}'::jsonb,
   last_seen TIMESTAMPTZ,
   is_online BOOLEAN DEFAULT false,
+  relay_count INTEGER NOT NULL DEFAULT 1,
+  -- Hardware replacement tracking
+  flash_count INTEGER NOT NULL DEFAULT 0,         -- how many times firmware was downloaded/sent
+  last_flashed_at TIMESTAMPTZ,                    -- last time credentials were sent to hardware
+  hardware_replaced BOOLEAN NOT NULL DEFAULT false, -- true if marked as replaced hardware
+  hardware_replace_count INTEGER NOT NULL DEFAULT 0,-- how many times hardware was replaced
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -86,3 +92,24 @@ CREATE TABLE IF NOT EXISTS sessions (
   is_active BOOLEAN DEFAULT true,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- 8. Hardware Flash Log
+-- Tracks every time credentials were sent to a physical ESP32 board
+CREATE TABLE IF NOT EXISTS hardware_flash_log (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  device_id UUID NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
+  event_type TEXT NOT NULL,  -- 'initial_flash' | 'credential_send' | 'hardware_replace' | 'factory_reset'
+  notes TEXT,                -- optional reason (e.g. "Board burnt", "Water damage")
+  performed_by TEXT,         -- factory admin note
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- MIGRATION: Add new columns to existing databases (safe to run on existing DBs)
+-- ─────────────────────────────────────────────────────────────────────────────
+
+ALTER TABLE devices ADD COLUMN IF NOT EXISTS relay_count           INTEGER      NOT NULL DEFAULT 1;
+ALTER TABLE devices ADD COLUMN IF NOT EXISTS flash_count           INTEGER      NOT NULL DEFAULT 0;
+ALTER TABLE devices ADD COLUMN IF NOT EXISTS last_flashed_at       TIMESTAMPTZ;
+ALTER TABLE devices ADD COLUMN IF NOT EXISTS hardware_replaced     BOOLEAN      NOT NULL DEFAULT false;
+ALTER TABLE devices ADD COLUMN IF NOT EXISTS hardware_replace_count INTEGER     NOT NULL DEFAULT 0;

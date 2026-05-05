@@ -198,12 +198,253 @@ router.post('/device/:deviceId/generate-firmware', requireFactoryAuth, async (re
   }
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /firmware-source
+// Download ALL raw firmware source files as a ZIP (generic, no device config)
+// Use this to get the full source code for manual editing
+// ─────────────────────────────────────────────────────────────────────────────
+router.get('/firmware-source', requireFactoryAuth, async (req, res) => {
+  try {
+    const firmwareDir = path.resolve(__dirname, '../../firmware/iotyk_esp32');
+    if (!fs.existsSync(firmwareDir)) {
+      return res.status(404).json({ error: 'Firmware source directory not found on server' });
+    }
+
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', 'attachment; filename="iotyk_esp32_source.zip"');
+
+    const archive = archiver('zip', { zlib: { level: 9 } });
+    archive.pipe(res);
+
+    // Add only FILES (skip subdirectories like __pycache__)
+    const files = fs.readdirSync(firmwareDir);
+    for (const file of files) {
+      const filePath = path.join(firmwareDir, file);
+      if (fs.statSync(filePath).isFile()) {
+        archive.file(filePath, { name: `iotyk_esp32/${file}` });
+      }
+    }
+
+    // Add a README with flashing instructions
+    archive.append(generateFlashingReadme(), { name: 'iotyk_esp32/FLASH_INSTRUCTIONS.md' });
+
+    await archive.finalize();
+  } catch (error) {
+    console.error('Firmware source download error:', error);
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Failed to create firmware source ZIP' });
+    }
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /device/:deviceId/firmware-package
+// Download ALL firmware files as a ZIP with device-specific config.h and
+// certificates.h pre-filled. Open in Arduino IDE and flash directly.
+// ─────────────────────────────────────────────────────────────────────────────
+router.get('/device/:deviceId/firmware-package', requireFactoryAuth, async (req, res) => {
+  try {
+    const { deviceId } = req.params;
+    const emqxCaCert = req.query?.emqx_ca || '';
+
+    await ensureRelayCountColumn();
+    const deviceRes = await query(`
+      SELECT d.device_id, d.namespace, COALESCE(d.relay_count, 1) AS relay_count, c.mqtt_username, c.mqtt_password_enc
+      FROM devices d
+      JOIN mqtt_credentials c ON c.device_id = d.id
+      WHERE d.device_id = $1 AND c.cred_type = 'device_permanent' AND c.is_active = true
+      ORDER BY c.created_at DESC
+      LIMIT 1
+    `, [deviceId]);
+
+    if (deviceRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Device not found' });
+    }
+
+    const device = deviceRes.rows[0];
+    const broker = process.env.EMQX_MQTT_HOST || 'xxxx.ala.us-east-1.emqxsl.com';
+    const password = decrypt(device.mqtt_password_enc);
+    const localToken = crypto.randomBytes(8).toString('hex');
+
+    // Build device-specific files
+    const configContent = buildFirmwareConfig({
+      deviceId: device.device_id,
+      namespace: device.namespace,
+      broker,
+      username: device.mqtt_username,
+      password,
+      localToken,
+      relayCount: sanitizeRelayCount(device.relay_count),
+    });
+
+    const certs = generateCertificates(device.device_id);
+    const certsHeader = formatCertificatesHeader(certs, emqxCaCert);
+
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename="${device.device_id}_flash_package.zip"`);
+
+    const archive = archiver('zip', { zlib: { level: 9 } });
+    archive.pipe(res);
+
+    const folderName = 'iotyk_esp32'; // MUST match .ino filename for Arduino IDE
+
+    // 1. Add generated device-specific headers
+    archive.append(configContent, { name: `${folderName}/config.h` });
+    archive.append(certsHeader, { name: `${folderName}/certificates.h` });
+
+    // 2. Add all other firmware files (skip config.h, certificates.h — already added above)
+    const firmwareDir = path.resolve(__dirname, '../../firmware/iotyk_esp32');
+    if (fs.existsSync(firmwareDir)) {
+      const files = fs.readdirSync(firmwareDir);
+      for (const file of files) {
+        if (file === 'config.h' || file === 'certificates.h') continue; // overridden above
+        const filePath = path.join(firmwareDir, file);
+        if (fs.statSync(filePath).isFile()) {
+          archive.file(filePath, { name: `${folderName}/${file}` });
+        }
+      }
+    }
+
+    // 3. Add flashing instructions
+    archive.append(generateFlashingReadme(device.device_id), { name: `${folderName}/FLASH_INSTRUCTIONS.md` });
+
+    // 4. Log the flash event (non-blocking — don't fail the download if log fails)
+    archive.on('end', async () => {
+      try {
+        await query(`
+          UPDATE devices
+          SET flash_count = COALESCE(flash_count, 0) + 1,
+              last_flashed_at = NOW()
+          WHERE device_id = $1
+        `, [device.device_id]);
+        await query(`
+          INSERT INTO hardware_flash_log (device_id, event_type, notes)
+          SELECT id, 'credential_send', 'Firmware package downloaded'
+          FROM devices WHERE device_id = $1
+        `, [device.device_id]);
+      } catch (logErr) {
+        console.warn('[Flash Log] Failed to log flash event:', logErr.message);
+      }
+    });
+
+    await archive.finalize();
+  } catch (error) {
+    console.error('Firmware package download error:', error);
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Failed to generate firmware package' });
+    }
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /device/:deviceId/replace-hardware
+// Mark device as hardware-replaced. Returns same credentials for re-flashing.
+// Use when original ESP32 board is damaged and needs to be replaced.
+// The device identity (ID, namespace, MQTT creds) stays the same — only the
+// physical board changes. User pairing is preserved.
+// ─────────────────────────────────────────────────────────────────────────────
+router.post('/device/:deviceId/replace-hardware', requireFactoryAuth, async (req, res) => {
+  try {
+    const { deviceId } = req.params;
+    const notes = req.body?.notes || 'Hardware replaced';
+
+    await ensureRelayCountColumn();
+    const deviceRes = await query(`
+      SELECT d.id, d.device_id, d.namespace, COALESCE(d.relay_count, 1) AS relay_count,
+             d.hardware_replace_count, d.flash_count, d.owner_id,
+             c.mqtt_username, c.mqtt_password_enc
+      FROM devices d
+      JOIN mqtt_credentials c ON c.device_id = d.id
+      WHERE d.device_id = $1 AND c.cred_type = 'device_permanent' AND c.is_active = true
+      ORDER BY c.created_at DESC
+      LIMIT 1
+    `, [deviceId]);
+
+    if (deviceRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Device not found' });
+    }
+
+    const device = deviceRes.rows[0];
+    const broker = process.env.EMQX_MQTT_HOST || 'xxxx.ala.us-east-1.emqxsl.com';
+    const password = decrypt(device.mqtt_password_enc);
+
+    // Mark hardware as replaced, increment counter
+    await query(`
+      UPDATE devices
+      SET hardware_replaced = true,
+          hardware_replace_count = COALESCE(hardware_replace_count, 0) + 1,
+          last_flashed_at = NOW()
+      WHERE device_id = $1
+    `, [deviceId]);
+
+    // Log the replacement event
+    await query(`
+      INSERT INTO hardware_flash_log (device_id, event_type, notes)
+      VALUES ($1, 'hardware_replace', $2)
+    `, [device.id, notes]);
+
+    // Return the same credentials — ready to flash new board
+    res.json({
+      message: 'Hardware replacement recorded. Use the same credentials to flash the new board.',
+      hardware_replace_count: (device.hardware_replace_count || 0) + 1,
+      firmware_config: {
+        device_id: device.device_id,
+        namespace: device.namespace,
+        mqtt_broker: broker,
+        relay_count: sanitizeRelayCount(device.relay_count),
+        relay_pins: DEFAULT_RELAY_PINS.slice(0, sanitizeRelayCount(device.relay_count)),
+        permanent_mqtt: {
+          username: device.mqtt_username,
+          password,
+        },
+        download_url: `/api/v1/factory/device/${encodeURIComponent(deviceId)}/firmware-package`,
+      },
+      instructions: [
+        '1. Download firmware package from download_url',
+        '2. Flash to the new ESP32 board using Arduino IDE',
+        '3. Connect new board via USB to factory dashboard',
+        '4. Authenticate with session token',
+        '5. Click Send Credentials — credentials are identical to original board',
+        '6. User pairing (app connection) is preserved — no re-pairing needed',
+      ]
+    });
+
+  } catch (error) {
+    console.error('Hardware replace error:', error);
+    res.status(500).json({ error: 'Failed to process hardware replacement' });
+  }
+});
+
+// GET /device/:deviceId/flash-history  — full flash log for a device
+router.get('/device/:deviceId/flash-history', requireFactoryAuth, async (req, res) => {
+  try {
+    const { deviceId } = req.params;
+    const result = await query(`
+      SELECT l.event_type, l.notes, l.created_at
+      FROM hardware_flash_log l
+      JOIN devices d ON d.id = l.device_id
+      WHERE d.device_id = $1
+      ORDER BY l.created_at DESC
+    `, [deviceId]);
+    res.json({ device_id: deviceId, history: result.rows });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch flash history' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 // List all provisioned devices (for admin dashboard)
 router.get('/devices', requireFactoryAuth, async (req, res) => {
   try {
     await ensureRelayCountColumn();
     const devicesRes = await query(`
-      SELECT d.id, d.device_id, d.namespace, d.name, d.is_online, d.created_at, COALESCE(d.relay_count, 1) AS relay_count, u.email as owner_email
+      SELECT d.id, d.device_id, d.namespace, d.name, d.is_online, d.created_at,
+             COALESCE(d.relay_count, 1) AS relay_count,
+             COALESCE(d.flash_count, 0) AS flash_count,
+             d.last_flashed_at,
+             COALESCE(d.hardware_replaced, false) AS hardware_replaced,
+             COALESCE(d.hardware_replace_count, 0) AS hardware_replace_count,
+             u.email as owner_email
       FROM devices d
       LEFT JOIN users u ON u.id = d.owner_id
       ORDER BY d.created_at DESC
@@ -280,6 +521,7 @@ router.post('/device/:deviceId/compile', requireFactoryAuth, async (req, res) =>
     arduinoCli = homeCliPath;
   }
   
+  const arduinoConfig = path.join(projectRoot, 'arduino-cli.yaml');
   console.log(`[Factory] Resolved arduino-cli path: ${arduinoCli}`);
 
   try {
@@ -336,7 +578,8 @@ router.post('/device/:deviceId/compile', requireFactoryAuth, async (req, res) =>
     // 3. Compile using Arduino CLI
     // FQBN for ESP32 Dev Module
     const fqbn = 'esp32:esp32:esp32'; 
-    const compileCmd = `${arduinoCli} compile --fqbn ${fqbn} --output-dir "${tempDir}" "${tempDir}"`;
+    // Use --jobs 1 to limit memory usage on Render free tier (512MB)
+    const compileCmd = `${arduinoCli} --config-file "${arduinoConfig}" compile --fqbn ${fqbn} --jobs 1 --output-dir "${tempDir}" "${tempDir}"`;
 
     console.log(`Starting compilation for ${deviceId}...`);
     const { exec } = await import('child_process');
@@ -448,4 +691,128 @@ async function ensureRelayCountColumn() {
     ALTER TABLE devices
     ADD COLUMN IF NOT EXISTS relay_count INTEGER NOT NULL DEFAULT 1;
   `);
+}
+
+function generateFlashingReadme(deviceId = null) {
+  const deviceLine = deviceId
+    ? `**Device ID:** \`${deviceId}\``
+    : '**Device ID:** *(generic source — fill in config.h manually)*';
+
+  return `# IoTYK ESP32 — Flash Instructions
+${deviceLine}
+
+---
+
+## 📋 Files in this ZIP
+
+| File | Description |
+|------|-------------|
+| \`iotyk_esp32.ino\` | **Main sketch** — open this in Arduino IDE |
+| \`config.h\` | **Device credentials** — pre-filled with your device data |
+| \`certificates.h\` | **TLS certificates** — WSS certs + EMQX CA placeholder |
+| \`mqtt_manager.h\` | MQTT permanent + temporary connection logic |
+| \`ble_provision.h\` | BLE WiFi provisioning logic |
+| \`local_server.h\` | Local WebSocket Secure (WSS) server |
+
+---
+
+## ⚙️ Step 1 — Install Arduino IDE
+
+Download from: https://www.arduino.cc/en/software  
+Use **Arduino IDE 2.x** (recommended).
+
+---
+
+## 🔌 Step 2 — Add ESP32 Board Support
+
+1. Open Arduino IDE → **File → Preferences**
+2. In **Additional Boards Manager URLs**, add:
+   \`\`\`
+   https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
+   \`\`\`
+3. Go to **Tools → Board → Boards Manager**
+4. Search for \`esp32\` → Install **esp32 by Espressif Systems** (version 2.x or 3.x)
+
+---
+
+## 📦 Step 3 — Install Required Libraries
+
+Go to **Tools → Manage Libraries** and install each one:
+
+| Library Name | Author |
+|---|---|
+| **ArduinoJson** | Benoit Blanchon |
+| **PubSubClient** | Nick O'Leary |
+| **WebSockets** | Markus Sattler (links2004) |
+| **NimBLE-Arduino** | h2zero |
+
+---
+
+## 🔑 Step 4 — Paste EMQX CA Certificate (Important!)
+
+Open \`certificates.h\` and find this section:
+
+\`\`\`
+static const char EMQX_MQTT_CA_CERT[] PROGMEM = R"EOF(
+-----BEGIN CERTIFICATE-----
+PASTE_EMQX_CA_CERTIFICATE_HERE
+-----END CERTIFICATE-----
+)EOF";
+\`\`\`
+
+Replace \`PASTE_EMQX_CA_CERTIFICATE_HERE\` with your actual EMQX CA certificate:
+1. Log into EMQX Cloud console
+2. Go to: **Deployment → Overview → Connection guide**
+3. Download \`emqxsl-ca.crt\`
+4. Open it in Notepad, copy ALL content between (and including) the \`-----BEGIN\` and \`-----END\` lines
+5. Paste it in place of the placeholder
+
+---
+
+## 🖥️ Step 5 — Select Board & Port
+
+1. Connect ESP32 via USB
+2. **Tools → Board → esp32 → ESP32 Dev Module**
+3. **Tools → Port** → Select the COM port (e.g., COM3, COM4, /dev/ttyUSB0)
+
+---
+
+## 🚀 Step 6 — Upload
+
+1. Open \`iotyk_esp32.ino\` (all .h files auto-load since they're in the same folder)
+2. Click **Upload** (→ button)
+3. Wait for "Done uploading"
+
+---
+
+## 📡 Step 7 — Monitor & Pair
+
+1. Open **Tools → Serial Monitor** (baud: **115200**)
+2. You should see:
+   \`\`\`
+   --- IoTYK ESP32 Starting ---
+   BLE Advertising started. Name: IoTYK-XXXX
+   \`\`\`
+3. Open the IoTYK mobile app → scan QR code or enter the pairing key → send WiFi credentials via BLE
+4. Device connects to WiFi, then MQTT → LED slow blinks ✅
+
+---
+
+## 🏁 LED Status Guide
+
+| LED Pattern | Meaning |
+|---|---|
+| OFF | Waiting for BLE pairing |
+| Fast blink (200ms) | BLE connected / Connecting to WiFi or MQTT |
+| Slow blink (1000ms) | Fully connected to MQTT ✅ |
+
+---
+
+## ❓ Troubleshooting
+
+- **Port not visible**: Install CP2102 or CH340 USB driver for your ESP32 board
+- **Compilation error "library not found"**: Re-check Step 3 library names
+- **MQTT not connecting**: Verify \`certificates.h\` has real EMQX CA cert (not placeholder)
+- **BLE not visible**: Ensure phone Bluetooth is ON and app has BLE permissions
+`;
 }
