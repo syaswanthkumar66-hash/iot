@@ -4,7 +4,7 @@ services:
     runtime: node
     region: oregon
     plan: free
-    buildCommand: npm install
+    buildCommand: chmod +x setup_arduino.sh && ./setup_arduino.sh && npm install
     startCommand: npm start
     envVars:
       - key: NODE_ENV
