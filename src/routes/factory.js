@@ -292,12 +292,14 @@ router.get('/device/:deviceId/firmware-package', requireFactoryAuth, async (req,
     archive.append(configContent, { name: `${folderName}/config.h` });
     archive.append(certsHeader, { name: `${folderName}/certificates.h` });
 
-    // 2. Add all other firmware files (skip config.h, certificates.h — already added above)
+    // 2. Add all other firmware files from the source directory
     const firmwareDir = path.resolve(__dirname, '../../firmware/iotyk_esp32');
     if (fs.existsSync(firmwareDir)) {
       const files = fs.readdirSync(firmwareDir);
       for (const file of files) {
-        if (file === 'config.h' || file === 'certificates.h') continue; // overridden above
+        // Skip files we've already generated dynamically or that aren't source code
+        if (file === 'config.h' || file === 'certificates.h' || file.startsWith('.') || file.endsWith('.zip') || file.endsWith('.exe')) continue;
+        
         const filePath = path.join(firmwareDir, file);
         if (fs.statSync(filePath).isFile()) {
           archive.file(filePath, { name: `${folderName}/${file}` });
@@ -576,8 +578,8 @@ router.post('/device/:deviceId/compile', requireFactoryAuth, async (req, res) =>
     fs.writeFileSync(path.join(tempDir, 'certificates.h'), certsHeader);
 
     // 3. Compile using Arduino CLI
-    // FQBN for ESP32 Dev Module
-    const fqbn = 'esp32:esp32:esp32'; 
+    // FQBN for ESP32 Dev Module with Huge App partition (needed for BLE + SSL)
+    const fqbn = 'esp32:esp32:esp32:PartitionScheme=huge_app'; 
     // Use --jobs 1 to limit memory usage on Render free tier (512MB)
     const compileCmd = `${arduinoCli} --config-file "${arduinoConfig}" compile --fqbn ${fqbn} --jobs 1 --output-dir "${tempDir}" "${tempDir}"`;
 
@@ -710,16 +712,18 @@ ${deviceLine}
 | \`iotyk_esp32.ino\` | **Main sketch** — open this in Arduino IDE |
 | \`config.h\` | **Device credentials** — pre-filled with your device data |
 | \`certificates.h\` | **TLS certificates** — WSS certs + EMQX CA placeholder |
-| \`mqtt_manager.h\` | MQTT permanent + temporary connection logic |
-| \`ble_provision.h\` | BLE WiFi provisioning logic |
-| \`local_server.h\` | Local WebSocket Secure (WSS) server |
+| `TinyMqtt.h` | **Custom MQTT Engine** — zero-dependency cloud comms |
+| `TinyJson.h` | **Custom JSON Engine** — lightweight data parsing |
+| `TinyWss.h` | **Custom WSS Engine** — secure local control |
+| `ble_provision.h` | BLE WiFi provisioning logic |
+| `local_server.h` | Local WebSocket Secure (WSS) server |
 
 ---
 
 ## ⚙️ Step 1 — Install Arduino IDE
 
 Download from: https://www.arduino.cc/en/software  
-Use **Arduino IDE 2.x** (recommended).
+Use **Arduino IDE 2.x** or **3.x**.
 
 ---
 
@@ -727,24 +731,18 @@ Use **Arduino IDE 2.x** (recommended).
 
 1. Open Arduino IDE → **File → Preferences**
 2. In **Additional Boards Manager URLs**, add:
-   \`\`\`
+   ```
    https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
-   \`\`\`
+   ```
 3. Go to **Tools → Board → Boards Manager**
-4. Search for \`esp32\` → Install **esp32 by Espressif Systems** (version 2.x or 3.x)
+4. Search for `esp32` → Install **esp32 by Espressif Systems** (version 3.x recommended)
 
 ---
 
-## 📦 Step 3 — Install Required Libraries
+## 📦 Step 3 — Libraries (IMPORTANT)
 
-Go to **Tools → Manage Libraries** and install each one:
-
-| Library Name | Author |
-|---|---|
-| **ArduinoJson** | Benoit Blanchon |
-| **PubSubClient** | Nick O'Leary |
-| **WebSockets** | Markus Sattler (links2004) |
-| **NimBLE-Arduino** | h2zero |
+**ZERO LIBRARIES REQUIRED!**  
+This firmware is custom-built to have no external dependencies. Do **NOT** install ArduinoJson, PubSubClient, or WebSockets. Everything you need is already in this ZIP folder.
 
 ---
 
