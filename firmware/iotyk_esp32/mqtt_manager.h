@@ -20,8 +20,15 @@ TinyMqtt mqttPerm(netPerm);
 unsigned long lastMqttRetry = 0;
 bool mqttWasConnected = false;
 
+// New Callback for incoming MQTT messages from EMQX
+void onMqttMessage(String topic, String payload) {
+    Serial.println("[MQTT] Rx: " + topic + " | " + payload);
+    handleCommand(payload);
+}
+
 void setupMqtt() {
     netPerm.setCACert(EMQX_MQTT_CA_CERT);
+    mqttPerm.setCallback(onMqttMessage);
     
     String broker = MQTT_BROKER;
     mqttPerm.setServer(broker, MQTT_PORT);
@@ -39,10 +46,10 @@ void loopMqtt() {
             String pass = prefs.getString(KEY_PERM_PASS, "");
             String devId = prefs.getString(KEY_DEVICE_ID, "ESP32-Unknown");
             
-            if (user != "") {
+            if (user != "" && WiFi.status() == WL_CONNECTED) {
                 mqttPerm.setCredentials(devId, user, pass);
                 if (mqttPerm.connect()) {
-                    Serial.println("[MQTT] Connected to broker.");
+                    Serial.println("[MQTT] Connected to EMQX.");
                     String ns = prefs.getString(KEY_DEVICE_NS, "default");
                     mqttPerm.subscribe("iotyk/" + ns + "/cmd");
                     onMqttFullyConnected();
