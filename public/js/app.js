@@ -44,6 +44,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const factoryApiRoot = '/api/v1/factory';
 
   // ─── State ────────────────────────────────────────────────────────────────
+  // Load saved key from localStorage
+  if (keyInput) {
+    keyInput.value = localStorage.getItem('iotyk_factory_key') || '';
+    keyInput.addEventListener('input', () => {
+      localStorage.setItem('iotyk_factory_key', keyInput.value);
+    });
+  }
+
   let currentDeviceData  = null;
   let serialPort         = null;
   let readLoopActive     = false;
