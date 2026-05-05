@@ -60,8 +60,15 @@ export function generateCertificates(deviceId) {
 }
 
 export function formatCertificatesHeader(certs, mqttCaCert = '') {
-  // Use provided cert, or environment variable, or fallback to empty
-  const emqxCa = (mqttCaCert && mqttCaCert.length > 64) ? mqttCaCert : (process.env.MQTT_CA_CERT || '');
+  // Use provided cert, or environment variable EMQX_MQTT_CA_CERT, or fallback to empty placeholder
+  let emqxCa = (mqttCaCert && mqttCaCert.length > 64)
+    ? mqttCaCert
+    : (process.env.EMQX_MQTT_CA_CERT || '').trim();
+
+  // Handle \n-escaped newlines (dotenv stores multi-line values with literal \n)
+  if (emqxCa && !emqxCa.includes('\n')) {
+    emqxCa = emqxCa.replace(/\\n/g, '\n');
+  }
 
   return `#ifndef IOTYK_CERTIFICATES_H
 #define IOTYK_CERTIFICATES_H
