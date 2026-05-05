@@ -20,13 +20,12 @@ TinyMqtt mqttPerm(netPerm);
 unsigned long lastMqttRetry = 0;
 bool mqttWasConnected = false;
 
-// New Callback for incoming MQTT messages from EMQX
 void onMqttMessage(String topic, String payload) {
-    Serial.println("[MQTT] Rx: " + topic + " | " + payload);
     handleCommand(payload);
 }
 
 void setupMqtt() {
+    // Fixed: Use the correct CA certificate variable name
     netPerm.setCACert(EMQX_MQTT_CA_CERT);
     mqttPerm.setCallback(onMqttMessage);
     
@@ -49,7 +48,6 @@ void loopMqtt() {
             if (user != "" && WiFi.status() == WL_CONNECTED) {
                 mqttPerm.setCredentials(devId, user, pass);
                 if (mqttPerm.connect()) {
-                    Serial.println("[MQTT] Connected to EMQX.");
                     String ns = prefs.getString(KEY_DEVICE_NS, "default");
                     mqttPerm.subscribe("iotyk/" + ns + "/cmd");
                     onMqttFullyConnected();

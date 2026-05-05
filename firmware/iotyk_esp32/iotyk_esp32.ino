@@ -25,7 +25,6 @@ void boostCPU() {
     if (!isBoosted) {
         setCpuFrequencyMhz(FREQ_BOOST);
         isBoosted = true;
-        Serial.println("[POWER] Boost -> 240MHz");
     }
     lastActivityTime = millis();
 }
@@ -34,7 +33,6 @@ void checkPowerScaling() {
     if (isBoosted && (millis() - lastActivityTime > BOOST_DURATION_MS)) {
         setCpuFrequencyMhz(FREQ_IDLE);
         isBoosted = false;
-        Serial.println("[POWER] Relax -> 80MHz");
     }
 }
 
@@ -54,17 +52,14 @@ void stopAll();
 String getBleName();
 String getDeviceMac();
 
-// ─── Application Logic ────────────────────────────────────────────────────
-
 void handleCommand(String cmdJson) {
-  boostCPU(); // Boost whenever a command is received
+  boostCPU();
   int relayIndex = TinyJson::getInt(cmdJson, "relay");
   bool state = TinyJson::getBool(cmdJson, "state");
 
   if (relayIndex >= 0 && relayIndex < RELAY_COUNT) {
     digitalWrite(RELAY_PINS[relayIndex], RELAY_ACTIVE_LOW ? !state : state);
     publishState(getCurrentStateJson());
-    Serial.printf("[CMD] Relay %d -> %s\n", relayIndex, state ? "ON" : "OFF");
   }
 }
 
@@ -77,12 +72,8 @@ String getCurrentStateJson() {
   return TinyJson::createState(prefs.getString(KEY_DEVICE_ID, FACTORY_DEVICE_ID), RELAY_COUNT, states);
 }
 
-// ─── Status Callbacks ─────────────────────────────────────────────────────
-
 void onMqttFullyConnected()  { ledState = LED_SLOW_BLINK; }
 void onMqttDisconnected()    { if (WiFi.status() == WL_CONNECTED) ledState = LED_FAST_BLINK; }
-
-// ─── Network Helpers ──────────────────────────────────────────────────────
 
 String getBleName() {
   String mac = getDeviceMac();
@@ -96,17 +87,15 @@ void startWiFi() {
   if (ssid == "") return;
   
   WiFi.mode(WIFI_STA);
-  WiFi.setSleep(false); // Kept awake for instant response
+  WiFi.setSleep(false);
   WiFi.begin(ssid.c_str(), pass.c_str());
   ledState = LED_FAST_BLINK;
 }
 
-// ─── Serial Command Parser ───
-
 String serialBuffer = "";
 
 void handleSerialCommand(String line) {
-  boostCPU(); // Boost for serial interaction
+  boostCPU();
   line.trim();
   if (line.startsWith("AUTH:")) {
     String provided = line.substring(5);
@@ -149,7 +138,7 @@ void handleSerialCommand(String line) {
     else if (line == "CMD:CLEAR_NVS") { prefs.clear(); ESP.restart(); }
     else if (line == "CMD:STATUS") {
        Serial.println("--- STATUS ---");
-       Serial.println("CPU: " + String(getCpuFrequencyMhz()) + "MHz");
+       Serial.println("ID: " + prefs.getString(KEY_DEVICE_ID, "Unset"));
        Serial.println("Temp: " + String(temperatureRead(), 1) + " C");
        Serial.println("WiFi: " + String(WiFi.status() == WL_CONNECTED ? "OK" : "NO"));
     }
@@ -157,18 +146,26 @@ void handleSerialCommand(String line) {
 }
 
 void setup() {
-  // Start in Idle mode
   setCpuFrequencyMhz(FREQ_IDLE);
-  
   Serial.begin(115200);
   delay(100);
   
-  esp_task_wdt_init(WDT_TIMEOUT_SECONDS, true);
-  esp_task_wdt_add(NULL);
+  // FIXED: Compatibility for ESP32 Core v3.x.x
+  #if ESP_ARDUINO_VERSION_MAJOR >= 3
+    esp_task_wdt_config_t wdt_config = {
+        .timeout_ms = WDT_TIMEOUT_SECONDS * 1000,
+        .idle_core_mask = 0,
+        .trigger_panic = true
+    };
+    esp_task_wdt_init(&wdt_config);
+    esp_task_wdt_add(NULL);
+  #else
+    esp_task_wdt_init(WDT_TIMEOUT_SECONDS, true);
+    esp_task_wdt_add(NULL);
+  #endif
 
   generateSessionToken();
-  Serial.println("\n[INIT] IoTYK Dynamic Power Firmware v1.7");
-  Serial.println("[INIT] Starting @ 80MHz (Cool Mode)");
+  Serial.println("\n[INIT] IoTYK Professional Firmware v1.8");
 
   for (int i = 0; i < RELAY_COUNT; i++) {
     pinMode(RELAY_PINS[i], OUTPUT);
@@ -195,8 +192,6 @@ void setup() {
 
 void loop() {
   esp_task_wdt_reset();
-  
-  // Power Scaling Monitor
   checkPowerScaling();
 
   while (Serial.available()) {
@@ -209,13 +204,11 @@ void loop() {
   loopMqtt();
   loopLocalServer();
 
-  // LED blink
   static unsigned long lastBlink = 0;
   int interval = (ledState == LED_FAST_BLINK) ? 200 : (ledState == LED_SLOW_BLINK ? 1000 : 0);
   if (interval > 0 && millis() - lastBlink > interval) {
     digitalWrite(LED_PIN, !digitalRead(LED_PIN));
     lastBlink = millis();
   }
-
   delay(1); 
 }

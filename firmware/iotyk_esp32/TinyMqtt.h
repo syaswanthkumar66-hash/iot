@@ -15,11 +15,10 @@ private:
     uint32_t _lastPing = 0;
     void (*_onMsg)(String, String) = NULL;
 
-    void sendBuffer(uint8_t* buf, size_t len) {
+    void sendBuffer(const uint8_t* buf, size_t len) {
         if (_client && _client->connected()) _client->write(buf, len);
     }
 
-    // Helper to read variable length int from MQTT stream
     uint32_t readRemainingLength() {
         uint32_t multiplier = 1;
         uint32_t value = 0;
@@ -43,12 +42,11 @@ public:
     bool connect() {
         if (!_client->connect(_host.c_str(), _port)) return false;
 
-        uint8_t pkt[128];
+        uint8_t pkt[256];
         int ptr = 0;
         pkt[ptr++] = 0x10; // Connect
-        int lenPos = ptr++; // Placeholder for length
+        int lenPos = ptr++; // Placeholder
         
-        // Protocol Name
         pkt[ptr++] = 0x00; pkt[ptr++] = 0x04; pkt[ptr++] = 'M'; pkt[ptr++] = 'Q'; pkt[ptr++] = 'T'; pkt[ptr++] = 'T';
         pkt[ptr++] = 0x04; // v3.1.1
         
@@ -79,30 +77,26 @@ public:
 
     void publish(String topic, String payload) {
         if (!connected()) return;
-        uint8_t pkt[512]; // Large enough for state JSON
+        uint8_t pkt[512];
         int ptr = 0;
-        pkt[ptr++] = 0x30; // Publish
-        
-        int totalLen = 2 + topic.length() + payload.length();
-        pkt[ptr++] = (uint8_t)totalLen; // Simplified for < 127
-        
+        pkt[ptr++] = 0x30;
+        pkt[ptr++] = (uint8_t)(2 + topic.length() + payload.length());
         pkt[ptr++] = (uint8_t)(topic.length() >> 8); pkt[ptr++] = (uint8_t)(topic.length() & 0xFF);
         memcpy(&pkt[ptr], topic.c_str(), topic.length()); ptr += topic.length();
         memcpy(&pkt[ptr], payload.c_str(), payload.length()); ptr += payload.length();
-        
         sendBuffer(pkt, ptr);
     }
 
     void subscribe(String topic) {
         if (!connected()) return;
-        uint8_t pkt[64];
+        uint8_t pkt[128];
         int ptr = 0;
-        pkt[ptr++] = 0x82; // Subscribe
+        pkt[ptr++] = 0x82;
         pkt[ptr++] = (uint8_t)(2 + 2 + topic.length() + 1);
-        pkt[ptr++] = 0x00; pkt[ptr++] = 0x01; // Packet ID
+        pkt[ptr++] = 0x00; pkt[ptr++] = 0x01;
         pkt[ptr++] = (uint8_t)(topic.length() >> 8); pkt[ptr++] = (uint8_t)(topic.length() & 0xFF);
         memcpy(&pkt[ptr], topic.c_str(), topic.length()); ptr += topic.length();
-        pkt[ptr++] = 0x00; // QoS 0
+        pkt[ptr++] = 0x00;
         sendBuffer(pkt, ptr);
     }
 
@@ -117,19 +111,15 @@ public:
         if (_client->available()) {
             uint8_t type = _client->read();
             uint32_t len = readRemainingLength();
-            
-            if ((type & 0xF0) == 0x30) { // Incoming Publish
-                uint16_t topicLen = (_client->read() << 8) | _client->read();
+            if ((type & 0xF0) == 0x30) {
+                uint16_t tLen = (_client->read() << 8) | _client->read();
                 String topic = "";
-                for(int i=0; i<topicLen; i++) topic += (char)_client->read();
-                
-                uint32_t payloadLen = len - 2 - topicLen;
+                for(int i=0; i<tLen; i++) topic += (char)_client->read();
+                uint32_t pLen = len - 2 - tLen;
                 String payload = "";
-                for(uint32_t i=0; i<payloadLen; i++) payload += (char)_client->read();
-                
+                for(uint32_t i=0; i<pLen; i++) payload += (char)_client->read();
                 if (_onMsg) _onMsg(topic, payload);
             } else {
-                // Consume other packets (CONNACK, SUBACK, etc.)
                 for(uint32_t i=0; i<len; i++) _client->read();
             }
         }
