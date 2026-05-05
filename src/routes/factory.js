@@ -731,9 +731,9 @@ Use **Arduino IDE 2.x** or **3.x**.
 
 1. Open Arduino IDE → **File → Preferences**
 2. In **Additional Boards Manager URLs**, add:
-   ```
+   \`\`\`
    https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
-   ```
+   \`\`\`
 3. Go to **Tools → Board → Boards Manager**
 4. Search for \`esp32\` → Install **esp32 by Espressif Systems** (version 3.x recommended)
 
