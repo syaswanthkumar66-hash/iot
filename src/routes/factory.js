@@ -621,6 +621,47 @@ router.post('/device/:deviceId/compile', requireFactoryAuth, async (req, res) =>
   }
 });
 
+/**
+ * @api {post} /api/v1/factory/device/:deviceId/provision-tokens
+ * Generates 24h temporary MQTT credentials and a local session token.
+ */
+router.post('/device/:deviceId/provision-tokens', requireFactoryAuth, async (req, res) => {
+  const { deviceId } = req.params;
+  try {
+    // 1. Get current device
+    const deviceRes = await query('SELECT * FROM devices WHERE device_id = $1', [deviceId]);
+    if (deviceRes.rows.length === 0) return res.status(404).json({ error: 'Device not found' });
+    const device = deviceRes.rows[0];
+
+    // 2. Generate 1h MQTT Credentials (3600 seconds)
+    const mqttUser = `tmp_${crypto.randomBytes(4).toString('hex')}`;
+    const mqttPass = crypto.randomBytes(12).toString('base64');
+    const expiresAt = new Date(Date.now() + 1 * 60 * 60 * 1000); // 1 Hour
+
+    // Save to mqtt_credentials table
+    await query(`
+      INSERT INTO mqtt_credentials (device_id, cred_type, mqtt_username, mqtt_password_enc, expires_at)
+      VALUES ($1, 'temporary', $2, $3, $4)
+    `, [device.id, mqttUser, encrypt(mqttPass), expiresAt]);
+
+    // 3. Generate Local Session Token (64-bit Hex)
+    const sessionToken = crypto.randomBytes(8).toString('hex').toUpperCase();
+
+    // 4. Return secure bundle to Dashboard
+    res.json({
+      mqtt_user: mqttUser,
+      mqtt_pass: mqttPass,
+      session_token: sessionToken,
+      device_key: device.device_key_hash || 'DEFAULT_KEY',
+      expires_at: expiresAt.toISOString()
+    });
+
+  } catch (err) {
+    console.error('[Factory] Token generation error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;
 
 function buildFirmwareConfig({ deviceId, namespace, broker, username, password, localToken, relayCount = 1 }) {

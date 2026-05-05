@@ -416,36 +416,36 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!sessionAuthed) return;
     if (!currentDeviceData) return;
 
-    if (currentDeviceData._fetchOnSend) {
-      try {
-        logSerial('[INFO] Fetching full credentials from server...', 'log-info');
-        const res = await fetch(`${factoryApiRoot}/device/${encodeURIComponent(currentDeviceData.device_id)}/config.h`,
-          { headers: { 'Authorization': `Bearer ${keyInput.value}` } });
-        if (!res.ok) throw new Error('Fetch failed');
-        const configText = await res.text();
-        const extract = key => { const m = configText.match(new RegExp(`#define ${key} "([^"]+)"`)); return m ? m[1] : ''; };
-        currentDeviceData.mqtt_user = extract('FACTORY_PERM_MQTT_USER');
-        currentDeviceData.mqtt_pass = extract('FACTORY_PERM_MQTT_PASS');
-        currentDeviceData.namespace = extract('FACTORY_DEVICE_NS');
-        currentDeviceData._fetchOnSend = false;
-        
-        document.getElementById('fwNamespace').textContent = currentDeviceData.namespace;
-        document.getElementById('fwPermUser').textContent  = currentDeviceData.mqtt_user;
-        document.getElementById('fwPermPass').textContent  = '••••••••';
-      } catch (err) {
-        logSerial(`[ERROR] ${err.message}`, 'log-err');
-        return;
+    const ssid = prompt("Enter WiFi SSID:");
+    if (!ssid) return;
+    const pass = prompt("Enter WiFi Password:");
+
+    try {
+      logSerial('[INFO] Fetching secure 1h tokens from server...', 'log-info');
+      
+      // 1. Fetch Temporary MQTT & Session Tokens from Backend
+      const res = await fetch(`${factoryApiRoot}/device/${encodeURIComponent(currentDeviceData.device_id)}/provision-tokens`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${keyInput.value}` }
+      });
+      if (!res.ok) throw new Error('Failed to fetch security tokens');
+      const tokens = await res.json();
+
+      // 2. Prepare Secure Packet: SSID|PASS|TEMP_USER|TEMP_PASS|SESSION_TOKEN|DEVICE_KEY
+      // (Using tokens.device_key which is the permanent master key)
+      const cmd = `CMD:PROVISION|${ssid}|${pass}|${tokens.mqtt_user}|${tokens.mqtt_pass}|${tokens.session_token}|${tokens.device_key}`;
+
+      logSerial('[INFO] Sending secure provisioning packet to ESP32...', 'log-info');
+      logSerial(`→ CMD:PROVISION|${ssid}|****|${tokens.mqtt_user}|****|${tokens.session_token}|****`, 'log-tx');
+
+      if (await writeSerial(cmd)) {
+        logSerial('[OK] Credentials sent! Device is now secure and restarting.', 'log-ok');
+        alert("Device provisioned successfully with 1h temporary credentials!");
       }
+    } catch (err) {
+      logSerial(`[ERROR] Provisioning failed: ${err.message}`, 'log-err');
+      alert(`Error: ${err.message}`);
     }
-
-    const localToken = Array.from(crypto.getRandomValues(new Uint8Array(8))).map(b => b.toString(16).padStart(2, '0')).join('');
-    const { device_id, namespace, mqtt_user, mqtt_pass } = currentDeviceData;
-    const cmd = `CMD:PROVISION|${device_id}|${namespace}|${mqtt_user}|${mqtt_pass}|${localToken}`;
-
-    logSerial('[INFO] Sending credentials to ESP32...', 'log-info');
-    logSerial(`→ CMD:PROVISION|${device_id}|${namespace}|***|***|${localToken}`, 'log-tx');
-
-    if (await writeSerial(cmd)) logSerial('[OK] Credentials sent! Device restarting.', 'log-ok');
   }
 
   // ─────────────────────────────────────────────────────────────────────────
