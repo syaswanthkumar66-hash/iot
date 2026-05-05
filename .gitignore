@@ -2,7 +2,6 @@ node_modules/
 .env
 .DS_Store
 .expo/
-mobile-app/
 *.db
 *.log
 __pycache__/
