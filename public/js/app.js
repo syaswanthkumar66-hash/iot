@@ -183,7 +183,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function downloadFirmwareZip() {
     const key = document.getElementById('factoryKeyInput')?.value;
-    window.location.href = `${factoryApiRoot}/device/${currentDeviceData.device_id}/firmware-package?key=${key}`;
+    window.location.href = `${factoryApiRoot}/device/${currentDeviceData.device_id}/firmware-package?key=${encodeURIComponent(key)}`;
   }
 
   async function connectSerial() {
