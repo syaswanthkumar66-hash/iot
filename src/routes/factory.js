@@ -19,7 +19,10 @@ const MAX_RELAY_COUNT = DEFAULT_RELAY_PINS.length;
 
 // Simple auth for factory tool - in production use a strong FACTORY_API_KEY
 const requireFactoryAuth = (req, res, next) => {
-  const token = req.headers.authorization?.split(' ')[1];
+  let token = req.headers.authorization?.split(' ')[1];
+  if (!token) {
+    token = req.query?.key || req.query?.token;
+  }
   if (token !== (process.env.FACTORY_API_KEY || 'dev-factory-key')) {
     return res.status(401).json({ error: 'Unauthorized factory access' });
   }

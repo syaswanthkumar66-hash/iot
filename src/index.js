@@ -55,16 +55,18 @@ app.use('/api/v1/factory', factoryRoutes);
 // Start server
 async function start() {
   try {
-    await connectDB();
-    console.log('✅ Connected to database');
+    const databaseReady = await connectDB();
+    if (databaseReady) {
+      console.log('Connected to database');
+    }
 
     mqttBridge.connect();
 
     app.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`);
+      console.log(`Server running on port ${PORT}`);
     });
   } catch (error) {
-    console.error('❌ Failed to start server:', error.message);
+    console.error('Failed to start server:', error.message);
     process.exit(1);
   }
 }

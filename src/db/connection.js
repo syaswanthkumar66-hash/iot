@@ -1,5 +1,6 @@
 import pg from 'pg';
 import dotenv from 'dotenv';
+import { hasRealEnvValue, requireRealEnvValue } from '../config/env.js';
 
 dotenv.config();
 
@@ -8,11 +9,20 @@ const { Pool } = pg;
 // Always use SSL if connecting to Supabase (or any external production DB)
 const isSupabase = process.env.DATABASE_URL?.includes('supabase');
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: hasRealEnvValue('DATABASE_URL') ? process.env.DATABASE_URL : undefined,
   ssl: (process.env.NODE_ENV === 'production' || isSupabase) ? { rejectUnauthorized: false } : undefined,
 });
 
 export async function connectDB() {
+  if (!hasRealEnvValue('DATABASE_URL')) {
+    if (process.env.NODE_ENV === 'production') {
+      requireRealEnvValue('DATABASE_URL', 'Postgres database URL');
+    }
+
+    console.warn('Database is not configured. Set DATABASE_URL in .env to enable database-backed API routes.');
+    return false;
+  }
+
   const client = await pool.connect();
   
   // Auto-migration for missing columns in existing Supabase databases
@@ -39,9 +49,14 @@ export async function connectDB() {
   }
 
   client.release();
+  return true;
 }
 
 export async function query(text, params) {
+  if (!hasRealEnvValue('DATABASE_URL')) {
+    throw new Error('Database is not configured. Set DATABASE_URL in .env.');
+  }
+
   const start = Date.now();
   const res = await pool.query(text, params);
   const duration = Date.now() - start;
@@ -51,6 +66,10 @@ export async function query(text, params) {
 
 // Transaction helper
 export async function withTransaction(callback) {
+  if (!hasRealEnvValue('DATABASE_URL')) {
+    throw new Error('Database is not configured. Set DATABASE_URL in .env.');
+  }
+
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
