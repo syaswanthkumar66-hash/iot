@@ -14,6 +14,30 @@ const pool = new Pool({
 
 export async function connectDB() {
   const client = await pool.connect();
+  
+  // Auto-migration for missing columns in existing Supabase databases
+  try {
+    await client.query(`
+      ALTER TABLE devices ADD COLUMN IF NOT EXISTS relay_count INTEGER NOT NULL DEFAULT 1;
+      ALTER TABLE devices ADD COLUMN IF NOT EXISTS flash_count INTEGER NOT NULL DEFAULT 0;
+      ALTER TABLE devices ADD COLUMN IF NOT EXISTS last_flashed_at TIMESTAMPTZ;
+      ALTER TABLE devices ADD COLUMN IF NOT EXISTS hardware_replaced BOOLEAN NOT NULL DEFAULT false;
+      ALTER TABLE devices ADD COLUMN IF NOT EXISTS hardware_replace_count INTEGER NOT NULL DEFAULT 0;
+      
+      CREATE TABLE IF NOT EXISTS hardware_flash_log (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        device_id UUID NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
+        event_type TEXT NOT NULL,
+        notes TEXT,
+        performed_by TEXT,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `);
+    console.log('✅ Database schema verified and auto-migrated');
+  } catch (err) {
+    console.error('⚠️ Auto-migration skipped or failed:', err.message);
+  }
+
   client.release();
 }
 

@@ -75,6 +75,38 @@ window.displayResult = (data) => {
   const sec = document.getElementById('resultSection');
   if (lbl) lbl.textContent = data.qr_data.device_id;
   if (sec) sec.classList.remove('hidden');
+
+  // Populate new credentials UI
+  const setTxt = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  setTxt('lblDeviceIdText', data.qr_data?.device_id || '');
+  setTxt('lblDeviceKey', data.qr_data?.device_key || 'Hidden (Only shown on creation)');
+  
+  if (data.firmware_config) {
+    setTxt('fwDeviceId', data.firmware_config.device_id);
+    setTxt('fwRelayCount', data.firmware_config.relay_count);
+    setTxt('fwRelayPins', data.firmware_config.relay_pins?.join(', '));
+    setTxt('fwNamespace', data.firmware_config.namespace);
+    setTxt('fwPermUser', data.firmware_config.permanent_mqtt?.username || 'Hidden');
+    setTxt('fwPermPass', data.firmware_config.permanent_mqtt?.password || 'Hidden');
+  } else {
+    ['fwDeviceId', 'fwRelayCount', 'fwRelayPins', 'fwNamespace', 'fwPermUser', 'fwPermPass'].forEach(id => setTxt(id, ''));
+  }
+
+  // Generate QR Code
+  const qrContainer = document.getElementById('qrcode');
+  if (qrContainer && typeof QRCode !== 'undefined' && data.qr_data?.device_key) {
+    qrContainer.innerHTML = '';
+    new QRCode(qrContainer, {
+      text: JSON.stringify({
+        i: data.qr_data.device_id,
+        k: data.qr_data.device_key
+      }),
+      width: 128,
+      height: 128
+    });
+  } else if (qrContainer) {
+    qrContainer.innerHTML = '<div style="color:var(--muted); font-size:12px; text-align:center; padding-top:40px;">QR Hidden</div>';
+  }
 };
 
 // ─── DOM Initialization ─────────────────────────────────────────────────────
