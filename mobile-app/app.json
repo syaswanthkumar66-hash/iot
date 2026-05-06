@@ -1,0 +1,51 @@
+{
+  "expo": {
+    "name": "IoTYK",
+    "slug": "iotyk-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "scheme": "iotyk",
+    "splash": {
+      "backgroundColor": "#080B10",
+      "resizeMode": "contain"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.iotyk.mobile",
+      "infoPlist": {
+        "NSBluetoothAlwaysUsageDescription": "IoTYK uses Bluetooth to send WiFi credentials to your ESP32 device.",
+        "NSBluetoothPeripheralUsageDescription": "IoTYK uses Bluetooth to configure your IoT device.",
+        "NSCameraUsageDescription": "IoTYK uses the camera to scan device QR codes."
+      }
+    },
+    "android": {
+      "package": "com.iotyk.mobile",
+      "adaptiveIcon": {
+        "backgroundColor": "#080B10"
+      },
+      "permissions": [
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.BLUETOOTH",
+        "android.permission.BLUETOOTH_ADMIN",
+        "android.permission.BLUETOOTH_SCAN",
+        "android.permission.BLUETOOTH_CONNECT",
+        "android.permission.CAMERA"
+      ]
+    },
+    "plugins": [
+      "expo-secure-store",
+      "expo-camera",
+      [
+        "react-native-ble-plx",
+        {
+          "isBackgroundEnabled": false,
+          "modes": ["central"],
+          "bluetoothAlwaysPermission": "IoTYK uses Bluetooth to configure your ESP32 device."
+        }
+      ]
+    ]
+  }
+}

@@ -1,4 +1,5 @@
 import dotenv from 'dotenv';
+import { hasRealEnvValue } from '../config/env.js';
 
 dotenv.config();
 
@@ -13,9 +14,13 @@ class EmqxAdmin {
     this.appSecret = process.env.EMQX_APP_SECRET;
     this.authId = process.env.EMQX_AUTH_ID || 'password_based%3Abuilt_in_database';
 
-    if (!this.baseUrl || !this.appId || !this.appSecret) {
-      console.warn('⚠️ EMQX Admin credentials not fully configured in environment.');
+    if (!this.isConfigured()) {
+      console.warn('EMQX Admin credentials are not configured.');
     }
+  }
+
+  isConfigured() {
+    return hasRealEnvValue('EMQX_API_URL') && hasRealEnvValue('EMQX_APP_ID') && hasRealEnvValue('EMQX_APP_SECRET');
   }
 
   get headers() {
@@ -31,7 +36,7 @@ class EmqxAdmin {
    * POST /api/v5/authentication/{id}/users
    */
   async createUser(userId, password) {
-    if (!this.baseUrl) return false;
+    if (!this.isConfigured()) return false;
 
     try {
       const response = await fetch(`${this.baseUrl}/api/v5/authentication/${this.authId}/users`, {
@@ -61,7 +66,7 @@ class EmqxAdmin {
    * DELETE /api/v5/authentication/{id}/users/{user_id}
    */
   async deleteUser(userId) {
-    if (!this.baseUrl) return false;
+    if (!this.isConfigured()) return false;
 
     try {
       const response = await fetch(`${this.baseUrl}/api/v5/authentication/${this.authId}/users/${encodeURIComponent(userId)}`, {
@@ -86,7 +91,7 @@ class EmqxAdmin {
    * GET /api/v5/authentication/{id}/users
    */
   async listUsers(page = 1, limit = 100) {
-    if (!this.baseUrl) return { data: [], meta: {} };
+    if (!this.isConfigured()) return { data: [], meta: {} };
 
     try {
       const response = await fetch(`${this.baseUrl}/api/v5/authentication/${this.authId}/users?page=${page}&limit=${limit}`, {
