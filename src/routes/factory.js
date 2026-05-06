@@ -23,7 +23,11 @@ const requireFactoryAuth = (req, res, next) => {
   if (!token) {
     token = req.query?.key || req.query?.token;
   }
-  if (token !== (process.env.FACTORY_API_KEY || 'dev-factory-key')) {
+  
+  let expected = (process.env.FACTORY_API_KEY || 'dev-factory-key').replace(/^['"]|['"]$/g, '').trim();
+  const cleanToken = token?.replace(/^['"]|['"]$/g, '').trim();
+
+  if (cleanToken !== expected) {
     return res.status(401).json({ error: 'Unauthorized factory access' });
   }
   next();
