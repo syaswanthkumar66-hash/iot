@@ -93,6 +93,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnSerialSend = document.getElementById('btnSerialSend');
   const serialInput = document.getElementById('serialInput');
 
+  // Additional Serial Control Buttons
+  const btnCmdStatus = document.getElementById('btnCmdStatus');
+  const btnReauth = document.getElementById('btnReauth');
+  const btnClearNvs = document.getElementById('btnClearNvs');
+  const btnFactoryReset = document.getElementById('btnFactoryReset');
+
   // Wire up event listeners
   if (btnProvision) btnProvision.onclick = provisionDevice;
   if (btnRefresh) btnRefresh.onclick = window.loadDevices;
@@ -105,6 +111,11 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnAuthenticate) btnAuthenticate.onclick = doAuthenticate;
   if (btnSendCredentials) btnSendCredentials.onclick = sendCredentialsToDevice;
   if (btnSerialSend) btnSerialSend.onclick = sendManualInput;
+  
+  if (btnCmdStatus) btnCmdStatus.onclick = () => writeSerial('STATUS');
+  if (btnReauth) btnReauth.onclick = () => writeSerial('REAUTH');
+  if (btnClearNvs) btnClearNvs.onclick = () => writeSerial('CLEAR_NVS');
+  if (btnFactoryReset) btnFactoryReset.onclick = () => writeSerial('FACTORY_RESET');
 
   window.loadDevices(); // Initial load
 
@@ -187,7 +198,35 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function sendCredentialsToDevice() {
-    // Provisioning logic
+    if (!currentDeviceData || !currentDeviceData.device_id) {
+      return alert("Please select a device from the table first.");
+    }
+    const key = document.getElementById('factoryKeyInput')?.value;
+    try {
+      const res = await fetch(`${factoryApiRoot}/device/${currentDeviceData.device_id}/provision-tokens`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${key}` }
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      
+      sessionToken = data.session_token;
+      
+      const payload = {
+        ssid: 'YOUR_WIFI_SSID', 
+        pass: 'YOUR_WIFI_PASS',
+        mqtt_u: data.mqtt_user,
+        mqtt_p: data.mqtt_pass,
+        l_tok: data.session_token
+      };
+
+      writeSerial(`PROV:${JSON.stringify(payload)}`);
+      const btnAuth = document.getElementById('btnAuthenticate');
+      if (btnAuth) btnAuth.disabled = false;
+      alert("Tokens sent to device over Serial!");
+    } catch (err) {
+      alert("Error sending credentials: " + err.message);
+    }
   }
 
   async function writeSerial(text) {

@@ -96,10 +96,20 @@ document.addEventListener('DOMContentLoaded', () => {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
+      
+      if (!res.ok) {
+        if (res.status === 401) {
+          localStorage.removeItem('iotyk_token');
+          location.reload();
+          return;
+        }
+        throw new Error(data.error || 'Failed to load devices');
+      }
+
       const list = document.getElementById('deviceList');
       list.innerHTML = '';
 
-      if (data.devices.length === 0) {
+      if (!data.devices || data.devices.length === 0) {
         list.innerHTML = '<p class="hint">No devices yet. Pair one above!</p>';
         return;
       }

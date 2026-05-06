@@ -5,10 +5,11 @@ dotenv.config();
 
 const { Pool } = pg;
 
-// Use SSL if connecting to Supabase (or any external production DB)
+// Always use SSL if connecting to Supabase (or any external production DB)
+const isSupabase = process.env.DATABASE_URL?.includes('supabase');
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
+  ssl: (process.env.NODE_ENV === 'production' || isSupabase) ? { rejectUnauthorized: false } : undefined,
 });
 
 export async function connectDB() {

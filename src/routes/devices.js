@@ -59,8 +59,16 @@ router.post('/pair', requireAuth, async (req, res) => {
 router.get('/', requireAuth, async (req, res) => {
   try {
     const resDevices = await query(`
-      SELECT device_id, name, relay_count, last_state, last_seen, is_online
-      FROM devices WHERE owner_id = $1
+      SELECT d.device_id, d.name, d.relay_count, d.last_state, d.last_seen, d.is_online, 'owner' as role
+      FROM devices d 
+      WHERE d.owner_id = $1
+      
+      UNION
+      
+      SELECT d.device_id, d.name, d.relay_count, d.last_state, d.last_seen, d.is_online, s.role as role
+      FROM devices d
+      JOIN device_shares s ON s.device_id = d.id
+      WHERE s.shared_with_id = $1 AND s.status = 'accepted'
     `, [req.user.id]);
     
     res.json({ devices: resDevices.rows });
