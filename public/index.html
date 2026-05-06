@@ -3,270 +3,130 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>IoTYK Factory Admin</title>
-  <meta name="description" content="IoTYK Factory Admin — Provision, configure and manage ESP32 devices via USB Serial">
+  <title>IoTYK — Factory Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
-<div class="app-container">
-
-  <!-- ── Header ── -->
   <header class="app-header">
     <div class="logo">⚡ IoTYK Factory</div>
     <div class="header-right">
-      <span id="globalBleStatus" class="status-badge status-offline">BLE DISCONNECTED</span>
       <span id="globalUsbStatus" class="status-badge status-offline">USB DISCONNECTED</span>
       <input type="password" id="factoryKeyInput" placeholder="Factory API Key" value="dev-factory-key">
     </div>
   </header>
 
-  <main class="main-content">
-
-    <!-- ══════════════════════════════════════════════════════
-         STEP 1 — PROVISION NEW DEVICE
-    ══════════════════════════════════════════════════════ -->
-    <section class="card">
-      <div class="step-badge">Step 1</div>
-      <h2>Provision New Device</h2>
-      <p class="subtitle">Creates a new ESP32 identity with unique MQTT credentials and a scannable QR label in the database.</p>
-      <div class="row-group">
-        <div>
-          <label class="field-label" for="relayCountInput">Switches / Relays</label>
-          <select id="relayCountInput" class="select-input">
-            <option value="1">1 switch</option><option value="2">2 switches</option>
-            <option value="3">3 switches</option><option value="4">4 switches</option>
-            <option value="5">5 switches</option><option value="6">6 switches</option>
-            <option value="7">7 switches</option><option value="8">8 switches</option>
-          </select>
+  <main class="container">
+    <section class="card factory-actions">
+      <h2>Manufacturing</h2>
+      <div class="action-grid">
+        <div class="input-group">
+          <label>Relay Count</label>
+          <input type="number" id="relayCountInput" value="1" min="1" max="8">
         </div>
-        <button id="btnProvision" class="btn primary">＋ Generate Device</button>
+        <button id="btnProvision" class="btn primary">Generate New Device</button>
+        <button id="btnRefresh" class="btn secondary">Refresh List</button>
       </div>
     </section>
 
-    <!-- ══════════════════════════════════════════════════════
-         RESULT PANEL — shown after provision / row select
-    ══════════════════════════════════════════════════════ -->
-    <section id="resultSection" class="hidden">
-
-      <!-- Success / Info Banner -->
-      <div id="resultBanner" class="success-banner">
-        <span class="icon">✓</span>
+    <section id="resultSection" class="card hidden">
+      <h2>Device Info: <span id="lblDeviceId"></span></h2>
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; background: rgba(0,0,0,0.2); padding: 20px; border-radius: 12px; border: 1px solid var(--border);">
         <div>
-          <h3 id="resultBannerTitle">Device Provisioned Successfully</h3>
-          <p id="resultBannerSub" style="font-size:13px;opacity:.8;margin:0"></p>
-        </div>
-      </div>
-
-      <!-- QR + Credentials grid -->
-      <div class="card result-card">
-        <div class="details-grid">
-          <!-- QR Code -->
-          <div class="detail-group">
-            <h4>📦 Label QR Code</h4>
-            <p class="hint">Print and attach to the physical device box.</p>
-            <div id="qrcode" class="qr-container"></div>
-            <div class="label-info">
-              <strong>ID:</strong> <span id="lblDeviceId"></span><br>
-              <strong>Key:</strong> <span id="lblDeviceKey"></span>
-            </div>
+          <h3 style="margin-bottom: 10px; font-size: 16px;">📦 Label QR Code</h3>
+          <p style="font-size: 12px; color: var(--muted); margin-bottom: 15px;">Print and attach to the physical device box.</p>
+          <div id="qrcode" style="background: white; padding: 10px; display: inline-block; border-radius: 8px; margin-bottom: 15px; width: 148px; height: 148px;"></div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 14px;">
+            <div style="margin-bottom: 5px;"><strong style="color:var(--accent)">ID:</strong> <span id="lblDeviceIdText"></span></div>
+            <div><strong style="color:var(--accent)">Key:</strong> <span id="lblDeviceKey"></span></div>
           </div>
-
-          <!-- Credentials -->
-          <div class="detail-group">
-            <h4>🔑 Device Credentials</h4>
-            <p class="hint">Sent to ESP32 via USB Serial in Step 3.</p>
-            <div class="code-block" id="credentialsBlock">
-              <div><span class="cl">Device ID :</span> <span id="fwDeviceId" class="cv"></span></div>
-              <div><span class="cl">Relays    :</span> <span id="fwRelayCount" class="cv"></span></div>
-              <div><span class="cl">Pins      :</span> <span id="fwRelayPins" class="cv"></span></div>
-              <div><span class="cl">Namespace :</span> <span id="fwNamespace" class="cv"></span></div>
-              <div style="margin-top:8px"><span class="cl">MQTT User :</span> <span id="fwPermUser" class="cv"></span></div>
-              <div><span class="cl">MQTT Pass :</span> <span id="fwPermPass" class="cv"></span></div>
-            </div>
-
-            <!-- Hardware status tags (shown for existing devices) -->
-            <div id="hwStatusRow" class="hw-status-row hidden">
-              <span id="hwFlashBadge" class="info-chip">Flashes: 0</span>
-              <span id="hwReplaceBadge" class="info-chip">Replacements: 0</span>
-              <span id="hwLastFlash" class="info-chip muted">Never flashed</span>
-            </div>
+        </div>
+        <div>
+          <h3 style="margin-bottom: 10px; font-size: 16px;">🔑 Device Credentials</h3>
+          <p style="font-size: 12px; color: var(--muted); margin-bottom: 15px;">Sent to ESP32 via USB Serial in Step 3.</p>
+          <div style="background: var(--bg); padding: 15px; border-radius: 8px; border: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.8;">
+            <div><span style="color:var(--muted)">Device ID : </span><span id="fwDeviceId"></span></div>
+            <div><span style="color:var(--muted)">Relays    : </span><span id="fwRelayCount"></span></div>
+            <div><span style="color:var(--muted)">Pins      : </span><span id="fwRelayPins"></span></div>
+            <div><span style="color:var(--muted)">Namespace : </span><span id="fwNamespace"></span></div>
+            <div style="margin-top:10px;"><span style="color:var(--muted)">MQTT User : </span><span id="fwPermUser"></span></div>
+            <div><span style="color:var(--muted)">MQTT Pass : </span><span id="fwPermPass"></span></div>
           </div>
         </div>
       </div>
-
-      <!-- ── Step 2: Download ── -->
-      <div class="card">
-        <div class="step-badge">Step 2</div>
-        <h4>Download Firmware Files</h4>
-        <p class="hint">
-          Downloads a ZIP containing all Arduino source files, auto-generated WSS certificates,
-          and this device's pre-filled <code>config.h</code>.
-          Flash once with Arduino IDE — credentials are written via USB Serial in Step 3.
-        </p>
-        <div class="action-buttons">
-          <button id="btnDownloadFirmwareZip" class="btn secondary">⬇ Download All Files (ZIP)</button>
-          <button id="btnReplaceHardware" class="btn warn-outline hidden">🔄 Replace Hardware</button>
-        </div>
-
-        <!-- Replace Hardware modal-inline -->
-        <div id="replacePanel" class="replace-panel hidden">
-          <p class="hint" style="color:var(--warn)">⚠ Use this when the original ESP32 board is physically damaged. The device identity and user pairing are preserved — only the board changes.</p>
-          <label class="field-label" for="replaceNotes">Reason / Notes</label>
-          <input type="text" id="replaceNotes" class="text-input" placeholder="e.g. Board burnt, water damage, short circuit…">
-          <div class="action-buttons" style="margin-top:10px">
-            <button id="btnConfirmReplace" class="btn danger">Confirm Hardware Replacement</button>
-            <button id="btnCancelReplace" class="btn secondary small">Cancel</button>
-          </div>
-        </div>
+      <div class="button-group">
+        <button id="btnDownloadFirmwareZip" class="btn primary">Download Flash Package (.ZIP)</button>
+        <button id="btnReplaceHardware" class="btn danger">Replace Physical Hardware</button>
       </div>
-
-      <!-- ── Step 3: USB Serial Provisioning ── -->
-      <div class="card">
-        <div class="step-badge">Step 3</div>
-        <h4>Provision via USB Serial</h4>
-        <p class="hint">
-          Connect the flashed ESP32 via USB. The ESP32 prints a <strong>session token</strong> on boot —
-          the dashboard auto-detects it. Authenticate, then send credentials to write them into NVS memory.
-        </p>
-
-        <!-- USB Connect row -->
-        <div class="usb-connect-row">
-          <div class="usb-baud-group">
-            <label class="field-label">Baud Rate</label>
-            <select id="baudRate" class="select-input small">
-              <option value="9600">9600</option>
-              <option value="115200" selected>115200</option>
-            </select>
-          </div>
-          <div class="usb-btn-group">
-            <button id="btnConnectUsb" class="btn primary">🔌 Connect USB</button>
-            <button id="btnDisconnectUsb" class="btn danger small hidden">✕ Disconnect</button>
-          </div>
-          <span id="usbStatusBadge" class="status-badge status-offline">DISCONNECTED</span>
-        </div>
-
-        <!-- Token Auth Panel -->
-        <div id="authPanel" class="auth-panel hidden">
-          <div class="auth-panel-row">
-            <div class="auth-token-display">
-              <span class="field-label">Session Token (auto-detected from ESP32)</span>
-              <div class="token-box">
-                <span id="detectedToken" class="token-value">Waiting for ESP32…</span>
-                <span id="authStatusBadge" class="status-badge status-offline">NOT AUTH</span>
-              </div>
-            </div>
-            <button id="btnAuthenticate" class="btn primary" disabled>🔑 Authenticate</button>
-          </div>
-          <p class="hint" style="margin-top:8px">ESP32 generates a new token on every boot. Auto-detected from serial output. Click <strong>Authenticate</strong> to unlock commands.</p>
-        </div>
-
-        <!-- Command Buttons (unlocked after AUTH:OK) -->
-        <div class="commands-grid" id="commandsGrid">
-          <button id="btnSendCredentials" class="cmd-btn primary-cmd" disabled>
-            <span class="cmd-icon">📤</span>
-            <span class="cmd-label">Send Credentials</span>
-            <span class="cmd-desc">Writes device ID, namespace, MQTT creds & token to ESP32 NVS</span>
-          </button>
-          <button id="btnCmdStatus" class="cmd-btn" disabled>
-            <span class="cmd-icon">📋</span>
-            <span class="cmd-label">Device Status</span>
-            <span class="cmd-desc">Print current NVS values, WiFi & MQTT connection state</span>
-          </button>
-          <button id="btnStopDevice" class="cmd-btn danger-cmd" disabled>
-            <span class="cmd-icon">⛔</span>
-            <span class="cmd-label">Stop Device</span>
-            <span class="cmd-desc">Disconnect WiFi, MQTT & BLE completely (no restart)</span>
-          </button>
-          <button id="btnClearNvs" class="cmd-btn danger-cmd" disabled>
-            <span class="cmd-icon">🧹</span>
-            <span class="cmd-label">Erase NVS</span>
-            <span class="cmd-desc">Clear IoTYK NVS namespace only, then restart</span>
-          </button>
-          <button id="btnFactoryReset" class="cmd-btn danger-cmd" disabled>
-            <span class="cmd-icon">🗑</span>
-            <span class="cmd-label">Factory Reset</span>
-            <span class="cmd-desc">Erase ALL NVS flash partitions and restart</span>
-          </button>
-          <button id="btnReauth" class="cmd-btn" disabled>
-            <span class="cmd-icon">↻</span>
-            <span class="cmd-label">Re-Authenticate</span>
-            <span class="cmd-desc">Revoke session, ESP32 generates new token</span>
-          </button>
-        </div>
-
-        <!-- Serial Monitor -->
-        <div class="serial-monitor-container">
-          <div class="serial-monitor-header">
-            <span>📟 Serial Monitor</span>
-            <div class="serial-monitor-actions">
-              <label class="autoscroll-label">
-                <input type="checkbox" id="chkAutoscroll" checked> Auto-scroll
-              </label>
-              <button id="btnClearLog" class="btn secondary ultra-small">Clear</button>
-            </div>
-          </div>
-          <div id="serialLog" class="serial-log"></div>
-          <div class="serial-input-row">
-            <input type="text" id="serialInput" class="serial-text-input" placeholder="Type any command and press Enter (e.g. CMD:STATUS)">
-            <button id="btnSerialSend" class="btn secondary small" disabled>Send</button>
-          </div>
-        </div>
+      <div id="replacePanel" class="hidden" style="margin-top:20px; padding:15px; background:#ef444410; border-radius:10px;">
+        <p style="color:var(--danger); font-size:14px; margin-bottom:10px;">⚠️ This will invalidate the previous ESP32 hardware and generate a new Master Key.</p>
+        <button id="btnConfirmReplace" class="btn danger small">Confirm Hardware Swap</button>
+        <button id="btnCancelReplace" class="btn secondary small">Cancel</button>
       </div>
-
     </section>
-    <!-- ── /Result Panel ── -->
 
-    <!-- ══════════════════════════════════════════════════════
-         DEVICE TABLE
-    ══════════════════════════════════════════════════════ -->
-    <section class="card">
-      <div class="table-header-row">
-        <div>
-          <h2 style="display:inline">Provisioned Devices</h2>
-          <span id="countConnected" class="count-badge">0</span>
+    <section class="card serial-monitor">
+      <div class="card-header">
+        <h2>USB Serial Monitor</h2>
+        <div class="usb-btn-group">
+          <button id="btnGlobalConnectUsb" class="btn primary small">Connect USB</button>
+          <button id="btnDisconnectUsb" class="btn secondary small">Disconnect</button>
         </div>
-        <div style="display:flex;gap:10px;align-items:center">
-          <button id="btnGlobalConnectUsb" class="btn primary small">🔌 Connect USB</button>
-          <button id="btnRefresh" class="btn secondary ultra-small">↻ Refresh</button>
+      </div>
+      
+      <div id="authPanel" class="hidden">
+        <div class="status-row">
+          <span id="usbStatusBadge" class="status-badge status-online">CONNECTED</span>
+          <span id="authStatusBadge" class="status-badge status-offline">NOT AUTHENTICATED</span>
+        </div>
+        <div class="detected-token">Detected Token: <code id="detectedToken">...</code></div>
+        <div class="action-grid" style="margin-top:15px;">
+          <button id="btnAuthenticate" class="btn primary small" disabled>Authenticate with Device</button>
+          <button id="btnSendCredentials" class="btn primary small">Send WiFi & 1h Tokens</button>
+          <button id="btnCmdStatus" class="btn secondary small">Fetch Status</button>
+          <button id="btnReauth" class="btn secondary small">Request Re-Auth</button>
+        </div>
+        <div class="action-grid" style="margin-top:10px;">
+          <button id="btnClearNvs" class="btn danger small">Clear NVS</button>
+          <button id="btnFactoryReset" class="btn danger small">Factory Reset</button>
         </div>
       </div>
 
+      <div id="serialLog" class="serial-log"></div>
+      
+      <div class="serial-input-row">
+        <input type="text" id="serialInput" placeholder="Type command (e.g. RELAY_ON)...">
+        <button id="btnSerialSend" class="btn primary small">SEND</button>
+        <button id="btnClearLog" class="btn secondary small">CLEAR</button>
+      </div>
+    </section>
+
+    <section class="card device-list">
+      <h2>Device Registry</h2>
       <div class="table-container">
-        <table id="deviceTable">
+        <table>
           <thead>
             <tr>
-              <th>Device ID</th>
+              <th>ID</th>
               <th>Relays</th>
               <th>Status</th>
               <th>Owner</th>
               <th>Flashes</th>
               <th>Replaced</th>
-              <th>Last Flashed</th>
+              <th>Last Flash</th>
               <th>Actions</th>
             </tr>
           </thead>
-          <tbody id="deviceTableBody"></tbody>
+          <tbody id="deviceTableBody">
+            <!-- Loaded via JS -->
+          </tbody>
         </table>
       </div>
     </section>
-
-    <!-- Flash History Modal -->
-    <div id="historyModal" class="modal hidden">
-      <div class="modal-box">
-        <div class="modal-header">
-          <strong id="historyModalTitle">Flash History</strong>
-          <button id="btnCloseHistory" class="btn secondary small">✕ Close</button>
-        </div>
-        <div id="historyContent" class="history-content"></div>
-      </div>
-    </div>
-
   </main>
-</div>
 
-<script src="js/app.js"></script>
+  <script src="js/app.js"></script>
 </body>
 </html>
