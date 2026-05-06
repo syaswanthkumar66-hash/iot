@@ -9,22 +9,25 @@
 #include "certificates.h"
 
 extern Preferences prefs;
+extern String getDeviceId();
+extern String getPermMqttUser();
+extern String getPermMqttPass();
 WiFiClientSecure net;
 TinyMqtt mqtt(net);
 
 void setupMQTT(const char* deviceId) {
     net.setCACert(EMQX_MQTT_CA_CERT);
-    mqtt.setServer(MQTT_HOST, MQTT_PORT);
+    mqtt.setServer(MQTT_BROKER, MQTT_PORT);
 
     // DUAL-AUTH LOGIC
-    String user = prefs.getString("mqtt_user", "");
-    String pass = prefs.getString("mqtt_pass", "");
+    String user = prefs.getString(KEY_TEMP_USER, "");
+    String pass = prefs.getString(KEY_TEMP_PASS, "");
 
     if (user != "") {
         Serial.println("[MQTT] Attempting connection with TEMPORARY credentials...");
-        mqtt.setCredentials(user.c_str(), pass.c_str());
-        if (mqtt.connect(deviceId)) {
-            Serial.println("[MQTT] Connected via TEMPORARY Auth ✅");
+        mqtt.setCredentials(String(deviceId), user, pass);
+        if (mqtt.connect()) {
+            Serial.println("[MQTT] Connected via TEMPORARY Auth");
             mqtt.subscribe("iotyk/cmd/" + String(deviceId));
             return;
         }
@@ -33,9 +36,9 @@ void setupMQTT(const char* deviceId) {
 
     // FALLBACK TO PERMANENT
     Serial.println("[MQTT] Attempting connection with PERMANENT credentials...");
-    mqtt.setCredentials(MQTT_USER, MQTT_PASS); // From config.h
-    if (mqtt.connect(deviceId)) {
-        Serial.println("[MQTT] Connected via PERMANENT Auth 🔒");
+    mqtt.setCredentials(String(deviceId), getPermMqttUser(), getPermMqttPass());
+    if (mqtt.connect()) {
+        Serial.println("[MQTT] Connected via PERMANENT Auth");
         mqtt.subscribe("iotyk/cmd/" + String(deviceId));
     } else {
         Serial.println("[MQTT] Critical Failure: Both auth methods failed.");
@@ -47,7 +50,8 @@ void loopMQTT() {
     if (!mqtt.connected()) {
         static unsigned long lastReconnect = 0;
         if (millis() - lastReconnect > 5000) {
-            setupMQTT(DEVICE_ID);
+            String deviceId = getDeviceId();
+            setupMQTT(deviceId.c_str());
             lastReconnect = millis();
         }
     }
@@ -58,8 +62,8 @@ void mqttPublish(String topic, String payload) {
 }
 
 void updateMqttCredentials(String newUser, String newPass) {
-    prefs.putString("mqtt_user", newUser);
-    prefs.putString("mqtt_pass", newPass);
+    prefs.putString(KEY_TEMP_USER, newUser);
+    prefs.putString(KEY_TEMP_PASS, newPass);
     Serial.println("[MQTT] New credentials saved. Rebooting...");
     delay(1000);
     ESP.restart();

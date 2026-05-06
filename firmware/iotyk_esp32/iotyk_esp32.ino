@@ -21,19 +21,52 @@ unsigned long lastStatusUpdate = 0;
 String currentSessionToken = "";
 unsigned long sessionExpiry = 0;
 
+String fallbackDeviceId() {
+    uint64_t chipId = ESP.getEfuseMac();
+    char id[20];
+    snprintf(id, sizeof(id), "iotyk-%04X%08X", (uint16_t)(chipId >> 32), (uint32_t)chipId);
+    return String(id);
+}
+
+String getDeviceId() {
+    String id = prefs.getString(KEY_DEVICE_ID, "");
+    if (id == "") id = FACTORY_DEVICE_ID;
+    if (id == "") id = fallbackDeviceId();
+    return id;
+}
+
+String getDeviceKey() {
+    String key = prefs.getString(KEY_LOCAL_TOKEN, "");
+    if (key == "") key = FACTORY_LOCAL_TOKEN;
+    return key;
+}
+
+String getPermMqttUser() {
+    String user = prefs.getString(KEY_PERM_USER, "");
+    if (user == "") user = FACTORY_PERM_MQTT_USER;
+    return user;
+}
+
+String getPermMqttPass() {
+    String pass = prefs.getString(KEY_PERM_PASS, "");
+    if (pass == "") pass = FACTORY_PERM_MQTT_PASS;
+    return pass;
+}
+
 void setup() {
     Serial.begin(115200);
     delay(1000);
     Serial.println("\n--- IoTYK ESP32 (SECURE AUTH) ---");
 
     prefs.begin("iotyk", false);
-    String ssid = prefs.getString("wifi_ssid", "");
-    String pass = prefs.getString("wifi_pass", "");
-    currentSessionToken = prefs.getString("session_token", "");
+    String ssid = prefs.getString(KEY_WIFI_SSID, "");
+    String pass = prefs.getString(KEY_WIFI_PASS, "");
+    currentSessionToken = prefs.getString(KEY_LOCAL_TOKEN, FACTORY_LOCAL_TOKEN);
     isProvisioned = (ssid != "");
+    String deviceId = getDeviceId();
 
     setCpuFrequencyMhz(80); 
-    setupBLE(DEVICE_ID);
+    setupBLE(deviceId.c_str());
 
     if (isProvisioned) {
         WiFi.begin(ssid.c_str(), pass.c_str());
@@ -44,13 +77,13 @@ void setup() {
             setCpuFrequencyMhz(240); 
             
             // Setup mDNS discovery (device_id.local)
-            if (MDNS.begin(DEVICE_ID)) {
-                Serial.printf("[mDNS] Responding at http://%s.local\n", DEVICE_ID);
+            if (MDNS.begin(deviceId.c_str())) {
+                Serial.printf("[mDNS] Responding at http://%s.local\n", deviceId.c_str());
             }
 
-            setupMQTT(DEVICE_ID);
-            setupLocalServer(DEVICE_ID);
-            setupOTA(DEVICE_ID);
+            setupMQTT(deviceId.c_str());
+            setupLocalServer(deviceId.c_str());
+            setupOTA(deviceId.c_str());
         }
     }
 
@@ -74,7 +107,7 @@ void loop() {
 // TOKEN VALIDATION
 bool isTokenValid(String token) {
     // 1. Check Permanent Key (from config.h)
-    if (token == DEVICE_KEY) return true;
+    if (token == getDeviceKey()) return true;
     
     // 2. Check Session Token (from App)
     if (currentSessionToken != "" && token == currentSessionToken) {
@@ -138,7 +171,7 @@ void handleCommand(String json) {
         int start = json.indexOf("\"new_token\":\"") + 13;
         int end = json.indexOf("\"", start);
         currentSessionToken = json.substring(start, end);
-        prefs.putString("session_token", currentSessionToken);
+        prefs.putString(KEY_LOCAL_TOKEN, currentSessionToken);
         Serial.println("[Auth] Session Updated");
     }
 }
@@ -146,7 +179,7 @@ void handleCommand(String json) {
 void handleSerialCommand(String cmd) {
     if (cmd.startsWith("AUTH:")) {
         String token = cmd.substring(5);
-        if (token == DEVICE_KEY) Serial.println("AUTH_OK");
+        if (token == getDeviceKey()) Serial.println("AUTH_OK");
         else Serial.println("AUTH_FAILED");
     } else if (cmd == "RESET") {
         prefs.clear();
@@ -157,6 +190,6 @@ void handleSerialCommand(String cmd) {
 }
 
 void publishStatus() {
-    String status = "{\"id\":\"" + String(DEVICE_ID) + "\",\"status\":\"online\"}";
+    String status = "{\"id\":\"" + getDeviceId() + "\",\"status\":\"online\"}";
     mqttPublish("iotyk/status", status);
 }

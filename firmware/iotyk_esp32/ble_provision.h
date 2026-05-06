@@ -12,6 +12,7 @@
 
 extern Preferences prefs;
 extern String currentSessionToken;
+extern String getDeviceKey();
 
 class MyServerCallbacks: public BLEServerCallbacks {
     void onConnect(BLEServer* pServer) { Serial.println("[BLE] App Connected"); }
@@ -39,17 +40,17 @@ class MyCallbacks: public BLECharacteristicCallbacks {
             }
 
             // SECURITY: Validate the AUTH_KEY against the permanent DEVICE_KEY
-            if (parts[5] != DEVICE_KEY) {
+            if (parts[5] != getDeviceKey()) {
                 Serial.println("[BLE] REJECTED: Invalid Device Key");
                 return;
             }
 
             // Save all credentials
-            prefs.putString("wifi_ssid", parts[0]);
-            prefs.putString("wifi_pass", parts[1]);
-            prefs.putString("mqtt_user", parts[2]);
-            prefs.putString("mqtt_pass", parts[3]);
-            prefs.putString("session_token", parts[4]);
+            prefs.putString(KEY_WIFI_SSID, parts[0]);
+            prefs.putString(KEY_WIFI_PASS, parts[1]);
+            prefs.putString(KEY_TEMP_USER, parts[2]);
+            prefs.putString(KEY_TEMP_PASS, parts[3]);
+            prefs.putString(KEY_LOCAL_TOKEN, parts[4]);
 
             Serial.println("[BLE] Provisioning Successful! Rebooting...");
             delay(1000);
