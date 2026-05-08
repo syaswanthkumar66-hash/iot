@@ -9,6 +9,7 @@ import DashboardScreen from './src/screens/DashboardScreen';
 import DeviceScreen from './src/screens/DeviceScreen';
 import PairDeviceScreen from './src/screens/PairDeviceScreen';
 import ScanScreen from './src/screens/ScanScreen';
+import BLEScanScreen from './src/screens/BLEScanScreen';
 import BLEProvisionScreen from './src/screens/BLEProvisionScreen';
 import { colors } from './src/theme/colors';
 
@@ -52,6 +53,7 @@ function RootNavigator() {
           <Stack.Screen name="Device"       component={DeviceScreen}       options={({ route }) => ({ title: route.params?.name || 'Device' })} />
           <Stack.Screen name="PairDevice"   component={PairDeviceScreen}   options={{ title: 'Pair Device' }} />
           <Stack.Screen name="Scan"         component={ScanScreen}         options={{ headerShown: false }} />
+          <Stack.Screen name="BLEScan"      component={BLEScanScreen}      options={{ title: 'Bluetooth Scan' }} />
           <Stack.Screen name="BLEProvision" component={BLEProvisionScreen} options={{ title: 'WiFi Setup' }} />
         </>
       ) : (

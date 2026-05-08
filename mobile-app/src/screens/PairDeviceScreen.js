@@ -6,59 +6,65 @@ import { useApp } from '../store/AppContext';
 import { colors } from '../theme/colors';
 import { commonStyles } from '../theme/styles';
 
-/**
- * PairDeviceScreen
- *
- * Can be reached two ways:
- *   (a) Manually from Dashboard → no route params → blank form
- *   (b) From ScanScreen (QR) → route.params.device_id + device_key → auto-filled
- */
 export default function PairDeviceScreen({ navigation, route }) {
-  const { state, actions } = useApp();
-
-  // Auto-fill from QR scan route params if available
-  const [deviceId, setDeviceId]   = useState(route.params?.device_id  ?? '');
+  const { state } = useApp();
+  const [deviceId, setDeviceId] = useState(route.params?.device_id ?? '');
   const [deviceKey, setDeviceKey] = useState(route.params?.device_key ?? '');
-  const [success, setSuccess]     = useState(false);
 
   const fromQR = Boolean(route.params?.device_id);
   const canSubmit = deviceId.trim().length > 0 && deviceKey.trim().length > 0;
 
-  async function submit() {
-    // Navigate to BLEProvision where it will pair the device AND provision the WiFi and MQTT credentials
+  function submit() {
     navigation.navigate('BLEProvision', {
       device_id: deviceId.trim(),
       device_key: deviceKey.trim()
     });
   }
 
-  return (
-    <SafeAreaView edges={['bottom']} style={commonStyles.screen}>
-      <ScrollView
-        contentContainerStyle={styles.scroll}
-        keyboardShouldPersistTaps="handled"
-      >
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={commonStyles.title}>
-            {fromQR ? 'Confirm Pairing' : 'Pair Device'}
-          </Text>
-          <Text style={commonStyles.subtitle}>
-            {fromQR
-              ? 'Device credentials were read from the QR code. Tap Add to pair.'
-              : 'Enter the device ID and pairing key from the device label.'}
-          </Text>
-        </View>
-
-        {/* QR badge */}
-        {fromQR && (
-          <View style={styles.qrBadge}>
-            <Text style={styles.qrBadgeIcon}>📷</Text>
-            <Text style={styles.qrBadgeText}>Filled from QR scan</Text>
+  if (!fromQR) {
+    return (
+      <SafeAreaView edges={['bottom']} style={commonStyles.screen}>
+        <ScrollView contentContainerStyle={styles.scroll}>
+          <View style={styles.header}>
+            <Text style={commonStyles.title}>Add Device</Text>
+            <Text style={commonStyles.subtitle}>
+              Choose how you want to find your ESP32. QR scans the label first, then Bluetooth connects to that exact device.
+            </Text>
           </View>
-        )}
-        <View style={[commonStyles.card, styles.form]}>
-          <Text style={commonStyles.label}>Device ID</Text>
+
+          <View style={styles.choiceGrid}>
+            <TouchableOpacity
+              activeOpacity={0.82}
+              style={[commonStyles.card, styles.choiceCard]}
+              onPress={() => navigation.navigate('Scan')}
+            >
+              <View style={[styles.choiceMark, styles.qrMark]}>
+                <Text style={styles.choiceMarkText}>QR</Text>
+              </View>
+              <Text style={styles.choiceTitle}>Scan QR Code</Text>
+              <Text style={styles.choiceText}>
+                Use the camera to read device ID and key, then connect over Bluetooth for WiFi setup.
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              activeOpacity={0.82}
+              style={[commonStyles.card, styles.choiceCard]}
+              onPress={() => navigation.navigate('BLEScan')}
+            >
+              <View style={[styles.choiceMark, styles.bleMark]}>
+                <Text style={styles.choiceMarkText}>BLE</Text>
+              </View>
+              <Text style={styles.choiceTitle}>Scan Bluetooth</Text>
+              <Text style={styles.choiceText}>
+                Ask for Bluetooth permission, find nearby IoTYK ESP32 devices, then choose one to configure.
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={[commonStyles.card, styles.form]}>
+            <Text style={styles.sectionTitle}>Enter manually</Text>
+            <Text style={commonStyles.label}>Device ID</Text>
             <TextInput
               autoCapitalize="none"
               autoCorrect={false}
@@ -66,8 +72,7 @@ export default function PairDeviceScreen({ navigation, route }) {
               placeholderTextColor={colors.muted}
               value={deviceId}
               onChangeText={setDeviceId}
-              style={[commonStyles.input, fromQR && styles.readonlyInput]}
-              editable={!fromQR}
+              style={commonStyles.input}
             />
 
             <Text style={commonStyles.label}>Device Key</Text>
@@ -76,42 +81,72 @@ export default function PairDeviceScreen({ navigation, route }) {
               autoCorrect={false}
               placeholder="pairing key"
               placeholderTextColor={colors.muted}
-              secureTextEntry={!fromQR}   // show key when filled from QR for transparency
+              secureTextEntry
               value={deviceKey}
               onChangeText={setDeviceKey}
-              style={[commonStyles.input, fromQR && styles.readonlyInput]}
-              editable={!fromQR}
+              style={commonStyles.input}
             />
 
-            {/* Already-paired error */}
             {state.error ? (
               <View style={styles.errorBox}>
                 <Text style={styles.errorText}>{state.error}</Text>
-                {state.error.toLowerCase().includes('pair') && (
-                  <Text style={styles.errorHint}>
-                    This device may already be linked to an account.
-                  </Text>
-                )}
               </View>
             ) : null}
 
-            <PrimaryButton
-              label="Next"
-              disabled={!canSubmit}
-              onPress={submit}
-            />
-
-            {/* Manual scan link (only when not from QR) */}
-            {!fromQR && (
-              <TouchableOpacity
-                style={styles.scanLink}
-                activeOpacity={0.7}
-                onPress={() => navigation.navigate('Scan')}
-              >
-                <Text style={styles.scanLinkText}>📷  Scan QR code instead</Text>
-              </TouchableOpacity>
-            )}
+            <PrimaryButton label="Continue to Bluetooth Setup" disabled={!canSubmit} onPress={submit} />
           </View>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView edges={['bottom']} style={commonStyles.screen}>
+      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+        <View style={styles.header}>
+          <Text style={commonStyles.title}>Confirm QR Device</Text>
+          <Text style={commonStyles.subtitle}>
+            The QR code gave us the device details. Next we will ask Bluetooth permission and connect to this ESP32.
+          </Text>
+        </View>
+
+        <View style={styles.qrBadge}>
+          <Text style={styles.qrBadgeText}>Filled from QR scan</Text>
+        </View>
+
+        <View style={[commonStyles.card, styles.form]}>
+          <Text style={commonStyles.label}>Device ID</Text>
+          <TextInput
+            autoCapitalize="none"
+            autoCorrect={false}
+            placeholder="esp32-xxxx"
+            placeholderTextColor={colors.muted}
+            value={deviceId}
+            onChangeText={setDeviceId}
+            style={[commonStyles.input, styles.readonlyInput]}
+            editable={false}
+          />
+
+          <Text style={commonStyles.label}>Device Key</Text>
+          <TextInput
+            autoCapitalize="none"
+            autoCorrect={false}
+            placeholder="pairing key"
+            placeholderTextColor={colors.muted}
+            value={deviceKey}
+            onChangeText={setDeviceKey}
+            style={[commonStyles.input, styles.readonlyInput]}
+            editable={false}
+          />
+
+          {state.error ? (
+            <View style={styles.errorBox}>
+              <Text style={styles.errorText}>{state.error}</Text>
+            </View>
+          ) : null}
+
+          <PrimaryButton label="Connect with Bluetooth" disabled={!canSubmit} onPress={submit} />
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -126,19 +161,52 @@ const styles = StyleSheet.create({
   header: {
     gap: 6
   },
+  choiceGrid: {
+    gap: 12
+  },
+  choiceCard: {
+    gap: 10,
+    overflow: 'hidden'
+  },
+  choiceMark: {
+    alignSelf: 'flex-start',
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 7
+  },
+  qrMark: {
+    backgroundColor: '#1E3A5F'
+  },
+  bleMark: {
+    backgroundColor: colors.accentSoft
+  },
+  choiceMarkText: {
+    color: colors.text,
+    fontSize: 12,
+    fontWeight: '900'
+  },
+  choiceTitle: {
+    color: colors.text,
+    fontSize: 18,
+    fontWeight: '800'
+  },
+  choiceText: {
+    color: colors.muted,
+    fontSize: 14,
+    lineHeight: 20
+  },
+  sectionTitle: {
+    color: colors.text,
+    fontSize: 16,
+    fontWeight: '800'
+  },
   qrBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
     backgroundColor: colors.accentSoft,
     borderRadius: 8,
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderWidth: 1,
     borderColor: colors.accent
-  },
-  qrBadgeIcon: {
-    fontSize: 16
   },
   qrBadgeText: {
     color: colors.accent,
@@ -149,50 +217,17 @@ const styles = StyleSheet.create({
     gap: 12
   },
   readonlyInput: {
-    opacity: 0.7,
+    opacity: 0.72,
     borderStyle: 'dashed'
   },
   errorBox: {
     backgroundColor: '#3B1A1A',
     borderRadius: 8,
-    padding: 12,
-    gap: 4
+    padding: 12
   },
   errorText: {
     color: colors.danger,
     fontSize: 13,
     fontWeight: '600'
-  },
-  errorHint: {
-    color: colors.muted,
-    fontSize: 12
-  },
-  scanLink: {
-    alignItems: 'center',
-    paddingVertical: 10
-  },
-  scanLinkText: {
-    color: colors.muted,
-    fontSize: 14,
-    fontWeight: '600'
-  },
-  // Success
-  successCard: {
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 36
-  },
-  successIcon: {
-    fontSize: 48,
-    color: colors.accent
-  },
-  successTitle: {
-    color: colors.text,
-    fontSize: 20,
-    fontWeight: '800'
-  },
-  successSub: {
-    color: colors.muted,
-    fontSize: 14
   }
 });

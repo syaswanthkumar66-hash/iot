@@ -7,8 +7,8 @@
 #include <Preferences.h>
 #include "config.h"
 
-#define SERVICE_UUID        "12345678-1234-1234-1234-123456789abc"
-#define CHARACTERISTIC_UUID "abcdefab-1234-1234-1234-abcdefabcdef"
+#define SERVICE_UUID        BLE_SERVICE_UUID
+#define CHARACTERISTIC_UUID BLE_WIFI_CHAR_UUID
 
 extern Preferences prefs;
 extern String currentSessionToken;

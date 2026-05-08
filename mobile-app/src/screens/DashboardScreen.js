@@ -1,5 +1,5 @@
 import React, { useLayoutEffect } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, FlatList, Platform, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import DebugPanel from '../components/DebugPanel';
 import DeviceCard from '../components/DeviceCard';
@@ -14,7 +14,7 @@ export default function DashboardScreen({ navigation }) {
     navigation.setOptions({
       headerRight: () => (
         <View style={styles.headerActions}>
-          <Pressable onPress={showAddMenu} style={styles.iconButton}>
+          <Pressable onPress={() => navigation.navigate('PairDevice')} style={styles.iconButton}>
             <Text style={styles.iconText}>+</Text>
           </Pressable>
           <Pressable onPress={actions.logout} style={styles.logoutButton}>
@@ -24,32 +24,6 @@ export default function DashboardScreen({ navigation }) {
       )
     });
   }, [actions.logout, navigation]);
-
-  function showAddMenu() {
-    if (Platform.OS === 'ios') {
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options: ['Cancel', 'Scan QR + BLE Setup', 'Enter Manually'],
-          cancelButtonIndex: 0,
-          title: 'Add Device'
-        },
-        (index) => {
-          if (index === 1) navigation.navigate('Scan');
-          if (index === 2) navigation.navigate('PairDevice');
-        }
-      );
-    } else {
-      Alert.alert(
-        'Add Device',
-        'How would you like to add a device?',
-        [
-          { text: 'Scan QR + BLE Setup', onPress: () => navigation.navigate('Scan') },
-          { text: 'Enter Manually',      onPress: () => navigation.navigate('PairDevice') },
-          { text: 'Cancel', style: 'cancel' }
-        ]
-      );
-    }
-  }
 
   function toggleDevice(device, value) {
     actions.togglePower(device.namespace, value).catch((error) => {
