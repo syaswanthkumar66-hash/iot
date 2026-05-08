@@ -1,5 +1,5 @@
 import { BleManager, State } from 'react-native-ble-plx';
-import { PermissionsAndroid, Platform } from 'react-native';
+import { NativeModules, PermissionsAndroid, Platform } from 'react-native';
 import { encode as btoa } from 'base-64';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -13,13 +13,26 @@ let _manager = null;
 let _connected = null;       // currently connected BleDevice
 let _scanTimeout = null;
 
+function bleUnavailableError() {
+  return new Error(
+    'Bluetooth native module is not available in this build. Use an Expo development build or a native Android/iOS build that includes react-native-ble-plx.'
+  );
+}
+
+export function isBleAvailable() {
+  return Boolean(NativeModules.BlePlx);
+}
+
 function manager() {
+  if (!isBleAvailable()) throw bleUnavailableError();
   if (!_manager) _manager = new BleManager();
   return _manager;
 }
 
 // ─── Permissions ──────────────────────────────────────────────────────────────
 export async function requestBlePermissions() {
+  if (!isBleAvailable()) throw bleUnavailableError();
+
   if (Platform.OS === 'ios') return true;
 
   if (Platform.Version >= 31) {
@@ -119,14 +132,24 @@ export function scanAndConnect(deviceId, onStatus) {
  * @param {function} onFound - callback when a device is found
  */
 export function scanForAny(onFound) {
+  if (!isBleAvailable()) {
+    console.warn(bleUnavailableError().message);
+    return false;
+  }
+
   manager().startDeviceScan(
     [SERVICE_UUID], 
     { allowDuplicates: false }, 
     (error, device) => {
-      if (error) return;
+      if (error) {
+        console.warn('BLE scan failed:', error);
+        return;
+      }
       if (device) onFound(device);
     }
   );
+
+  return true;
 }
 
 // ─── Send WiFi credentials ────────────────────────────────────────────────────

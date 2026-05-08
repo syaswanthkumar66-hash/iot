@@ -14,7 +14,14 @@ Install these libraries before flashing:
 2. Download the generated `config.h`.
 3. Replace `firmware/iotyk_esp32/config.h` with the downloaded file.
 4. Paste the EMQX CA certificate into `certificates.h`.
-5. Flash `iotyk_esp32.ino`.
+5. In Arduino IDE, select `Tools > Partition Scheme > No FS 4MB (2MB APP x2)`.
+6. Flash `iotyk_esp32.ino`.
+
+The default ESP32 partition scheme only gives the app about 1.2 MB, which is too small
+for this firmware because it includes WiFi, BLE provisioning, TLS MQTT, local services,
+and OTA. `No FS 4MB (2MB APP x2)` keeps OTA-capable app slots while giving enough
+program space. If you do not need OTA uploads, `Huge APP (3MB No OTA/1MB SPIFFS)` also
+works.
 
 The device uses BLE for first setup, local `ws://<device_id>.local:81` for LAN control, local HTTP on port 80 for `/info`, `/state`, and `/cmd`, and EMQX MQTT over TLS for remote control.
 

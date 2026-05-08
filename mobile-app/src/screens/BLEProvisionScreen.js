@@ -129,7 +129,16 @@ export default function BLEProvisionScreen({ navigation, route }) {
 
     async function provision() {
       // 1. Permissions
-      const granted = await requestBlePermissions();
+      let granted = false;
+      try {
+        granted = await requestBlePermissions();
+      } catch (err) {
+        if (aborted.current) return;
+        setError(err.message);
+        setStep(STEP.ERROR);
+        return;
+      }
+
       if (aborted.current) return;
       if (!granted) {
         setError('Bluetooth permissions denied. Please allow Bluetooth access in Settings.');
