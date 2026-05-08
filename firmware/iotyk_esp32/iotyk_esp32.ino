@@ -13,6 +13,7 @@
 #include "local_server.h"
 #include "ota_manager.h"
 #include "ble_provision.h"
+#include "TinyJson.h"
 
 // State
 Preferences prefs;
@@ -177,10 +178,59 @@ void handleCommand(String json) {
 }
 
 void handleSerialCommand(String cmd) {
+    cmd.trim();
     if (cmd.startsWith("AUTH:")) {
         String token = cmd.substring(5);
         if (token == getDeviceKey()) Serial.println("AUTH_OK");
         else Serial.println("AUTH_FAILED");
+    } else if (cmd.startsWith("PROV:")) {
+        String json = cmd.substring(5);
+        String ssid = TinyJson::getString(json, "ssid");
+        String pass = TinyJson::getString(json, "pass");
+        String mqtt_u = TinyJson::getString(json, "mqtt_u");
+        String mqtt_p = TinyJson::getString(json, "mqtt_p");
+        String l_tok = TinyJson::getString(json, "l_tok");
+
+        if (ssid != "") {
+            prefs.putString(KEY_WIFI_SSID, ssid);
+            prefs.putString(KEY_WIFI_PASS, pass);
+            prefs.putString(KEY_TEMP_USER, mqtt_u);
+            prefs.putString(KEY_TEMP_PASS, mqtt_p);
+            prefs.putString(KEY_LOCAL_TOKEN, l_tok);
+            
+            Serial.println("PROV_OK");
+            Serial.println("[PROV] Credentials stored via Serial. Rebooting...");
+            delay(1000);
+            ESP.restart();
+        } else {
+            Serial.println("PROV_FAILED: Invalid SSID");
+        }
+    } else if (cmd == "STATUS") {
+        Serial.println("STATUS_OK");
+        Serial.println("--- DEVICE STATUS ---");
+        Serial.printf("Device ID: %s\n", getDeviceId().c_str());
+        Serial.printf("Provisioned: %s\n", isProvisioned ? "YES" : "NO");
+        Serial.printf("WiFi Status: %s\n", (WiFi.status() == WL_CONNECTED) ? "CONNECTED" : "DISCONNECTED");
+        if (WiFi.status() == WL_CONNECTED) {
+            Serial.printf("IP Address: %s\n", WiFi.localIP().toString().c_str());
+            Serial.printf("RSSI: %d dBm\n", WiFi.RSSI());
+        }
+        Serial.printf("MQTT Status: %s\n", mqtt.connected() ? "CONNECTED" : "DISCONNECTED");
+        Serial.printf("Local Session Token: %s\n", getDeviceKey().c_str());
+        Serial.println("---------------------");
+    } else if (cmd == "REAUTH") {
+        Serial.println("REAUTH_OK");
+        Serial.println("[Auth] Cleared session authentication state. Run AUTH:<token> to re-authenticate.");
+    } else if (cmd == "CLEAR_NVS") {
+        prefs.clear();
+        Serial.println("CLEAR_NVS_OK");
+        Serial.println("[NVS] All stored preferences cleared.");
+    } else if (cmd == "FACTORY_RESET") {
+        prefs.clear();
+        Serial.println("FACTORY_RESET_OK");
+        Serial.println("[Factory] Device fully reset to factory defaults. Rebooting...");
+        delay(1000);
+        ESP.restart();
     } else if (cmd == "RESET") {
         prefs.clear();
         Serial.println("RESET_OK");
