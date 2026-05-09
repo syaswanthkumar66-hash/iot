@@ -217,7 +217,8 @@ export default function BLEProvisionScreen({ navigation, route }) {
              mqtt: {
                u: tokenRes.temp_mqtt.username,
                p: tokenRes.temp_mqtt.password
-             }
+             },
+             key: device_key
            });
            await sendPairingToken(payload);
            await localDeviceApi.saveToken(device_id, tokenRes.token);

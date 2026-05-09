@@ -1,0 +1,103 @@
+#ifndef MAIN_CERTIFICATES_H
+#define MAIN_CERTIFICATES_H
+
+#include <string.h>
+
+/*
+ * SECTION A: EMQX MQTT CA Certificate
+ * Note: Sourced from EMQX Cloud Console deployment connection guide.
+ */
+static const char EMQX_MQTT_CA_CERT[] = 
+"-----BEGIN CERTIFICATE-----\n"
+"PASTE_EMQX_CA_CERTIFICATE_HERE\n"
+"-----END CERTIFICATE-----";
+
+/*
+ * SECTION B: Local WSS Certificates
+ * Self-signed certs generated dynamically for local secure socket connections.
+ */
+
+// LOCAL_WSS_CA_CERT — Root CA certificate
+static const char LOCAL_WSS_CA_CERT[] = 
+"-----BEGIN CERTIFICATE-----\n"
+"MIIDZzCCAk+gAwIBAgIUI+mjzJDmEzpQ/F9jIF/Bv++f0lcwDQYJKoZIhvcNAQEL\n"
+"BQAwYzELMAkGA1UEBhMCVVMxEzARBgNVBAgMCkNhbGlmb3JuaWExFjAUBgNVBAcM\n"
+"DVNhbiBGcmFuY2lzY28xDjAMBgNVBAoMBUlvVFlLMRcwFQYDVQQDDA5Jb1RZSyBM\n"
+"b2NhbCBDQTAeFw0yNjA0MzAwOTE0MDJaFw0zNjA0MjcwOTE0MDJaMGMxCzAJBgNV\n"
+"BAYTAlVTMRMwEQYDVQQIDApDYWxpZm9ybmlhMRYwFAYDVQQHDA1TYW4gRnJhbmNp\n"
+"c2NvMQ4wDAYDVQQKDAVJb1RZSzEXMBUGA1UEAwwOSW9UWUsgTG9jYWwgQ0EwggEi\n"
+"MA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCuPc+cXrsqamNyX+1S4Xr5U/Ic\n"
+"NU6nBgU0AlzlvziBWDoSXdwzcVh7uMq8KuDvl16hjUli/YxgBY7pVXOR9Ik3dY+N\n"
+"L0HyAI76XPSjeTESKxXowTCPvnPCdggUh8uv3a+xIUcN2Y5qI8drV4T8g+YKokek\n"
+"eLLSm4et1pqwJ504DQ3YW7oaN2aCZJGcbxYAhnqjbZpzf76nFrpJhwFIQbHI7L5c\n"
+"npA38ht1IEpJxDLInsJzF6Bn8Le52jiPCPVSxGVbGMkRD6jYmH1NahDLquO642xZ\n"
+"padLjSCGLFR+gB87MxNsyaBNpJA9KR5n3xORKtpYkstcvA2hOgQ+HN0kkyCnAgMB\n"
+"AAGjEzARMA8GA1UdEwEB/wQFMAMBAf8wDQYJKoZIhvcNAQELBQADggEBAB6Bwcve\n"
+"Srlhw7VluOomhetKLrzfOLTNfLqW+Kxnseoja9FKH5j5iekZhMpNyMP4qsYqVYqY\n"
+"E3rXKPb0/KcxsZeK8BGkelRO87l3PT4ecWeIyd1p9RFtBaPhoM4EFCDdmtyT4fdH\n"
+"QJs/fGxDjhuophQ2aAEUMcaq9fVKTdBDAgSfrt1QlczLFHSBBBT4Mi6oYqPBtuMF\n"
+"dCILHIngusYdgMN1NvP6ffGDsq8XwS4I6nNnw42AzkdUt8W1WxYVVuPkpgChPy1b\n"
+"3aDgbCFU0PazyErjlo6oj6peMBWmedj66ZhcgHoV5+1JqUQKbyo5eT33P21HHLBj\n"
+"mv5SCmEsX+YISE0=\n"
+"-----END CERTIFICATE-----";
+
+// LOCAL_WSS_SERVER_CERT — Client/Server certificate mapping IP:127.0.0.1
+static const char LOCAL_WSS_SERVER_CERT[] = 
+"-----BEGIN CERTIFICATE-----\n"
+"MIIDijCCAnKgAwIBAgIUUZe75eqPkLEgMJ9KEg9dW/T1apkwDQYJKoZIhvcNAQEL\n"
+"BQAwYzELMAkGA1UEBhMCVVMxEzARBgNVBAgMCkNhbGlmb3JuaWExFjAUBgNVBAcM\n"
+"DVNhbiBGcmFuY2lzY28xDjAMBgNVBAoMBUlvVFlLMRcwFQYDVQQDDA5Jb1RZSyBM\n"
+"b2NhbCBDQTAeFw0yNjA0MzAwOTE0MDJaFw0yODA4MDIwOTE0MDJaMGcxCzAJBgNV\n"
+"BAYTAlVTMRMwEQYDVQQIDApDYWxpZm9ybmlhMRYwFAYDVQQHDA1TYW4gRnJhbmNp\n"
+"c2NvMQ4wDAYDVQQKDAVJb1RZSzEbMBkGA1UEAwwSRVNQMzItNkdURVo2LmxvY2Fs\n"
+"MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtH6gaQURbeVVd03HUdES\n"
+"jeQVMk6zdXx3hKLR5NDvsMoyK8kMQtKY/lWevIGGF/N1QfrY8Yu+4JXTCXKNLr7E\n"
+"SQadpgOW2omS7xUUbPC3JU/l0J4pZIJjeGqEYMCUysbfFFrPJrfBl5yxB4GXrhOR\n"
+"VowPFPrihoRXA+PKuxmn9Pxjp7V5gFj0ngRM+7xphEq3SzRYUyu6rBpuRBVG1dMn\n"
+"wD4obCrWA7ylaujLa8OCxk83u/YXVo3OiS/+MCMM/BZul0jW516T9GM4NNv14jD7\n"
+"PZKkWncA+RXGY5d2vdv9TgR7GE2LHSWelPYlECl03nOxhvarph2txNfFMGX019Tc\n"
+"OQIDAQABozIwMDAuBgNVHREEJzAlghJFU1AzMi02R1RFWjYubG9jYWyCCWxvY2Fs\n"
+"aG9zdIcEfwAAATANBgkqhkiG9w0BAQsFAAOCAQEAeuy8Rk0SI1mhONb8VJRS2u56\n"
+"6cC0BrrYBr/6yhLSG8s5Cozs/Crd5yytXxNsPqveizNIzRpRVLnfLjB3/pRC2DMA\n"
+"iMp/ZqqgrCReNoc8ahx7VAYi5mA1le9OvtICV7Wnd0Osb7IdPk9bgEY30fyTU0pt\n"
+"AmcF4g/qtowJ4M8XPIV8/HoJK4eZr5dlJbmMoF9N8nT2M0RUNfCW7J+F3PKreiyu\n"
+"kEGg1rgcrojpY6bbdDJbCPsJtOciVraFyJyaJvmL0g100iZSH7UyTgtWZLl4yrci\n"
+"wJRROo8Mn8jlf5VvKdPzNVht3T9MFCAVB58AP1flk3t3aXz7m4IJUDLowkx4/g==\n"
+"-----END CERTIFICATE-----";
+
+// LOCAL_WSS_PRIVATE_KEY — RSA Private Key (securely loaded in RAM/ROM)
+static const char LOCAL_WSS_PRIVATE_KEY[] = 
+"-----BEGIN RSA PRIVATE KEY-----\n"
+"MIIEowIBAAKCAQEAtH6gaQURbeVVd03HUdESjeQVMk6zdXx3hKLR5NDvsMoyK8kM\n"
+"QtKY/lWevIGGF/N1QfrY8Yu+4JXTCXKNLr7ESQadpgOW2omS7xUUbPC3JU/l0J4p\n"
+"ZIJjeGqEYMCUysbfFFrPJrfBl5yxB4GXrhORVowPFPrihoRXA+PKuxmn9Pxjp7V5\n"
+"gFj0ngRM+7xphEq3SzRYUyu6rBpuRBVG1dMnwD4obCrWA7ylaujLa8OCxk83u/YX\n"
+"Vo3OiS/+MCMM/BZul0jW516T9GM4NNv14jD7PZKkWncA+RXGY5d2vdv9TgR7GE2L\n"
+"HSWelPYlECl03nOxhvarph2txNfFMGX019TcOQIDAQABAoIBAAzRo3Xh+MNr0r6W\n"
+"5Q2QAjfWl5TLlx5EeT6Py8Vq+2L8cUS/0iGa0Gfbz9rGfi4MSesmNCsviB5uNZ9J\n"
+"pfJIdStUj3S/c4LQ24EkZ593FyLMwl8nJHxxcDwYoI84jji6mBRbgLPYwCSS6dXF\n"
+"I+8mj59schPE37q7Am0RzA+uukmBVsN6lQwLUITVz1fvxgTSzFw/L+5gtmEKAjeU\n"
+"VrJjj0CdHV+TyHpcgAvH//V7giEHD/jdBtQqu8SWFSxSfPl9MSArneM20d4AVW8j\n"
+"GL9buUKH9ivmrh4TK9lR9bctVDj8DgWFDsPAeslwNrQe8dtysbSvjuxB3SSgLTTf\n"
+"Sbbi3tMCgYEA43mWutnx8c4tKfFmwrU9bDhqdZoTHiOTTd9awtuJgomCTip9jDLh\n"
+"o68vBE/1VfvylROeAP3dnfsRe4+MauLt4cZAgwExBytFugaYRyqyhHvtxVSsxdh3\n"
+"h7v4Vm1O4EzOLRJhHfIxJiPSnWieGRDmIBXC1hy3fKe2c5ss/akKQm8CgYEAyyDf\n"
+"mkmmzuIVHNbY/s3oL27iZ/VQVyLknQUUXwhFbhf+7SqKYzDOHT7fOEz6R33DWVGG\n"
+"m2/lIZrcKlREK8safbn5Vj73Ay8hUajNy5EpA5lJ+L4v+x7JiMvEeDm5OrASMlOG\n"
+"YoIXAjkJyCbVv39P2VysOW2GkK2EOAhPuyPef9cCgYEA40xFryPEPMi2HGkZM4oC\n"
+"fDbLOgPhAoat1GxQttDD0OoyiISwuvzEtth/9KEpFugQd6IIihkh75BG4d6Igu2K\n"
+"ocWGBOGV6gH1RHL+im5Bv1xONJXtpiwtFDZhaYsD++EDS8pHvLKbJe85rwwwnf9i\n"
+"08Cq1WQQfMDg8RenlzfoBoUCgYB9vpntLw7eH0KmmbG2+sxzIJdzd38Gkgkn0s8r\n"
+"jTk90Aj11FHa2YmevR7+AVkmDIpzrm4/puMXDICii4uv+Ikrr4bUhyHujKx5mp/b\n"
+"Fr9nBOuv2jxlnkdwMYQsUL+Dvx9knCQisxl/PMP7bV8ArtVFX4MWAeE9iszAyxRg\n"
+"avH//QKBgFxezM3Mv2QVSIqF+/0DOFVeiCLB2vCGjrApO3lRigr1awCWL3cd404V\n"
+"65Yx6xd0cjktpzgkFTqmrJ+WVuvFjRKLwQ3E5bNk931FDtgVyV1A5Fd/dy1e8cA1\n"
+"VivcLFOjkoKt1jKZSmzxHa8UlBVDT4vkT9r07UvSDa24wcYWFS2C\n"
+"-----END RSA PRIVATE KEY-----";
+
+// Helper function to check if a certificate is valid (non-placeholder)
+inline bool hasUsableCa(const char* ca) {
+    return ca && strstr(ca, "PASTE_") == nullptr && strlen(ca) > 100;
+}
+
+#endif // MAIN_CERTIFICATES_H

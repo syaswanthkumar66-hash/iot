@@ -1,5 +1,6 @@
 // ─── Global State ───────────────────────────────────────────────────────────
 let currentDeviceData = null;
+let currentDeviceKey = '';
 let serialPort = null;
 let sessionToken = '';
 let sessionAuthed = false;
@@ -29,9 +30,19 @@ window.fetchDeviceDetails = async (deviceId) => {
     const data = await res.json();
     const device = data.devices.find(d => d.device_id === deviceId);
     if (device) {
+      // Since devices list doesn't store unhashed password, we'll fetch them from config endpoint or build placeholder
       window.displayResult({
-        qr_data: { device_id: device.device_id },
-        firmware_config: { device_id: device.device_id }
+        qr_data: { device_id: device.device_id, device_key: 'Stored Securely' },
+        firmware_config: {
+          device_id: device.device_id,
+          relay_count: device.relay_count,
+          relay_pins: [26, 27, 14, 25, 33, 32, 23, 22].slice(0, device.relay_count),
+          namespace: device.namespace,
+          permanent_mqtt: {
+            username: `perm_${device.namespace}`,
+            password: '• • • • • • • •'
+          }
+        }
       });
     }
   } catch (err) { console.error("Error fetching details", err); }
@@ -71,6 +82,8 @@ window.loadDevices = async () => {
 
 window.displayResult = (data) => {
   currentDeviceData = data.firmware_config;
+  currentDeviceKey = data.qr_data?.device_key || '';
+
   const lbl = document.getElementById('lblDeviceId');
   const sec = document.getElementById('resultSection');
   if (lbl) lbl.textContent = data.qr_data.device_id;
@@ -107,6 +120,12 @@ window.displayResult = (data) => {
   } else if (qrContainer) {
     qrContainer.innerHTML = '<div style="color:var(--muted); font-size:12px; text-align:center; padding-top:40px;">QR Hidden</div>';
   }
+
+  // Manage UI button states on device select
+  const btnAuth = document.getElementById('btnAuthenticate');
+  if (btnAuth && serialPort) {
+    btnAuth.disabled = !currentDeviceKey || currentDeviceKey === 'Stored Securely';
+  }
 };
 
 // ─── DOM Initialization ─────────────────────────────────────────────────────
@@ -121,6 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnGlobalConnectUsb = document.getElementById('btnGlobalConnectUsb');
   const btnDisconnectUsb = document.getElementById('btnDisconnectUsb');
   const btnAuthenticate = document.getElementById('btnAuthenticate');
+  const btnPerformFactorySetup = document.getElementById('btnPerformFactorySetup');
   const btnSendCredentials = document.getElementById('btnSendCredentials');
   const btnSerialSend = document.getElementById('btnSerialSend');
   const serialInput = document.getElementById('serialInput');
@@ -130,6 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnReauth = document.getElementById('btnReauth');
   const btnClearNvs = document.getElementById('btnClearNvs');
   const btnFactoryReset = document.getElementById('btnFactoryReset');
+  const btnClearLog = document.getElementById('btnClearLog');
 
   // Wire up event listeners
   if (btnProvision) btnProvision.onclick = provisionDevice;
@@ -141,13 +162,27 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnGlobalConnectUsb) btnGlobalConnectUsb.onclick = connectSerial;
   if (btnDisconnectUsb) btnDisconnectUsb.onclick = disconnectSerial;
   if (btnAuthenticate) btnAuthenticate.onclick = doAuthenticate;
+  if (btnPerformFactorySetup) btnPerformFactorySetup.onclick = doPerformFactorySetup;
   if (btnSendCredentials) btnSendCredentials.onclick = sendCredentialsToDevice;
   if (btnSerialSend) btnSerialSend.onclick = sendManualInput;
+  if (btnClearLog) btnClearLog.onclick = () => { const l = document.getElementById('serialLog'); if (l) l.innerHTML = ''; };
   
   if (btnCmdStatus) btnCmdStatus.onclick = () => writeSerial('STATUS');
   if (btnReauth) btnReauth.onclick = () => writeSerial('REAUTH');
-  if (btnClearNvs) btnClearNvs.onclick = () => writeSerial('CLEAR_NVS');
-  if (btnFactoryReset) btnFactoryReset.onclick = () => writeSerial('FACTORY_RESET');
+  if (btnClearNvs) {
+    btnClearNvs.onclick = () => {
+      if (confirm("Clear device non-volatile memory? This reboots the ESP32.")) {
+        writeSerial('CLEAR_NVS');
+      }
+    };
+  }
+  if (btnFactoryReset) {
+    btnFactoryReset.onclick = () => {
+      if (confirm("Restore ESP32 to original default state?")) {
+        writeSerial('FACTORY_RESET');
+      }
+    };
+  }
 
   window.loadDevices(); // Initial load
 
@@ -172,11 +207,15 @@ document.addEventListener('DOMContentLoaded', () => {
   async function confirmHardwareReplacement() {
     const key = document.getElementById('factoryKeyInput')?.value;
     try {
-      await fetch(`${factoryApiRoot}/device/${currentDeviceData.device_id}/replace-hardware`, {
+      const res = await fetch(`${factoryApiRoot}/device/${currentDeviceData.device_id}/replace-hardware`, {
         method: 'POST', headers: { 'Authorization': `Bearer ${key}` }
       });
-      alert("Hardware invalidated. New Master Key generated.");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      
+      alert("Hardware invalidated. New Master Key generated. Save/flash credentials below.");
       document.getElementById('replacePanel')?.classList.add('hidden');
+      window.displayResult(data);
       window.loadDevices();
     } catch (err) { alert(err.message); }
   }
@@ -193,11 +232,16 @@ document.addEventListener('DOMContentLoaded', () => {
       serialPort = port;
       updateUsbStatus(true);
       startReadLoop(port);
+      // Fetch initial status instantly upon connecting
+      setTimeout(() => writeSerial('STATUS'), 1000);
     } catch (err) { alert("USB Error: " + err.message); }
   }
 
   async function disconnectSerial() {
-    if (serialPort) { await serialPort.close(); serialPort = null; }
+    if (serialPort) { 
+      await serialPort.close(); 
+      serialPort = null; 
+    }
     updateUsbStatus(false);
   }
 
@@ -209,30 +253,173 @@ document.addEventListener('DOMContentLoaded', () => {
       badge.className = `status-badge ${connected ? 'status-online' : 'status-offline'}`;
     }
     if (panel) panel.classList.toggle('hidden', !connected);
+    if (!connected) {
+      document.getElementById('diagnosticsPanel')?.classList.add('hidden');
+    }
   }
 
   async function startReadLoop(port) {
     const decoder = new TextDecoderStream();
     port.readable.pipeTo(decoder.writable);
     const reader = decoder.readable.getReader();
+    let lineBuffer = '';
+    
     try {
       while (true) {
         const { value, done } = await reader.read();
         if (done) break;
+        
         logSerial(value, 'log-rx');
+        
+        lineBuffer += value;
+        let lines = lineBuffer.split('\r\n');
+        if (lines.length === 1) {
+          lines = lineBuffer.split('\n');
+        }
+        lineBuffer = lines.pop(); // Hold incomplete trailing string
+        
+        for (let line of lines) {
+          parseSerialLine(line.trim());
+        }
       }
-    } catch (err) { console.error(err); }
+    } catch (err) { console.error("Web Serial read stream error:", err); }
+  }
+
+  function parseSerialLine(line) {
+    if (!line) return;
+
+    if (line === 'AUTH_OK') {
+      sessionAuthed = true;
+      const el = document.getElementById('authStatusBadge');
+      if (el) {
+        el.textContent = 'AUTHENTICATED';
+        el.className = 'status-badge status-online';
+      }
+      if (btnPerformFactorySetup) btnPerformFactorySetup.disabled = false;
+      return;
+    }
+    
+    if (line === 'AUTH_FAILED') {
+      sessionAuthed = false;
+      const el = document.getElementById('authStatusBadge');
+      if (el) {
+        el.textContent = 'AUTH FAILED';
+        el.className = 'status-badge status-offline';
+      }
+      if (btnPerformFactorySetup) btnPerformFactorySetup.disabled = true;
+      return;
+    }
+
+    if (line === 'REAUTH_OK' || line === 'SERIAL_UNAUTH') {
+      sessionAuthed = false;
+      const el = document.getElementById('authStatusBadge');
+      if (el) {
+        el.textContent = (line === 'SERIAL_UNAUTH') ? 'UNAUTHORIZED' : 'NOT AUTHENTICATED';
+        el.className = 'status-badge status-offline';
+      }
+      if (btnPerformFactorySetup) btnPerformFactorySetup.disabled = true;
+      return;
+    }
+
+    // Diagnostics telemetry parsing
+    const setDiag = (id, val, statusClass) => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.textContent = val;
+        if (statusClass) {
+          el.className = statusClass;
+        }
+      }
+    };
+
+    if (line.startsWith('Device ID:')) {
+      const id = line.substring(10).trim();
+      setDiag('diagDeviceId', id);
+      document.getElementById('diagnosticsPanel')?.classList.remove('hidden');
+      
+      // If we selected a device matching this physical ID, unlock Authenticate button
+      if (currentDeviceData && currentDeviceData.device_id === id) {
+        if (btnAuthenticate) btnAuthenticate.disabled = false;
+      }
+    } else if (line.startsWith('Provisioned:')) {
+      const prov = line.substring(12).trim();
+      setDiag('diagWifiStatus', 'Provisioned: ' + prov);
+    } else if (line.startsWith('WiFi Status:')) {
+      const wifiStatus = line.substring(12).trim();
+      const sClass = (wifiStatus === 'CONNECTED') ? 'status-online-text' : 'status-offline-text';
+      setDiag('diagWifiStatus', wifiStatus);
+    } else if (line.startsWith('SSID:')) {
+      setDiag('diagWifiDetails', line.substring(5).trim() || 'Not Configured');
+    } else if (line.startsWith('IP Address:')) {
+      const ip = line.substring(11).trim();
+      const cur = document.getElementById('diagWifiDetails')?.textContent || '';
+      setDiag('diagWifiDetails', `${cur} (${ip})`);
+    } else if (line.startsWith('RSSI:')) {
+      setDiag('diagWifiRssi', line.substring(5).trim());
+    } else if (line.startsWith('MQTT Status:')) {
+      setDiag('diagMqttStatus', line.substring(12).trim());
+    } else if (line.startsWith('MQTT Auth Method:')) {
+      setDiag('diagMqttAuth', line.substring(17).trim());
+    } else if (line.startsWith('Local Session Token:')) {
+      const tok = line.substring(20).trim();
+      sessionToken = tok;
+      const detEl = document.getElementById('detectedToken');
+      if (detEl) detEl.textContent = tok;
+      
+      // If no current device key is selected, fall back to what was auto-read from board!
+      if (!currentDeviceKey) {
+        currentDeviceKey = tok;
+      }
+      if (btnAuthenticate) btnAuthenticate.disabled = false;
+    } else if (line.startsWith('Local WSS Status:')) {
+      setDiag('diagWssStatus', line.substring(17).trim());
+    } else if (line.startsWith('BLE Status:')) {
+      setDiag('diagBleStatus', line.substring(11).trim());
+    }
   }
 
   async function doAuthenticate() {
-    // Logic for AUTH command
-    writeSerial(`AUTH:${sessionToken}`);
+    const keyToUse = currentDeviceKey || sessionToken;
+    if (!keyToUse || keyToUse === 'Stored Securely') {
+      return alert("No local pairing key loaded. Please select a device from the Registry table, or click Fetch Status.");
+    }
+    writeSerial(`AUTH:${keyToUse}`);
+  }
+
+  async function doPerformFactorySetup() {
+    if (!currentDeviceData) {
+      return alert("Please select a device from the registry table first.");
+    }
+    
+    // Validate we have permanent credentials loaded (usually on fresh provisioning)
+    if (currentDeviceData.permanent_mqtt?.password === '• • • • • • • •' || !currentDeviceKey || currentDeviceKey === 'Stored Securely') {
+      return alert("Factory Setup is only available immediately after generating a new device record, as the unhashed password and token are only displayed once for security. If this is an existing device, download the flash .zip file instead.");
+    }
+
+    const payload = {
+      device_id: currentDeviceData.device_id,
+      user: currentDeviceData.permanent_mqtt?.username,
+      pass: currentDeviceData.permanent_mqtt?.password,
+      token: currentDeviceKey
+    };
+
+    writeSerial(`PROV_PERM:${JSON.stringify(payload)}`);
+    alert("Permanent setup details sent successfully over Serial! The device will store these parameters in NVS and reboot.");
   }
 
   async function sendCredentialsToDevice() {
     if (!currentDeviceData || !currentDeviceData.device_id) {
       return alert("Please select a device from the table first.");
     }
+
+    // Prompt user for local WiFi credentials
+    const wifiSSID = prompt("Enter local WiFi SSID for the device to connect to:", "");
+    if (wifiSSID === null) return; // Cancelled
+    if (!wifiSSID.trim()) return alert("SSID cannot be blank.");
+
+    const wifiPASS = prompt(`Enter Password for WiFi network "${wifiSSID}":`, "");
+    if (wifiPASS === null) return;
+
     const key = document.getElementById('factoryKeyInput')?.value;
     try {
       const res = await fetch(`${factoryApiRoot}/device/${currentDeviceData.device_id}/provision-tokens`, {
@@ -245,17 +432,16 @@ document.addEventListener('DOMContentLoaded', () => {
       sessionToken = data.session_token;
       
       const payload = {
-        ssid: 'YOUR_WIFI_SSID', 
-        pass: 'YOUR_WIFI_PASS',
+        ssid: wifiSSID.trim(), 
+        pass: wifiPASS,
         mqtt_u: data.mqtt_user,
         mqtt_p: data.mqtt_pass,
         l_tok: data.session_token
       };
 
       writeSerial(`PROV:${JSON.stringify(payload)}`);
-      const btnAuth = document.getElementById('btnAuthenticate');
-      if (btnAuth) btnAuth.disabled = false;
-      alert("Tokens sent to device over Serial!");
+      if (btnAuthenticate) btnAuthenticate.disabled = false;
+      alert("SSID, Password and secure 24-hour temporary tokens written to ESP32! Device will now reboot and connect.");
     } catch (err) {
       alert("Error sending credentials: " + err.message);
     }
@@ -263,26 +449,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function writeSerial(text) {
     if (!serialPort) return;
-    const writer = serialPort.writable.getWriter();
-    await writer.write(new TextEncoder().encode(text + '\n'));
-    writer.releaseLock();
+    try {
+      const writer = serialPort.writable.getWriter();
+      await writer.write(new TextEncoder().encode(text + '\n'));
+      writer.releaseLock();
+    } catch (err) {
+      console.error("Web Serial write error:", err);
+    }
   }
 
   function sendManualInput() {
-    const input = document.getElementById('serialInput');
-    if (!input || !input.value) return;
-    writeSerial(input.value);
-    logSerial(input.value, 'log-tx');
-    input.value = '';
+    if (!serialInput) return;
+    const value = serialInput.value;
+    if (!value) return;
+    writeSerial(value);
+    logSerial(value + '\n', 'log-tx');
+    serialInput.value = '';
   }
 
   function logSerial(msg, cls) {
     const log = document.getElementById('serialLog');
     if (!log) return;
-    const div = document.createElement('div');
-    div.className = cls;
-    div.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
-    log.appendChild(div);
+    
+    // Treat HTML line breaks properly
+    const lines = msg.split('\n');
+    lines.forEach(line => {
+      if (!line.trim()) return;
+      const div = document.createElement('div');
+      div.className = cls;
+      div.textContent = `[${new Date().toLocaleTimeString()}] ${line}`;
+      log.appendChild(div);
+    });
+    
     log.scrollTop = log.scrollHeight;
   }
 });

@@ -189,10 +189,20 @@ router.post('/device/:deviceId/generate-firmware', requireFactoryAuth, async (re
     archive.append(configContent, { name: 'config.h' });
     archive.append(certsHeader, { name: 'certificates.h' });
 
-    // Append firmware directory
+    // Append firmware directory (excluding config.h/certificates.h to avoid duplicates)
     const firmwareDir = path.resolve(__dirname, '../../firmware/iotyk_esp32');
     if (fs.existsSync(firmwareDir)) {
-      archive.directory(firmwareDir, false);
+      const files = fs.readdirSync(firmwareDir);
+      for (const file of files) {
+        if (file === 'config.h' || file === 'certificates.h' || file.startsWith('.') || file.endsWith('.zip') || file.endsWith('.exe')) continue;
+        
+        const filePath = path.join(firmwareDir, file);
+        if (file === 'main') {
+          archive.directory(filePath, 'main');
+        } else if (fs.statSync(filePath).isFile()) {
+          archive.file(filePath, { name: file });
+        }
+      }
     }
 
     await archive.finalize();
@@ -223,11 +233,13 @@ router.get('/firmware-source', requireFactoryAuth, async (req, res) => {
     const archive = archiver('zip', { zlib: { level: 9 } });
     archive.pipe(res);
 
-    // Add only FILES (skip subdirectories like __pycache__)
+    // Add files and main component directory (skip subdirectories like __pycache__ or build)
     const files = fs.readdirSync(firmwareDir);
     for (const file of files) {
       const filePath = path.join(firmwareDir, file);
-      if (fs.statSync(filePath).isFile()) {
+      if (file === 'main') {
+        archive.directory(filePath, 'iotyk_esp32/main');
+      } else if (fs.statSync(filePath).isFile()) {
         archive.file(filePath, { name: `iotyk_esp32/${file}` });
       }
     }
@@ -295,11 +307,11 @@ router.get('/device/:deviceId/firmware-package', requireFactoryAuth, async (req,
 
     const folderName = 'iotyk_esp32'; // MUST match .ino filename for Arduino IDE
 
-    // 1. Add generated device-specific headers
-    archive.append(configContent, { name: `${folderName}/config.h` });
-    archive.append(certsHeader, { name: `${folderName}/certificates.h` });
+    // 1. Add generated device-specific headers inside main folder
+    archive.append(configContent, { name: `${folderName}/main/config.h` });
+    archive.append(certsHeader, { name: `${folderName}/main/certificates.h` });
 
-    // 2. Add all other firmware files from the source directory
+    // 2. Add all other firmware files from the source directory (including main component)
     const firmwareDir = path.resolve(__dirname, '../../firmware/iotyk_esp32');
     if (fs.existsSync(firmwareDir)) {
       const files = fs.readdirSync(firmwareDir);
@@ -308,7 +320,13 @@ router.get('/device/:deviceId/firmware-package', requireFactoryAuth, async (req,
         if (file === 'config.h' || file === 'certificates.h' || file.startsWith('.') || file.endsWith('.zip') || file.endsWith('.exe')) continue;
         
         const filePath = path.join(firmwareDir, file);
-        if (fs.statSync(filePath).isFile()) {
+        if (file === 'main') {
+          const mainFiles = fs.readdirSync(filePath);
+          for (const mFile of mainFiles) {
+            if (mFile === 'config.h' || mFile === 'certificates.h') continue;
+            archive.file(path.join(filePath, mFile), { name: `${folderName}/main/${mFile}` });
+          }
+        } else if (fs.statSync(filePath).isFile()) {
           archive.file(filePath, { name: `${folderName}/${file}` });
         }
       }
@@ -557,17 +575,25 @@ router.post('/device/:deviceId/compile', requireFactoryAuth, async (req, res) =>
     // 2. Prepare temporary build directory
     if (!fs.existsSync(tempBaseDir)) fs.mkdirSync(tempBaseDir, { recursive: true });
     fs.mkdirSync(tempDir, { recursive: true });
+    fs.mkdirSync(path.join(tempDir, 'main'), { recursive: true });
 
-    // Copy firmware files (skip subdirectories like __pycache__)
+    // Copy firmware files recursively (skip build directories)
     const firmwareSrcDir = path.resolve(__dirname, '../../firmware/iotyk_esp32');
     const files = fs.readdirSync(firmwareSrcDir);
     for (const file of files) {
       const srcPath = path.join(firmwareSrcDir, file);
-      if (!fs.statSync(srcPath).isFile()) continue; // skip directories
-      fs.copyFileSync(srcPath, path.join(tempDir, file));
+      if (file === 'main') {
+        const mainFiles = fs.readdirSync(srcPath);
+        for (const mFile of mainFiles) {
+          if (mFile === 'config.h' || mFile === 'certificates.h') continue;
+          fs.copyFileSync(path.join(srcPath, mFile), path.join(tempDir, 'main', mFile));
+        }
+      } else if (fs.statSync(srcPath).isFile()) {
+        fs.copyFileSync(srcPath, path.join(tempDir, file));
+      }
     }
 
-    // Generate config.h
+    // Generate config.h inside main/
     const configContent = buildFirmwareConfig({
       deviceId: device.device_id,
       namespace: device.namespace,
@@ -577,37 +603,35 @@ router.post('/device/:deviceId/compile', requireFactoryAuth, async (req, res) =>
       localToken,
       relayCount: sanitizeRelayCount(device.relay_count)
     });
-    fs.writeFileSync(path.join(tempDir, 'config.h'), configContent);
+    fs.writeFileSync(path.join(tempDir, 'main', 'config.h'), configContent);
 
-    // Generate certificates.h
+    // Generate certificates.h inside main/
     const certs = generateCertificates(device.device_id);
     const certsHeader = formatCertificatesHeader(certs, emqxCaCert);
-    fs.writeFileSync(path.join(tempDir, 'certificates.h'), certsHeader);
+    fs.writeFileSync(path.join(tempDir, 'main', 'certificates.h'), certsHeader);
 
-    // 3. Compile using Arduino CLI
-    // FQBN for ESP32 Dev Module with Huge App partition (needed for BLE + SSL)
-    const fqbn = 'esp32:esp32:esp32:PartitionScheme=huge_app'; 
-    // Use --jobs 1 to limit memory usage on Render free tier (512MB)
-    const compileCmd = `${arduinoCli} --config-file "${arduinoConfig}" compile --fqbn ${fqbn} --jobs 1 --output-dir "${tempDir}" "${tempDir}"`;
+    // 3. Compile using ESP-IDF
+    const compileCmd = `idf.py build`;
 
-    console.log(`Starting compilation for ${deviceId}...`);
+    console.log(`Starting native ESP-IDF compilation for ${deviceId}...`);
     const { exec } = await import('child_process');
     const { promisify } = await import('util');
     const execAsync = promisify(exec);
 
-
     try {
-      await execAsync(compileCmd, { timeout: 300000 }); // 5 min timeout
+      await execAsync(compileCmd, { cwd: tempDir, timeout: 300000 }); // 5 min timeout
     } catch (compileError) {
-      const details = compileError.stdout || compileError.stderr || compileError.message;
-      console.error('Compilation failed:', details);
-      return res.status(500).json({ error: 'Firmware compilation failed', details });
+      console.error('Native compilation failed:', compileError.message);
+      return res.status(500).json({ 
+        error: 'Native firmware compilation failed', 
+        details: 'Native ESP-IDF build requires the idf.py compiler toolchain installed on the server host. Please download the pre-aligned zip package instead and compile locally using "idf.py build".' 
+      });
     }
 
-    // 4. Find and return the .bin file
-    const binFile = path.join(tempDir, 'iotyk_esp32.ino.bin');
+    // 4. Find and return the compiled binary file
+    const binFile = path.join(tempDir, 'build', 'iotyk_esp32.bin');
     if (!fs.existsSync(binFile)) {
-      return res.status(500).json({ error: 'Compilation finished but .bin file not found' });
+      return res.status(500).json({ error: 'Compilation finished but binary file not found' });
     }
 
     res.setHeader('Content-Type', 'application/octet-stream');
@@ -674,55 +698,58 @@ export default router;
 function buildFirmwareConfig({ deviceId, namespace, broker, username, password, localToken, relayCount = 1 }) {
   const count = sanitizeRelayCount(relayCount);
   const pins = DEFAULT_RELAY_PINS.slice(0, count);
-  // Generate a random local token if not supplied (e.g., for ZIP / config.h download routes)
   const token = localToken || crypto.randomBytes(8).toString('hex');
 
-  return `#ifndef IOTYK_CONFIG_H
-#define IOTYK_CONFIG_H
+  return `#ifndef MAIN_CONFIG_H
+#define MAIN_CONFIG_H
 
-// --- Hardware ---
+#include <stdint.h>
+
+// --- Hardware Layout ---
 #define LED_PIN 2
 #define RELAY_COUNT ${count}
 #define RELAY_ACTIVE_LOW true
+
+// GPIO assignments
 static const uint8_t RELAY_PINS[RELAY_COUNT] = {${pins.join(', ')}};
 
-// --- BLE UUIDs ---
-#define BLE_SERVICE_UUID "12345678-1234-1234-1234-123456789abc"
-#define BLE_WIFI_CHAR_UUID "abcd1234-5678-1234-5678-abcdef123456"
-#define BLE_TOKEN_CHAR_UUID "abcd1234-5678-1234-5678-abcdef123457"
+// --- BLE NimBLE UUIDs ---
+#define BLE_SERVICE_UUID     "12345678-1234-1234-1234-123456789abc"
+#define BLE_WIFI_CHAR_UUID   "abcd1234-5678-1234-5678-abcdef123456"
+#define BLE_TOKEN_CHAR_UUID  "abcd1234-5678-1234-5678-abcdef123457"
 
-// --- EMQX MQTT Configuration ---
-#define MQTT_BROKER "${escapeCString(broker)}"
-#define MQTT_PORT 8883
-#define MQTT_KEEP_ALIVE 60
+// --- EMQX MQTTS Configuration ---
+#define DEFAULT_MQTT_BROKER "${escapeCString(broker)}"
+#define MQTT_PORT           8883
+#define MQTT_KEEP_ALIVE     60
 
-// --- Factory values for downloadable firmware ---
-#define FACTORY_DEVICE_ID "${escapeCString(deviceId)}"
-#define FACTORY_DEVICE_NS "${escapeCString(namespace)}"
+// --- Factory Fallbacks ---
+#define FACTORY_DEVICE_ID      "${escapeCString(deviceId)}"
+#define FACTORY_DEVICE_NS      "${escapeCString(namespace)}"
 #define FACTORY_PERM_MQTT_USER "${escapeCString(username)}"
 #define FACTORY_PERM_MQTT_PASS "${escapeCString(password)}"
-#define FACTORY_LOCAL_TOKEN "${escapeCString(token)}"
+#define FACTORY_LOCAL_TOKEN    "${escapeCString(token)}"
 
-// --- Local network services ---
-#define LOCAL_HTTP_PORT 80
-#define LOCAL_WS_PORT 81
-#define LOCAL_WSS_PORT 82
-#define LOCAL_WSS_ENABLED true
-#define FIRMWARE_VERSION "1.1.0"
+// --- Firmware Version ---
+#define FIRMWARE_VERSION "1.2.0"
 
-// --- NVS Storage Keys ---
-#define NVS_NAMESPACE "iotyk"
-#define KEY_WIFI_SSID "w_ssid"
-#define KEY_WIFI_PASS "w_pass"
-#define KEY_DEVICE_ID "d_id"
-#define KEY_DEVICE_NS "d_ns"
-#define KEY_PERM_USER "m_p_usr"
-#define KEY_PERM_PASS "m_p_pwd"
-#define KEY_TEMP_USER "m_t_usr"
-#define KEY_TEMP_PASS "m_t_pwd"
+// --- Port assignments ---
+#define LOCAL_HTTP_PORT  80
+#define LOCAL_WSS_PORT   82
+
+// --- NVS Storage Keys (Namespace "iotyk") ---
+#define NVS_NAMESPACE   "iotyk"
+#define KEY_WIFI_SSID   "w_ssid"
+#define KEY_WIFI_PASS   "w_pass"
+#define KEY_DEVICE_ID   "d_id"
+#define KEY_DEVICE_NS   "d_ns"
+#define KEY_PERM_USER   "m_p_usr"
+#define KEY_PERM_PASS   "m_p_pwd"
+#define KEY_TEMP_USER   "m_t_usr"
+#define KEY_TEMP_PASS   "m_t_pwd"
 #define KEY_LOCAL_TOKEN "l_tok"
 
-#endif
+#endif // MAIN_CONFIG_H
 `;
 }
 
@@ -748,8 +775,10 @@ function generateFlashingReadme(deviceId = null) {
     ? `**Device ID:** '${deviceId}'`
     : '**Device ID:** *(generic source — fill in config.h manually)*';
 
-  return `# IoTYK ESP32 — Flash Instructions
+  return `# IoTYK ESP32 — Native ESP-IDF Flash Instructions
 ${deviceLine}
+
+This firmware package has been compiled natively with **100% native ESP-IDF (C/C++)** for maximum performance, minimal memory usage, and advanced security.
 
 ---
 
@@ -757,106 +786,49 @@ ${deviceLine}
 
 | File | Description |
 |------|-------------|
-| 'iotyk_esp32.ino' | **Main sketch** — open this in Arduino IDE |
-| 'config.h' | **Device credentials** — pre-filled with your device data |
-| 'certificates.h' | **TLS certificates** — WSS certs + EMQX CA placeholder |
-| 'TinyMqtt.h' | **Custom MQTT Engine** — zero-dependency cloud comms |
-| 'TinyJson.h' | **Custom JSON Engine** — lightweight data parsing |
-| 'TinyWss.h' | **Custom WSS Engine** — secure local control |
-| 'ble_provision.h' | BLE WiFi provisioning logic |
-| 'local_server.h' | Local WebSocket Secure (WSS) server |
+| 'CMakeLists.txt' | ESP-IDF Root project build descriptor |
+| 'sdkconfig.defaults' | Pre-selected Bluetooth NimBLE settings |
+| 'FLASH_INSTRUCTIONS.md' | Step-by-step native compile guidelines |
+| 'main/CMakeLists.txt' | Component registry for compile modules |
+| 'main/main.cpp' | Central FreeRTOS loop & system task orchestrator |
+| 'main/config.h' | Pre-filled credentials specific to this device |
+| 'main/certificates.h' | SSL certificates for WSS + EMQX cloud broker |
+| 'main/nvs_manager.cpp' | Key-Value NVS storage controller |
+| 'main/relay_controller.cpp'| Hardware GPIO toggles |
+| 'main/wifi_manager.cpp' | WiFi event handler & network interfaces |
+| 'main/ble_provision.cpp' | NimBLE Bluetooth discoverability & pairing callbacks |
+| 'main/local_server.cpp' | Local HTTPS and secure WebSocket server |
+| 'main/mqtt_manager.cpp' | Secure cloud MQTTS client loops |
 
 ---
 
-## ⚙️ Step 1 — Install Arduino IDE
+## 🚀 How to Compile and Flash Natively
 
-Download from: https://www.arduino.cc/en/software  
-Use **Arduino IDE 2.x** or **3.x**.
+### 1. Prerequisite
+Ensure you have the **Espressif ESP-IDF Toolchain** (v5.0 or later) installed on your system.
 
----
+### 2. Configure Environment
+Open your ESP-IDF Command Prompt (or Terminal) and navigate to the package folder:
+\`\`\`bash
+cd iotyk_esp32
+\`\`\`
 
-## 🔌 Step 2 — Add ESP32 Board Support
+### 3. Build the Firmware
+Compile the project natively. This will automatically compile all C/C++ files, download the lightweight **NimBLE** stack, and link WSS:
+\`\`\`bash
+idf.py build
+\`\`\`
 
-1. Open Arduino IDE → **File → Preferences**
-2. In **Additional Boards Manager URLs**, add:
-   'https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json'
-3. Go to **Tools → Board → Boards Manager**
-4. Search for 'esp32' → Install **esp32 by Espressif Systems** (version 3.x recommended)
-
----
-
-## 📦 Step 3 — Libraries (IMPORTANT)
-
-**ZERO LIBRARIES REQUIRED!**  
-This firmware is custom-built to have no external dependencies. Do **NOT** install ArduinoJson, PubSubClient, or WebSockets. Everything you need is already in this ZIP folder.
-
----
-
-## 🔑 Step 4 — Paste EMQX CA Certificate (Important!)
-
-Open 'certificates.h' and find this section:
-
-'''
-static const char EMQX_MQTT_CA_CERT[] PROGMEM = R"EOF(
------BEGIN CERTIFICATE-----
-PASTE_EMQX_CA_CERTIFICATE_HERE
------END CERTIFICATE-----
-)EOF";
-'''
-
-Replace 'PASTE_EMQX_CA_CERTIFICATE_HERE' with your actual EMQX CA certificate:
-1. Log into EMQX Cloud console
-2. Go to: **Deployment → Overview → Connection guide**
-3. Download 'emqxsl-ca.crt'
-4. Open it in Notepad, copy ALL content between (and including) the '-----BEGIN' and '-----END' lines
-5. Paste it in place of the placeholder
+### 4. Flash and Monitor
+Connect your ESP32 device via USB and flash the program (replace 'COM3' with your specific serial port):
+\`\`\`bash
+idf.py -p COM3 flash monitor
+\`\`\`
 
 ---
 
-## 🖥️ Step 5 — Select Board & Port
+## 🖥️ Web Factory Dashboard Integration
 
-1. Connect ESP32 via USB
-2. **Tools → Board → esp32 → ESP32 Dev Module**
-3. **Tools → Port** → Select the COM port (e.g., COM3, COM4, /dev/ttyUSB0)
-
----
-
-## 🚀 Step 6 — Upload
-
-1. Open 'iotyk_esp32.ino' (all .h files auto-load since they're in the same folder)
-2. Click **Upload** (→ button)
-3. Wait for "Done uploading"
-
----
-
-## 📡 Step 7 — Monitor & Pair
-
-1. Open **Tools → Serial Monitor** (baud: **115200**)
-2. You should see:
-   '''
-   --- IoTYK ESP32 Starting ---
-   BLE Advertising started. Name: IoTYK-XXXX
-   '''
-3. Open the IoTYK mobile app → scan QR code or enter the pairing key → send WiFi credentials via BLE
-4. Device connects to WiFi, then MQTT → LED slow blinks ✅
-
----
-
-## 🏁 LED Status Guide
-
-| LED Pattern | Meaning |
-|---|---|
-| OFF | Waiting for BLE pairing |
-| Fast blink (200ms) | BLE connected / Connecting to WiFi or MQTT |
-| Slow blink (1000ms) | Fully connected to MQTT ✅ |
-
----
-
-## ❓ Troubleshooting
-
-- **Port not visible**: Install CP2102 or CH340 USB driver for your ESP32 board
-- **Compilation error 'library not found'**: Re-check Step 3 library names
-- **MQTT not connecting**: Verify 'certificates.h' has real EMQX CA cert (not placeholder)
-- **BLE not visible**: Ensure phone Bluetooth is ON and app has BLE permissions
+Open the **Web Factory Dashboard**, connect the board's USB serial port, and unlock commands with the Local Session Token pre-filled in your 'config.h'. Use the dashboard to burn permanent credentials, monitor WiFi reconnect states, or test relay actions instantly!
 `;
 }

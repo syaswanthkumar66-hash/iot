@@ -84,13 +84,55 @@
         <div class="detected-token">Detected Token: <code id="detectedToken">...</code></div>
         <div class="action-grid" style="margin-top:15px;">
           <button id="btnAuthenticate" class="btn primary small" disabled>Authenticate with Device</button>
+          <button id="btnPerformFactorySetup" class="btn primary small" disabled>Perform Factory Setup</button>
           <button id="btnSendCredentials" class="btn primary small">Send WiFi & 1h Tokens</button>
           <button id="btnCmdStatus" class="btn secondary small">Fetch Status</button>
-          <button id="btnReauth" class="btn secondary small">Request Re-Auth</button>
         </div>
         <div class="action-grid" style="margin-top:10px;">
+          <button id="btnReauth" class="btn secondary small">Request Re-Auth</button>
           <button id="btnClearNvs" class="btn danger small">Clear NVS</button>
           <button id="btnFactoryReset" class="btn danger small">Factory Reset</button>
+        </div>
+      </div>
+
+      <!-- Live Diagnostics Dashboard -->
+      <div id="diagnosticsPanel" class="hidden" style="margin-top:20px; background: rgba(0,0,0,0.3); border-radius:12px; border:1px solid var(--border); padding:15px;">
+        <h3 style="font-size:14px; color:var(--accent); margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+          <span>📊 Live Device Diagnostics</span>
+        </h3>
+        <div class="diagnostics-grid" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap:12px; font-size:13px; font-family:'JetBrains Mono', monospace;">
+          <div style="background:var(--bg); padding:10px; border-radius:8px; border:1px solid var(--border);">
+            <div style="color:var(--muted); font-size:11px; margin-bottom:4px;">DEVICE ID</div>
+            <div id="diagDeviceId" style="font-weight:bold; color:var(--accent);">-</div>
+          </div>
+          <div style="background:var(--bg); padding:10px; border-radius:8px; border:1px solid var(--border);">
+            <div style="color:var(--muted); font-size:11px; margin-bottom:4px;">WIFI STATUS</div>
+            <div id="diagWifiStatus" style="font-weight:bold;">-</div>
+          </div>
+          <div style="background:var(--bg); padding:10px; border-radius:8px; border:1px solid var(--border);">
+            <div style="color:var(--muted); font-size:11px; margin-bottom:4px;">SSID / IP</div>
+            <div id="diagWifiDetails" style="font-weight:bold;">-</div>
+          </div>
+          <div style="background:var(--bg); padding:10px; border-radius:8px; border:1px solid var(--border);">
+            <div style="color:var(--muted); font-size:11px; margin-bottom:4px;">SIGNAL (RSSI)</div>
+            <div id="diagWifiRssi" style="font-weight:bold;">-</div>
+          </div>
+          <div style="background:var(--bg); padding:10px; border-radius:8px; border:1px solid var(--border);">
+            <div style="color:var(--muted); font-size:11px; margin-bottom:4px;">MQTT STATUS</div>
+            <div id="diagMqttStatus" style="font-weight:bold;">-</div>
+          </div>
+          <div style="background:var(--bg); padding:10px; border-radius:8px; border:1px solid var(--border);">
+            <div style="color:var(--muted); font-size:11px; margin-bottom:4px;">MQTT AUTH METHOD</div>
+            <div id="diagMqttAuth" style="font-weight:bold;">-</div>
+          </div>
+          <div style="background:var(--bg); padding:10px; border-radius:8px; border:1px solid var(--border);">
+            <div style="color:var(--muted); font-size:11px; margin-bottom:4px;">LOCAL WSS STATUS</div>
+            <div id="diagWssStatus" style="font-weight:bold;">-</div>
+          </div>
+          <div style="background:var(--bg); padding:10px; border-radius:8px; border:1px solid var(--border);">
+            <div style="color:var(--muted); font-size:11px; margin-bottom:4px;">BLE ADVERTISING</div>
+            <div id="diagBleStatus" style="font-weight:bold;">-</div>
+          </div>
         </div>
       </div>
 
