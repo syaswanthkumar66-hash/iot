@@ -14,13 +14,15 @@ static NimBLEServer* pServer = NULL;
 
 static std::string s_ssid = "";
 static std::string s_pass = "";
+static std::string s_temp_user = "";
+static std::string s_temp_pass = "";
+static std::string s_local_token = "";
 static bool s_wifi_received = false;
 static bool s_token_received = false;
 
 // Decodes standard Base64 string natively
 static std::string decode_base64(const std::string& input) {
     size_t out_len = 0;
-    // Estimate output length
     size_t max_len = (input.length() * 3) / 4 + 2;
     unsigned char* out_buf = (unsigned char*)malloc(max_len);
     if (!out_buf) return "";
@@ -49,18 +51,18 @@ class WifiCallbacks : public NimBLECharacteristicCallbacks {
             return;
         }
 
-        // Parse "ssid,password"
         size_t comma = decoded.find(',');
         if (comma != std::string::npos) {
             s_ssid = decoded.substr(0, comma);
             s_pass = decoded.substr(comma + 1);
             ESP_LOGI(TAG, "SSID & Password received over BLE: %s", s_ssid.c_str());
+            printf("Received WiFi configuration via App\n");
             s_wifi_received = true;
         } else {
-            // No password
             s_ssid = decoded;
             s_pass = "";
             ESP_LOGI(TAG, "SSID received over BLE (no password): %s", s_ssid.c_str());
+            printf("Received WiFi configuration via App (No Password)\n");
             s_wifi_received = true;
         }
     }
@@ -95,13 +97,19 @@ class TokenCallbacks : public NimBLECharacteristicCallbacks {
             return;
         }
 
-        // Fetch permanent key from NVS
+        // Fetch local token from redundant config
+        io_tyk_config_t current_cfg;
         char stored_key[64] = {0};
-        nvs_manager_get_str(KEY_LOCAL_TOKEN, stored_key, sizeof(stored_key), FACTORY_LOCAL_TOKEN);
+        
+        if (nvs_manager_load_config(&current_cfg) == ESP_OK && strlen(current_cfg.local_token) > 0) {
+            strncpy(stored_key, current_cfg.local_token, sizeof(stored_key) - 1);
+        } else {
+            strncpy(stored_key, FACTORY_LOCAL_TOKEN, sizeof(stored_key) - 1);
+        }
 
         // Verify key
         if (strcmp(json_key->valuestring, stored_key) != 0) {
-            ESP_LOGE(TAG, "BLE Pairing authentication failed! Invalid pairing key: %s (Expected: %s)", json_key->valuestring, stored_key);
+            ESP_LOGE(TAG, "BLE Pairing authentication failed! Invalid pairing key");
             cJSON_Delete(root);
             return;
         }
@@ -110,20 +118,18 @@ class TokenCallbacks : public NimBLECharacteristicCallbacks {
         cJSON* json_mqtt_p = cJSON_GetObjectItem(json_mqtt, "p");
 
         if (!json_mqtt_u || !json_mqtt_p) {
-            ESP_LOGE(TAG, "Missing MQTT temporary credentials inside BLE JSON");
+            ESP_LOGE(TAG, "Missing MQTT temporary credentials");
             cJSON_Delete(root);
             return;
         }
 
-        // Save pairing values to NVS
-        nvs_manager_set_str(KEY_TEMP_USER, json_mqtt_u->valuestring);
-        nvs_manager_set_str(KEY_TEMP_PASS, json_mqtt_p->valuestring);
-        
-        // Save pairing session token
-        nvs_manager_set_str(KEY_LOCAL_TOKEN, json_tok->valuestring); // session promotes to auth token
-
-        ESP_LOGI(TAG, "BLE Pairing authenticated successfully! Storing credentials...");
+        s_temp_user = json_mqtt_u->valuestring;
+        s_temp_pass = json_mqtt_p->valuestring;
+        s_local_token = json_tok->valuestring;
         s_token_received = true;
+
+        ESP_LOGI(TAG, "BLE Pairing authenticated successfully!");
+        printf("Received temporary MQTT credentials via BLE\n");
 
         cJSON_Delete(root);
     }
@@ -138,14 +144,12 @@ void ble_provision_start(const char* device_id) {
     pServer = NimBLEDevice::createServer();
     NimBLEService* pService = pServer->createService(BLE_SERVICE_UUID);
 
-    // Create WiFi characteristic (SSID,PASS)
     NimBLECharacteristic* pWifiChar = pService->createCharacteristic(
         BLE_WIFI_CHAR_UUID,
         NIMBLE_PROPERTY::WRITE | NIMBLE_PROPERTY::WRITE_NR
     );
     pWifiChar->setCallbacks(new WifiCallbacks());
 
-    // Create Token characteristic
     NimBLECharacteristic* pTokenChar = pService->createCharacteristic(
         BLE_TOKEN_CHAR_UUID,
         NIMBLE_PROPERTY::WRITE | NIMBLE_PROPERTY::WRITE_NR
@@ -154,11 +158,10 @@ void ble_provision_start(const char* device_id) {
 
     pService->start();
 
-    // Start advertising
     NimBLEAdvertising* pAdvertising = NimBLEDevice::getAdvertising();
     pAdvertising->addServiceUUID(BLE_SERVICE_UUID);
     pAdvertising->setScanResponse(true);
-    pAdvertising->setMinPreferred(0x06);  // helper for iOS connections
+    pAdvertising->setMinPreferred(0x06);
     pAdvertising->start();
 
     s_ble_active = true;
@@ -170,9 +173,27 @@ void ble_provision_start(const char* device_id) {
     xTaskCreate([](void* p) {
         while (s_ble_active) {
             if (s_wifi_received && s_token_received) {
-                ESP_LOGI(TAG, "Credentials fully verified over BLE! Saving WiFi SSID and Rebooting...");
-                nvs_manager_set_str(KEY_WIFI_SSID, s_ssid.c_str());
-                nvs_manager_set_str(KEY_WIFI_PASS, s_pass.c_str());
+                ESP_LOGI(TAG, "Credentials fully verified over BLE! Saving redundant configuration and Rebooting...");
+                
+                io_tyk_config_t cfg;
+                if (nvs_manager_load_config(&cfg) != ESP_OK) {
+                    memset(&cfg, 0, sizeof(io_tyk_config_t));
+                }
+                
+                strncpy(cfg.wifi_ssid, s_ssid.c_str(), sizeof(cfg.wifi_ssid) - 1);
+                strncpy(cfg.wifi_pass, s_pass.c_str(), sizeof(cfg.wifi_pass) - 1);
+                strncpy(cfg.temp_user, s_temp_user.c_str(), sizeof(cfg.temp_user) - 1);
+                strncpy(cfg.temp_pass, s_temp_pass.c_str(), sizeof(cfg.temp_pass) - 1);
+                strncpy(cfg.local_token, s_local_token.c_str(), sizeof(cfg.local_token) - 1);
+                
+                if (strlen(cfg.r_cnt) == 0) {
+                    strcpy(cfg.r_cnt, "4"); // Default to 4 relays
+                }
+                
+                nvs_manager_save_config(&cfg);
+                
+                // BLE Kill: Release all bluetooth memory allocation before restart/link
+                NimBLEDevice::deinit(true);
                 
                 vTaskDelay(pdMS_TO_TICKS(1500));
                 esp_restart();
@@ -180,7 +201,7 @@ void ble_provision_start(const char* device_id) {
             vTaskDelay(pdMS_TO_TICKS(200));
         }
         vTaskDelete(NULL);
-    }, "ble_monitor", 2048, NULL, 5, NULL);
+    }, "ble_monitor", 3072, NULL, 5, NULL);
 }
 
 void ble_provision_stop(void) {

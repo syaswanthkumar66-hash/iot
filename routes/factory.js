@@ -204,4 +204,31 @@ router.get('/generate-firmware/:deviceId', async (req, res) => {
   }
 });
 
+const crypto = require('crypto');
+
+/**
+ * POST /factory/sign-nonce
+ * Sign the boot challenge nonce using the factory private key (HMAC-SHA256)
+ */
+router.post('/sign-nonce', (req, res) => {
+  try {
+    const { nonce } = req.body;
+    if (!nonce) {
+      return res.status(400).json({ error: 'Challenge nonce required' });
+    }
+
+    const factoryKey = process.env.FACTORY_LOCAL_TOKEN || 'iotyk-factory-initial-key-2026';
+
+    const signature = crypto
+      .createHmac('sha256', factoryKey)
+      .update(nonce)
+      .digest('hex');
+
+    res.json({ signature });
+  } catch (err) {
+    console.error('Signing error:', err);
+    res.status(500).json({ error: 'Signature generation failed' });
+  }
+});
+
 module.exports = router;

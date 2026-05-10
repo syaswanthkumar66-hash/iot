@@ -264,7 +264,6 @@ router.get('/firmware-source', requireFactoryAuth, async (req, res) => {
 router.get('/device/:deviceId/firmware-package', requireFactoryAuth, async (req, res) => {
   try {
     const { deviceId } = req.params;
-    const emqxCaCert = req.query?.emqx_ca || '';
 
     await ensureRelayCountColumn();
     const deviceRes = await query(`
@@ -281,61 +280,121 @@ router.get('/device/:deviceId/firmware-package', requireFactoryAuth, async (req,
     }
 
     const device = deviceRes.rows[0];
-    const broker = process.env.EMQX_MQTT_HOST || 'xxxx.ala.us-east-1.emqxsl.com';
-    const password = decrypt(device.mqtt_password_enc);
-    const localToken = crypto.randomBytes(8).toString('hex');
-
-    // Build device-specific files
-    const configContent = buildFirmwareConfig({
-      deviceId: device.device_id,
-      namespace: device.namespace,
-      broker,
-      username: device.mqtt_username,
-      password,
-      localToken,
-      relayCount: sanitizeRelayCount(device.relay_count),
-    });
-
-    const certs = generateCertificates(device.device_id);
-    const certsHeader = formatCertificatesHeader(certs, emqxCaCert);
 
     res.setHeader('Content-Type', 'application/zip');
-    res.setHeader('Content-Disposition', `attachment; filename="${device.device_id}_flash_package.zip"`);
+    res.setHeader('Content-Disposition', `attachment; filename="${device.device_id}_native_flash_package.zip"`);
 
     const archive = archiver('zip', { zlib: { level: 9 } });
     archive.pipe(res);
 
-    const folderName = 'iotyk_esp32'; // MUST match .ino filename for Arduino IDE
+    const buildDir = path.resolve(__dirname, '../../firmware/iotyk_esp32/build');
 
-    // 1. Add generated device-specific headers inside main folder
-    archive.append(configContent, { name: `${folderName}/main/config.h` });
-    archive.append(certsHeader, { name: `${folderName}/main/certificates.h` });
+    // 1. Resolve compiled binary paths
+    const bootloaderPath = path.join(buildDir, 'bootloader/bootloader.bin');
+    const partitionsPath = path.join(buildDir, 'partition_table/partition-table.bin');
+    const otaDataPath = path.join(buildDir, 'ota_data_initial.bin');
+    const appPath = path.join(buildDir, 'iotyk_esp32.bin');
 
-    // 2. Add all other firmware files from the source directory (including main component)
-    const firmwareDir = path.resolve(__dirname, '../../firmware/iotyk_esp32');
-    if (fs.existsSync(firmwareDir)) {
-      const files = fs.readdirSync(firmwareDir);
-      for (const file of files) {
-        // Skip files we've already generated dynamically or that aren't source code
-        if (file === 'config.h' || file === 'certificates.h' || file.startsWith('.') || file.endsWith('.zip') || file.endsWith('.exe')) continue;
-        
-        const filePath = path.join(firmwareDir, file);
-        if (file === 'main') {
-          const mainFiles = fs.readdirSync(filePath);
-          for (const mFile of mainFiles) {
-            if (mFile === 'config.h' || mFile === 'certificates.h') continue;
-            archive.file(path.join(filePath, mFile), { name: `${folderName}/main/${mFile}` });
-          }
-        } else if (fs.statSync(filePath).isFile()) {
-          archive.file(filePath, { name: `${folderName}/${file}` });
-        }
-      }
+    if (fs.existsSync(bootloaderPath) && fs.existsSync(partitionsPath) && fs.existsSync(otaDataPath) && fs.existsSync(appPath)) {
+      // Append precompiled binary files
+      archive.file(bootloaderPath, { name: 'bin/bootloader.bin' });
+      archive.file(partitionsPath, { name: 'bin/partition-table.bin' });
+      archive.file(otaDataPath, { name: 'bin/ota_data_initial.bin' });
+      archive.file(appPath, { name: 'bin/iotyk_esp32.bin' });
+
+      // 2. Generate flash.bat (Windows Utility)
+      const batContent = `@echo off
+echo ====================================================================
+echo   IoTYK ESP32 - Native Production Flasher (${device.device_id})
+echo ====================================================================
+echo.
+echo Please connect your ESP32 board via USB.
+echo.
+set /p COM_PORT="Enter COM Port (e.g., COM5): "
+
+echo.
+echo Installing/upgrading esptool via pip...
+python -m pip install esptool --quiet
+
+echo.
+echo Flashing precompiled native ESP-IDF binaries to %COM_PORT%...
+esptool.py --chip esp32 -p %COM_PORT% -b 460800 --before=default-reset --after=hard-reset write-flash --flash-mode dio --flash-freq 40m --flash-size 4MB 0x1000 bin/bootloader.bin 0x8000 bin/partition-table.bin 0xf000 bin/ota_data_initial.bin 0x20000 bin/iotyk_esp32.bin
+
+echo.
+echo ====================================================================
+echo   Flashing complete! 
+echo ====================================================================
+echo.
+echo Step 2: Open the factory dashboard in your browser.
+echo Step 3: Connect to USB Serial, then click "Perform Factory Setup".
+echo.
+pause
+`;
+      archive.append(batContent, { name: 'flash.bat' });
+
+      // 3. Generate flash.sh (macOS / Linux Utility)
+      const shContent = `#!/bin/bash
+echo "===================================================================="
+echo "  IoTYK ESP32 - Native Production Flasher (${device.device_id})"
+echo "===================================================================="
+echo ""
+echo "Please connect your ESP32 board via USB."
+echo ""
+read -p "Enter Serial Port (e.g., /dev/ttyUSB0 or /dev/cu.usbserial-110): " SERIAL_PORT
+
+echo ""
+echo "Installing/upgrading esptool via pip..."
+pip install esptool --quiet
+
+echo ""
+echo "Flashing precompiled native ESP-IDF binaries to $SERIAL_PORT..."
+esptool.py --chip esp32 -p "$SERIAL_PORT" -b 460800 --before=default-reset --after=hard-reset write-flash --flash-mode dio --flash-freq 40m --flash-size 4MB 0x1000 bin/bootloader.bin 0x8000 bin/partition-table.bin 0xf000 bin/ota_data_initial.bin 0x20000 bin/iotyk_esp32.bin
+
+echo ""
+echo "===================================================================="
+echo "  Flashing complete!"
+echo "===================================================================="
+echo ""
+echo "Step 2: Open the factory dashboard in your browser."
+echo "Step 3: Connect to USB Serial, then click \\"Perform Factory Setup\\"."
+echo ""
+`;
+      archive.append(shContent, { name: 'flash.sh' });
+
+      // 4. Generate README.md
+      const readmeContent = `# IoTYK Direct Flasher — Device ${device.device_id}
+
+This package contains precompiled production binaries for device **${device.device_id}**.
+No source code setup or compilation is required!
+
+## 🚀 Step 1: Flash Device
+
+### Windows OS
+1. Connect your ESP32 via USB.
+2. Double-click \`flash.bat\`.
+3. Input your COM port (e.g., \`COM5\`) and press Enter.
+
+### macOS / Linux OS
+1. Connect your ESP32 via USB.
+2. Run \`bash flash.sh\` in your terminal.
+3. Input your serial port (e.g., \`/dev/ttyUSB0\` or \`/dev/cu.usbserial-110\`) and press Enter.
+
+## 🔑 Step 2: Personalize & Provision
+1. Open the Factory Web Dashboard (\`http://localhost:3000\`).
+2. Select your device **${device.device_id}** from the Registry table.
+3. Click **Connect USB** to connect Web Serial in the browser.
+4. Click **Perform Factory Setup** to automatically write your MQTT credentials and local access tokens over Web Serial to the board's permanent NVS!
+`;
+      archive.append(readmeContent, { name: 'README.md' });
+
+    } else {
+      return res.status(404).json({
+        error: 'Precompiled binaries not found',
+        details: 'Native ESP-IDF build binaries were not found inside the firmware build folder. Please compile the project first in firmware/iotyk_esp32 using "idf.py build".'
+      });
     }
 
-    // 3. Add flashing instructions
-    archive.append(generateFlashingReadme(device.device_id), { name: `${folderName}/FLASH_INSTRUCTIONS.md` });
-
-    // 4. Log the flash event (non-blocking — don't fail the download if log fails)
+    // 5. Log the flash event (non-blocking)
     archive.on('end', async () => {
       try {
         await query(`
@@ -346,7 +405,7 @@ router.get('/device/:deviceId/firmware-package', requireFactoryAuth, async (req,
         `, [device.device_id]);
         await query(`
           INSERT INTO hardware_flash_log (device_id, event_type, notes)
-          SELECT id, 'credential_send', 'Firmware package downloaded'
+          SELECT id, 'credential_send', 'Precompiled native flash package downloaded'
           FROM devices WHERE device_id = $1
         `, [device.device_id]);
       } catch (logErr) {

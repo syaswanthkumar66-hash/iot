@@ -1,5 +1,6 @@
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { hmac_sha256 } from '../utils/crypto';
 
 // For mDNS discovery on React Native we'd ideally use a library like 'react-native-zeroconf'
 // However, since it requires native modules that might not be in the bare Expo project yet,
@@ -77,54 +78,79 @@ export const localDeviceApi = {
    * Get device state directly over local WiFi
    */
   async getState(deviceId, token) {
-    return localRequest(deviceId, '/state', 'GET', null, token);
+    return this.sendCommandWs(deviceId, { action: 'STATUS' }, token);
   },
 
   /**
    * Send command directly over local WiFi
    */
   async sendCommand(deviceId, command, token) {
-    return localRequest(deviceId, '/cmd', 'POST', command, token);
+    return this.sendCommandWs(deviceId, command, token);
   },
 
   async sendCommandWs(deviceId, command, token) {
     if (!token) throw new Error('Missing local token.');
-    try {
-      return await wsRequest(deviceId, { token, cmd: command }, true);
-    } catch {
-      return wsRequest(deviceId, { token, cmd: command }, false);
-    }
+    return wsRequest(deviceId, command, token);
   }
 };
 
-function wsRequest(deviceId, payload, secure = false) {
+function wsRequest(deviceId, command, token) {
   return new Promise((resolve, reject) => {
-    const url = secure ? `wss://${deviceId}.local:82` : `ws://${deviceId}.local:81`;
+    // Port 80 plain WebSocket endpoint (matches high-performance S3 code freeze)
+    const url = `ws://${deviceId}.local/ws`;
     const ws = new WebSocket(url);
+    let authenticated = false;
+
     const timeoutId = setTimeout(() => {
       try { ws.close(); } catch {}
-      reject(new Error(`${secure ? 'Local WSS' : 'Local WebSocket'} timed out.`));
+      reject(new Error('Local WebSocket timed out.'));
     }, LOCAL_TIMEOUT_MS);
 
     ws.onopen = () => {
-      ws.send(JSON.stringify(payload));
+      // Challenge nonce is pushed automatically by device on connect
     };
 
     ws.onmessage = (event) => {
-      clearTimeout(timeoutId);
-      try { ws.close(); } catch {}
       try {
         const data = JSON.parse(event.data);
-        if (data?.error) reject(new Error(data.error));
-        else resolve(data);
-      } catch {
+
+        // 1. Handle challenge nonce
+        if (data && data.nonce) {
+          const hmac = hmac_sha256(token, data.nonce);
+          ws.send(JSON.stringify({ auth: hmac }));
+          return;
+        }
+
+        // 2. Handle authentication success
+        if (data && data.status === 'auth_ok') {
+          authenticated = true;
+          const payload = {
+            t: token,
+            ...command
+          };
+          ws.send(JSON.stringify(payload));
+          return;
+        }
+
+        // 3. Handle final command response
+        clearTimeout(timeoutId);
+        try { ws.close(); } catch {}
+
+        if (data && data.e) {
+          reject(new Error(`Device error code: ${data.e}`));
+        } else {
+          resolve(data);
+        }
+      } catch (err) {
+        clearTimeout(timeoutId);
+        try { ws.close(); } catch {}
         reject(new Error('Invalid local WebSocket response.'));
       }
     };
 
     ws.onerror = () => {
       clearTimeout(timeoutId);
-      reject(new Error(`${secure ? 'Local WSS' : 'Local WebSocket'} unavailable.`));
+      reject(new Error('Local WebSocket connection failed.'));
     };
   });
 }

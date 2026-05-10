@@ -22,4 +22,13 @@ void wifi_manager_get_ip(char* out_ip, size_t max_len);
 // Stop WiFi interfaces cleanly
 void wifi_manager_stop(void);
 
+// Check if WiFi connection retry limit has been exceeded
+bool wifi_manager_has_failed(void);
+
+// Configure dynamic WiFi power-save modem sleep modes
+void wifi_manager_set_power_save(bool enable);
+
+// Start mDNS host resolution service
+void wifi_manager_start_mdns(const char* device_id);
+
 #endif // MAIN_WIFI_MANAGER_H

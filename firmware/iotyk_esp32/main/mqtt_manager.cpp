@@ -20,6 +20,7 @@ static void mqtt_event_handler(void* handler_args, esp_event_base_t base, int32_
         case MQTT_EVENT_CONNECTED:
             ESP_LOGI(TAG, "MQTTS Secure Client Connected to Broker.");
             s_connected = true;
+            printf("Setup completed. Now connected to MQTT.\n");
             if (!s_cmd_topic.empty()) {
                 int msg_id = esp_mqtt_client_subscribe(client, s_cmd_topic.c_str(), 1);
                 ESP_LOGI(TAG, "Subscribed to topic: %s (msg_id=%d)", s_cmd_topic.c_str(), msg_id);

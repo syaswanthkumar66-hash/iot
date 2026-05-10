@@ -3,6 +3,7 @@
 #include "esp_event.h"
 #include "esp_netif.h"
 #include "esp_log.h"
+#include "mdns.h"
 #include <string.h>
 
 static const char* TAG = "WIFI_MGR";
@@ -10,9 +11,10 @@ static const char* TAG = "WIFI_MGR";
 static esp_netif_t* sta_netif = NULL;
 static esp_netif_t* ap_netif = NULL;
 static bool s_connected = false;
+static bool s_has_failed = false;
 static char s_ip_addr[32] = "0.0.0.0";
 static int s_retry_num = 0;
-#define WIFI_MAX_RETRY 10
+#define WIFI_MAX_RETRY 5
 
 static void event_handler(void* arg, esp_event_base_t event_base,
                                 int32_t event_id, void* event_data) {
@@ -27,6 +29,7 @@ static void event_handler(void* arg, esp_event_base_t event_base,
             ESP_LOGI(TAG, "Disconnected from AP. Retrying (%d/%d)...", s_retry_num, WIFI_MAX_RETRY);
         } else {
             ESP_LOGW(TAG, "Failed to connect after max retries.");
+            s_has_failed = true;
         }
     } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
         ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
@@ -85,6 +88,7 @@ void wifi_manager_connect_sta(const char* ssid, const char* pass) {
     ESP_ERROR_CHECK(esp_wifi_start());
     
     s_retry_num = 0;
+    s_has_failed = false;
     ESP_LOGI(TAG, "Starting connection to SSID: %s", ssid);
 }
 
@@ -119,6 +123,37 @@ void wifi_manager_get_ip(char* out_ip, size_t max_len) {
 void wifi_manager_stop(void) {
     esp_wifi_stop();
     s_connected = false;
+    s_has_failed = false;
     strcpy(s_ip_addr, "0.0.0.0");
     ESP_LOGI(TAG, "WiFi stopped");
+}
+
+bool wifi_manager_has_failed(void) {
+    return s_has_failed;
+}
+
+void wifi_manager_set_power_save(bool enable) {
+    // Direct power (5V 5W) connected. Keep WiFi transceiver fully active at all times for sub-ms ping times!
+    esp_wifi_set_ps(WIFI_PS_NONE);
+    ESP_LOGI(TAG, "WiFi Power Save forced disabled (Max Performance Mode at all times)");
+}
+
+void wifi_manager_start_mdns(const char* device_id) {
+    // Initialize mDNS service
+    esp_err_t err = mdns_init();
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "mDNS Init failed: %d", err);
+        return;
+    }
+
+    // Set hostname (e.g. iotyk-123456.local)
+    mdns_hostname_set(device_id);
+    // Set instance name
+    mdns_instance_name_set("IoTYK Smart Relay Board");
+
+    // Add HTTP and WebSocket services to resolve over mDNS
+    mdns_service_add(NULL, "_http", "_tcp", 80, NULL, 0);
+    mdns_service_add(NULL, "_ws", "_tcp", 8080, NULL, 0);
+
+    ESP_LOGI(TAG, "mDNS started successfully. Hostname: %s.local", device_id);
 }

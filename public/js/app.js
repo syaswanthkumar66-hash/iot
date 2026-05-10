@@ -288,6 +288,20 @@ document.addEventListener('DOMContentLoaded', () => {
   function parseSerialLine(line) {
     if (!line) return;
 
+    if (line.startsWith('CHALLENGE_NONCE:')) {
+      const nonce = line.substring(16).trim();
+      window.lastChallengeNonce = nonce;
+      logSerial(`Challenge Nonce Received: ${nonce}`, 'log-rx');
+      
+      const badge = document.getElementById('authStatusBadge');
+      if (badge) {
+        badge.textContent = 'PENDING UNLOCK';
+        badge.className = 'status-badge status-offline';
+      }
+      if (btnAuthenticate) btnAuthenticate.disabled = false;
+      return;
+    }
+
     if (line === 'AUTH_OK') {
       sessionAuthed = true;
       const el = document.getElementById('authStatusBadge');
@@ -379,11 +393,25 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function doAuthenticate() {
-    const keyToUse = currentDeviceKey || sessionToken;
-    if (!keyToUse || keyToUse === 'Stored Securely') {
-      return alert("No local pairing key loaded. Please select a device from the Registry table, or click Fetch Status.");
+    if (!window.lastChallengeNonce) {
+      return alert("No Challenge Nonce received from device yet. Please click status or tap the reset button on your device to trigger a challenge nonce.");
     }
-    writeSerial(`AUTH:${keyToUse}`);
+    
+    try {
+      logSerial("Submitting challenge nonce to factory backend for signature...", 'log-system');
+      const res = await fetch(`${factoryApiRoot}/sign-nonce`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nonce: window.lastChallengeNonce })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Signing failed");
+
+      logSerial(`Received cryptographic signature from backend: ${data.signature}`, 'log-system');
+      writeSerial(`AUTH:${data.signature}`);
+    } catch (err) {
+      alert("Failed to compute signature on backend: " + err.message);
+    }
   }
 
   async function doPerformFactorySetup() {
@@ -400,7 +428,8 @@ document.addEventListener('DOMContentLoaded', () => {
       device_id: currentDeviceData.device_id,
       user: currentDeviceData.permanent_mqtt?.username,
       pass: currentDeviceData.permanent_mqtt?.password,
-      token: currentDeviceKey
+      token: currentDeviceKey,
+      r_cnt: String(currentDeviceData.relay_count || 1)
     };
 
     writeSerial(`PROV_PERM:${JSON.stringify(payload)}`);
