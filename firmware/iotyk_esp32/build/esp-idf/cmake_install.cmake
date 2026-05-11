@@ -719,7 +719,7 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/build/esp-idf/h2zero__esp-nimble-cpp/cmake_install.cmake")
+  include("C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/build/esp-idf/espressif__mdns/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
@@ -729,7 +729,7 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/build/esp-idf/espressif__mdns/cmake_install.cmake")
+  include("C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/build/esp-idf/h2zero__esp-nimble-cpp/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)

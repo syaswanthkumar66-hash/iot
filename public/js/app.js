@@ -295,6 +295,23 @@ document.addEventListener('DOMContentLoaded', () => {
   function parseSerialLine(line) {
     if (!line) return;
 
+    if (line.startsWith('WIFI_AP:')) {
+      const ap = line.substring(8).trim();
+      if (!window.scannedNetworks) window.scannedNetworks = [];
+      if (!window.scannedNetworks.includes(ap)) {
+        window.scannedNetworks.push(ap);
+      }
+      return;
+    }
+
+    if (line === 'SCAN_END') {
+      window.isScanningWifi = false;
+      if (window.onScanFinished) {
+        window.onScanFinished(window.scannedNetworks || []);
+      }
+      return;
+    }
+
     if (line.startsWith('CHALLENGE_NONCE:')) {
       const nonce = line.substring(16).trim();
       window.lastChallengeNonce = nonce;
@@ -447,13 +464,46 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!currentDeviceData || !currentDeviceData.device_id) {
       return alert("Please select a device from the table first.");
     }
+    if (!serialPort) {
+      return alert("Please connect the device via USB Serial first.");
+    }
 
-    // Prompt user for local WiFi credentials
-    const wifiSSID = prompt("Enter local WiFi SSID for the device to connect to:", "");
-    if (wifiSSID === null) return; // Cancelled
-    if (!wifiSSID.trim()) return alert("SSID cannot be blank.");
+    // Start WiFi Scanning
+    window.scannedNetworks = [];
+    window.isScanningWifi = true;
+    logSerial("Initiating WiFi scan on physical ESP32 over serial...\n", "log-system");
+    await writeSerial("SCAN");
 
-    const wifiPASS = prompt(`Enter Password for WiFi network "${wifiSSID}":`, "");
+    // Wait 3.5 seconds for the scan to gather SSIDs
+    const scannedList = await new Promise((resolve) => {
+      window.onScanFinished = (list) => resolve(list);
+      setTimeout(() => {
+        resolve(window.scannedNetworks || []);
+        window.onScanFinished = null;
+      }, 3500);
+    });
+
+    let selectedSSID = "";
+    if (scannedList.length > 0) {
+      const promptMsg = "Discovered surrounding WiFi networks:\n\n" + 
+        scannedList.map((net, i) => `[${i + 1}]  📶 ${net}`).join("\n") + 
+        "\n\nEnter the NUMBER of the network to select, or type your own SSID directly:";
+      const userInput = prompt(promptMsg, "");
+      if (userInput === null) return; // Cancelled
+      const num = parseInt(userInput.trim());
+      if (!isNaN(num) && num >= 1 && num <= scannedList.length) {
+        selectedSSID = scannedList[num - 1];
+      } else {
+        selectedSSID = userInput.trim();
+      }
+    } else {
+      selectedSSID = prompt("No nearby networks auto-detected. Enter local WiFi SSID manually:", "");
+      if (selectedSSID === null) return; // Cancelled
+    }
+
+    if (!selectedSSID.trim()) return alert("SSID cannot be blank.");
+
+    const wifiPASS = prompt(`Enter Password for WiFi network "${selectedSSID}":`, "");
     if (wifiPASS === null) return;
 
     const key = document.getElementById('factoryKeyInput')?.value;
@@ -468,7 +518,7 @@ document.addEventListener('DOMContentLoaded', () => {
       sessionToken = data.session_token;
       
       const payload = {
-        ssid: wifiSSID.trim(), 
+        ssid: selectedSSID.trim(), 
         pass: wifiPASS,
         mqtt_u: data.mqtt_user,
         mqtt_p: data.mqtt_pass,
@@ -477,7 +527,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       await writeSerial(`PROV:${JSON.stringify(payload)}`);
       if (btnAuthenticate) btnAuthenticate.disabled = false;
-      alert("SSID, Password and secure 24-hour temporary tokens written to ESP32! Device will now reboot and connect.");
+      alert(`SSID ("${selectedSSID}"), Password, and secure temporary tokens written to ESP32! The device will now reboot and connect.`);
     } catch (err) {
       alert("Error sending credentials: " + err.message);
     }

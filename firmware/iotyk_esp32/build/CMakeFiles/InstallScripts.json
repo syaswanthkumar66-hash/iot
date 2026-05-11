@@ -157,9 +157,9 @@
 		"C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/build/esp-idf/rt/cmake_install.cmake",
 		"C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/build/esp-idf/spiffs/cmake_install.cmake",
 		"C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/build/esp-idf/ulp/cmake_install.cmake",
-		"C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/build/esp-idf/h2zero__esp-nimble-cpp/cmake_install.cmake",
-		"C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/build/esp-idf/espressif__cjson/cmake_install.cmake",
 		"C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/build/esp-idf/espressif__mdns/cmake_install.cmake",
+		"C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/build/esp-idf/espressif__cjson/cmake_install.cmake",
+		"C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/build/esp-idf/h2zero__esp-nimble-cpp/cmake_install.cmake",
 		"C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/build/esp-idf/espressif__mqtt/cmake_install.cmake",
 		"C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/build/esp-idf/main/cmake_install.cmake"
 	],

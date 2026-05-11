@@ -1,6 +1,6 @@
 import { BleManager, State } from 'react-native-ble-plx';
 import { NativeModules, PermissionsAndroid, Platform } from 'react-native';
-import { encode as btoa } from 'base-64';
+import { encode as btoa, decode as atob } from 'base-64';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 export const SERVICE_UUID = '12345678-1234-1234-1234-123456789abc';
@@ -150,6 +150,44 @@ export function scanForAny(onFound) {
   );
 
   return true;
+}
+
+// ─── Read Scanned WiFi Networks List ──────────────────────────────────────────
+/**
+ * Read and decode the scanned WiFi list from the connected device.
+ */
+export async function readWifiList() {
+  if (!_connected) throw new Error('No BLE device connected.');
+  try {
+    const char = await _connected.readCharacteristicForService(
+      SERVICE_UUID,
+      CHAR_UUID
+    );
+    if (!char?.value) return [];
+    const decoded = atob(char.value);
+    return decoded ? decoded.split(',').filter(Boolean) : [];
+  } catch (err) {
+    console.warn('Failed to read scanned WiFi list:', err);
+    return [];
+  }
+}
+
+/**
+ * Read the current real-time connection status from the connected device.
+ */
+export async function readWifiStatus() {
+  if (!_connected) throw new Error('No BLE device connected.');
+  try {
+    const char = await _connected.readCharacteristicForService(
+      SERVICE_UUID,
+      CHAR_UUID
+    );
+    if (!char?.value) return '';
+    return atob(char.value);
+  } catch (err) {
+    console.warn('Failed to read WiFi status:', err);
+    return '';
+  }
 }
 
 // ─── Send WiFi credentials ────────────────────────────────────────────────────

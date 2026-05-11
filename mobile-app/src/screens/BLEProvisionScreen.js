@@ -21,7 +21,9 @@ import {
   sendWifi,
   sendPairingToken,
   stopScan,
-  waitForBluetooth
+  waitForBluetooth,
+  readWifiList,
+  readWifiStatus
 } from '../services/ble';
 import { api } from '../services/api';
 import { localDeviceApi } from '../services/local';
@@ -119,6 +121,8 @@ export default function BLEProvisionScreen({ navigation, route }) {
   const [ssid, setSsid]         = useState('');
   const [wifiPass, setWifiPass] = useState('');
   const [error, setError]       = useState(null);
+  const [scannedNetworks, setScannedNetworks] = useState([]);
+  const [loadingWifi, setLoadingWifi] = useState(false);
 
   // Abort controller for cleanup on unmount
   const aborted = useRef(false);
@@ -170,6 +174,17 @@ export default function BLEProvisionScreen({ navigation, route }) {
         setError(err.message);
         setStep(STEP.ERROR);
         return;
+      }
+
+      if (aborted.current) return;
+      
+      // Fetch scanned networks over BLE
+      setStatus('Scanning surrounding WiFi networks…');
+      try {
+        const list = await readWifiList();
+        if (!aborted.current) setScannedNetworks(list);
+      } catch (err) {
+        console.warn('Scanned WiFi fetch error:', err);
       }
 
       if (aborted.current) return;
@@ -235,16 +250,43 @@ export default function BLEProvisionScreen({ navigation, route }) {
     try {
       setStatus('Sending WiFi credentials via Bluetooth...');
       await sendWifi(ssid, wifiPass);
+
+      setStatus('Waiting for device to connect to network...');
+      
+      let attempts = 0;
+      let connectedToMqtt = false;
+
+      while (attempts < 25 && !aborted.current) {
+        await new Promise(r => setTimeout(r, 1000));
+        attempts++;
+
+        const status = await readWifiStatus();
+        console.log('Real-time connection status from device:', status);
+
+        if (status === 'CONNECTING') {
+          setStatus('Device is associating with WiFi and connecting to EMQX...');
+        } else if (status === 'WIFI_FAILED') {
+          throw new Error('Device failed to link with your WiFi router. Please check your network password.');
+        } else if (status === 'EMQX_FAILED') {
+          throw new Error('Device linked with WiFi router, but failed to connect to EMQX server.');
+        } else if (status === 'CONNECTED') {
+          connectedToMqtt = true;
+          break;
+        }
+      }
+
+      if (!connectedToMqtt) {
+        throw new Error('Connection verification timed out. Please check if your router is active.');
+      }
     } catch (err) {
-      setError(`Failed to send WiFi: ${err.message}`);
-      setStep(STEP.ERROR);
+      Alert.alert('Setup Failed', err.message);
+      setStep(STEP.WIFI_FORM);
       return;
     }
 
-    // Disconnect BLE; device will now connect via WiFi.
+    // Disconnect BLE only after successful connection handshake
     await disconnectBle();
-    setStatus('WiFi sent. Device will use local network first, then MQTT when remote.');
-
+    setStatus('Successfully provisioned! Device is connected to WiFi and registered online.');
     setStep(STEP.SUCCESS);
   }
 
@@ -302,6 +344,41 @@ export default function BLEProvisionScreen({ navigation, route }) {
                 <View style={bleStyles.connectedDot} />
                 <Text style={bleStyles.connectedText}>Device connected via Bluetooth</Text>
               </View>
+
+              {scannedNetworks.length > 0 && (
+                <View style={bleStyles.scanContainer}>
+                  <Text style={commonStyles.label}>Nearby Networks (Tap to Select)</Text>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={bleStyles.scanScroll}
+                  >
+                    {scannedNetworks.map((net) => {
+                      const isSelected = ssid === net;
+                      return (
+                        <TouchableOpacity
+                          key={net}
+                          style={[
+                            bleStyles.capsule,
+                            isSelected && bleStyles.capsuleSelected
+                          ]}
+                          activeOpacity={0.7}
+                          onPress={() => setSsid(net)}
+                        >
+                          <Text
+                            style={[
+                              bleStyles.capsuleText,
+                              isSelected && bleStyles.capsuleTextSelected
+                            ]}
+                          >
+                            📶 {net}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </ScrollView>
+                </View>
+              )}
 
               <Text style={commonStyles.label}>WiFi Network (SSID)</Text>
               <TextInput
@@ -453,6 +530,36 @@ const bleStyles = StyleSheet.create({
     color: '#34D399',
     fontSize: 12,
     fontWeight: '700'
+  },
+  scanContainer: {
+    marginVertical: 4,
+    gap: 8
+  },
+  scanScroll: {
+    paddingVertical: 4,
+    gap: 8
+  },
+  capsule: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#1B2635',
+    borderWidth: 1,
+    borderColor: '#2D3E55',
+    marginRight: 8
+  },
+  capsuleSelected: {
+    backgroundColor: '#0F2C2C',
+    borderColor: '#14B8A6'
+  },
+  capsuleText: {
+    color: '#8EA0B3',
+    fontSize: 12,
+    fontWeight: '600'
+  },
+  capsuleTextSelected: {
+    color: '#14B8A6',
+    fontWeight: '800'
   },
   // Success
   successCircle: {
