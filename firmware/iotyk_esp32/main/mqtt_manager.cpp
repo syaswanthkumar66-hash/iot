@@ -3,6 +3,8 @@
 #include "esp_log.h"
 #include "certificates.h"
 #include "config.h"
+#include <stdio.h>
+#include <string.h>
 #include <string>
 
 static const char* TAG = "MQTT_MGR";

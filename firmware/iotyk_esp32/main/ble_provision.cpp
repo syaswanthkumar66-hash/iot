@@ -1,3 +1,7 @@
+#include "sdkconfig.h"
+
+#if CONFIG_BT_ENABLED
+
 #include "ble_provision.h"
 #include "NimBLEDevice.h"
 #include "cJSON.h"
@@ -6,6 +10,7 @@
 #include "config.h"
 #include <esp_log.h>
 #include <esp_system.h>
+#include <stdlib.h>
 #include <string>
 
 static const char* TAG = "BLE_PROV";
@@ -214,3 +219,17 @@ void ble_provision_stop(void) {
 bool ble_provision_is_active(void) {
     return s_ble_active;
 }
+
+#else // CONFIG_BT_ENABLED
+
+#include "ble_provision.h"
+#include "esp_log.h"
+
+void ble_provision_start(const char* device_id) {
+    ESP_LOGW("BLE_PROV", "Bluetooth hardware is not available on this chip target. Pairing is restricted to Serial/WiFi.");
+}
+
+void ble_provision_stop(void) {}
+bool ble_provision_is_active(void) { return false; }
+
+#endif // CONFIG_BT_ENABLED

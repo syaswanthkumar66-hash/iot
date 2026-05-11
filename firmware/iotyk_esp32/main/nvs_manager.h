@@ -1,7 +1,7 @@
 #ifndef MAIN_NVS_MANAGER_H
 #define MAIN_NVS_MANAGER_H
 
-#include <esp_err_t>
+#include "esp_err.h"
 #include <stddef.h>
 #include "config.h"
 

@@ -46,7 +46,7 @@ static const uint8_t OTA_PUBLIC_KEY[32] = {
 #define BLE_TOKEN_CHAR_UUID  "abcd1234-5678-1234-5678-abcdef123457"
 
 // --- EMQX MQTTS Configuration ---
-#define DEFAULT_MQTT_BROKER "xxxx.ala.us-east-1.emqxsl.com"
+#define DEFAULT_MQTT_BROKER "your-broker.ala.us-east-1.emqxsl.com"
 #define MQTT_PORT           8883
 #define MQTT_KEEP_ALIVE     60
 
@@ -62,7 +62,6 @@ static const uint8_t OTA_PUBLIC_KEY[32] = {
 
 // --- Port assignments ---
 #define LOCAL_HTTP_PORT  80
-#define LOCAL_WSS_PORT   82
 
 // --- NVS Storage Keys (Namespace "iotyk") ---
 #define NVS_NAMESPACE   "iotyk"

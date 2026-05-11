@@ -7,7 +7,7 @@
 // Callback function type definition for handling JSON commands
 typedef std::string (*command_callback_t)(const std::string& json_payload);
 
-// Start the native HTTPS and WSS (WebSocket Secure) server on port 82
+// Start the native HTTP and authenticated WS (WebSocket) server on port 80
 void local_server_start(command_callback_t on_command);
 
 // Stop the secure local server

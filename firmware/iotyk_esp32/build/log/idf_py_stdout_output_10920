@@ -1,0 +1,468 @@
+Command: ninja all
+[1/38] No update step for 'bootloader'
+[2/38] Linking C static library esp-idf\esp_driver_gptimer\libesp_driver_gptimer.a
+[3/38] Linking C static library esp-idf\cmock\libcmock.a
+[4/38] Linking C static library esp-idf\esp_blockdev_util\libesp_blockdev_util.a
+[5/38] Linking C static library esp-idf\esp_driver_cam\libesp_driver_cam.a
+[6/38] Linking C static library esp-idf\esp_driver_dac\libesp_driver_dac.a
+[7/38] Linking C static library esp-idf\esp_driver_ledc\libesp_driver_ledc.a
+[8/38] Linking C static library esp-idf\esp_driver_pcnt\libesp_driver_pcnt.a
+[9/38] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/wifi_manager.cpp.obj
+FAILED: esp-idf/main/CMakeFiles/__idf_main.dir/wifi_manager.cpp.obj 
+C:\Espressif\tools\xtensa-esp-elf\esp-15.2.0_20251204\xtensa-esp-elf\bin\xtensa-esp32-elf-g++.exe -DCJSON_CIRCULAR_LIMIT=10000 -DCJSON_NESTING_LIMIT=1000 -DESP_MDNS_VERSION_NUMBER=\"1.11.1\" -DESP_PLATFORM -DESP_PSA_ITS_AVAILABLE -DIDF_VER=\"v6.0.1\" -DMBEDTLS_CONFIG_FILE=\"mbedtls/esp_config.h\" -DMBEDTLS_MAJOR_VERSION=4 -DSOC_MMU_PAGE_SIZE=CONFIG_MMU_PAGE_SIZE -DSOC_XTAL_FREQ_MHZ=CONFIG_XTAL_FREQ -DTF_PSA_CRYPTO_USER_CONFIG_FILE=\"mbedtls/esp_config.h\" -D_GLIBCXX_HAVE_POSIX_SEMAPHORE -D_GLIBCXX_USE_POSIX_SEMAPHORE -D_GNU_SOURCE -D_POSIX_READER_WRITER_LOCKS -IC:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/build/config -IC:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main -ID:/.espressif/v6.0.1/esp-idf/components/esp_libc/platform_include -ID:/.espressif/v6.0.1/esp-idf/components/freertos/config/include -ID:/.espressif/v6.0.1/esp-idf/components/freertos/config/include/freertos -ID:/.espressif/v6.0.1/esp-idf/components/freertos/config/xtensa/include -ID:/.espressif/v6.0.1/esp-idf/components/freertos/FreeRTOS-Kernel/include -ID:/.espressif/v6.0.1/esp-idf/components/freertos/FreeRTOS-Kernel/portable/xtensa/include -ID:/.espressif/v6.0.1/esp-idf/components/freertos/FreeRTOS-Kernel/portable/xtensa/include/freertos -ID:/.espressif/v6.0.1/esp-idf/components/freertos/esp_additions/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hw_support/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hw_support/include/soc -ID:/.espressif/v6.0.1/esp-idf/components/esp_hw_support/ldo/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hw_support/debug_probe/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hw_support/etm/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hw_support/mspi_timing_tuning/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hw_support/mspi_timing_tuning/tuning_scheme_impl/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hw_support/power_supply/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hw_support/modem/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hw_support/port/esp32/. -ID:/.espressif/v6.0.1/esp-idf/components/esp_hw_support/port/esp32/include -ID:/.espressif/v6.0.1/esp-idf/components/heap/include -ID:/.espressif/v6.0.1/esp-idf/components/heap/tlsf -ID:/.espressif/v6.0.1/esp-idf/components/log/include -ID:/.espressif/v6.0.1/esp-idf/components/soc/include -ID:/.espressif/v6.0.1/esp-idf/components/soc/esp32 -ID:/.espressif/v6.0.1/esp-idf/components/soc/esp32/include -ID:/.espressif/v6.0.1/esp-idf/components/soc/esp32/register -ID:/.espressif/v6.0.1/esp-idf/components/hal/platform_port/include -ID:/.espressif/v6.0.1/esp-idf/components/hal/esp32/include -ID:/.espressif/v6.0.1/esp-idf/components/hal/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_rom/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_rom/esp32/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_rom/esp32/include/esp32 -ID:/.espressif/v6.0.1/esp-idf/components/esp_rom/esp32 -ID:/.espressif/v6.0.1/esp-idf/components/esp_common/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_system/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_system/port/soc -ID:/.espressif/v6.0.1/esp-idf/components/esp_system/port/include/private -ID:/.espressif/v6.0.1/esp-idf/components/esp_stdio/include -ID:/.espressif/v6.0.1/esp-idf/components/xtensa/esp32/include -ID:/.espressif/v6.0.1/esp-idf/components/xtensa/include -ID:/.espressif/v6.0.1/esp-idf/components/xtensa/deprecated_include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hal_gpio/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hal_gpio/esp32/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hal_usb/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hal_pmu/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hal_pmu/esp32/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hal_ana_conv/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hal_ana_conv/esp32/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hal_dma/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hal_i2s/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hal_i2s/esp32/include -ID:/.espressif/v6.0.1/esp-idf/components/lwip/include -ID:/.espressif/v6.0.1/esp-idf/components/lwip/include/apps -ID:/.espressif/v6.0.1/esp-idf/components/lwip/lwip/src/include -ID:/.espressif/v6.0.1/esp-idf/components/lwip/port/include -ID:/.espressif/v6.0.1/esp-idf/components/lwip/port/freertos/include -ID:/.espressif/v6.0.1/esp-idf/components/lwip/port/esp32xx/include -ID:/.espressif/v6.0.1/esp-idf/components/lwip/port/esp32xx/include/arch -ID:/.espressif/v6.0.1/esp-idf/components/lwip/port/esp32xx/include/sys -ID:/.espressif/v6.0.1/esp-idf/components/nvs_flash/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_partition/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_blockdev/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_wifi/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_wifi/include/local -ID:/.espressif/v6.0.1/esp-idf/components/esp_wifi/wifi_apps/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_wifi/wifi_apps/nan_app/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_event/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_phy/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_phy/esp32/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_netif/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_http_server/include -ID:/.espressif/v6.0.1/esp-idf/components/http_parser -ID:/.espressif/v6.0.1/esp-idf/components/esp_driver_gpio/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_driver_tsens/include -IC:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/managed_components/h2zero__esp-nimble-cpp/src -ID:/.espressif/v6.0.1/esp-idf/components/bt/include/esp32/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/common/osi/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/common/api/include/api -ID:/.espressif/v6.0.1/esp-idf/components/bt/common/btc/profile/esp/blufi/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/common/btc/profile/esp/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/common/hci_log/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/common/ble_log/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/common/tinycrypt/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/common/tinycrypt/port -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/ans/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/bas/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/dis/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/gap/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/gatt/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/hr/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/htp/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/ias/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/ipss/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/lls/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/prox/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/cts/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/tps/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/hid/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/sps/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/cte/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/util/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/store/ram/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/store/config/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/ras/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/porting/nimble/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/port/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/transport/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/porting/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/porting/npl/freertos/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/esp-hci/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_timer/include -ID:/.espressif/v6.0.1/esp-idf/components/driver/i2c/include -ID:/.espressif/v6.0.1/esp-idf/components/driver/touch_sensor/include -ID:/.espressif/v6.0.1/esp-idf/components/driver/twai/include -ID:/.espressif/v6.0.1/esp-idf/components/driver/touch_sensor/esp32/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hal_i2c/esp32/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hal_i2c/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hal_twai/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hal_twai/esp32/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hal_touch_sens/esp32/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hal_touch_sens/include -IC:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/managed_components/espressif__cjson/cJSON -IC:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/managed_components/espressif__mdns/include -ID:/.espressif/v6.0.1/esp-idf/components/console -ID:/.espressif/v6.0.1/esp-idf/components/vfs/include -IC:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/managed_components/espressif__mqtt/include -ID:/.espressif/v6.0.1/esp-idf/components/tcp_transport/include -ID:/.espressif/v6.0.1/esp-idf/components/esp-tls -ID:/.espressif/v6.0.1/esp-idf/components/esp-tls/esp-tls-crypto -ID:/.espressif/v6.0.1/esp-idf/components/mbedtls/port/include -ID:/.espressif/v6.0.1/esp-idf/components/mbedtls/mbedtls/include -ID:/.espressif/v6.0.1/esp-idf/components/mbedtls/mbedtls/library -ID:/.espressif/v6.0.1/esp-idf/components/mbedtls/mbedtls/tf-psa-crypto/core -ID:/.espressif/v6.0.1/esp-idf/components/mbedtls/mbedtls/tf-psa-crypto/drivers/builtin/src -ID:/.espressif/v6.0.1/esp-idf/components/mbedtls/esp_crt_bundle/include -ID:/.espressif/v6.0.1/esp-idf/components/mbedtls/port/psa_driver/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_security/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hal_security/esp32/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hal_security/include -ID:/.espressif/v6.0.1/esp-idf/components/mbedtls/mbedtls/tf-psa-crypto/include -ID:/.espressif/v6.0.1/esp-idf/components/mbedtls/mbedtls/tf-psa-crypto/drivers/builtin/include -ID:/.espressif/v6.0.1/esp-idf/components/mbedtls/mbedtls/tf-psa-crypto/drivers/everest/include -ID:/.espressif/v6.0.1/esp-idf/components/mbedtls/mbedtls/tf-psa-crypto/drivers/p256-m @"C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/build/toolchain/cxxflags" -fdiagnostics-color=always -ffunction-sections -fdata-sections -Wall -Werror -Wno-error=unused-function -Wno-error=unused-variable -Wno-error=unused-but-set-variable -Wno-error=deprecated-declarations -Wextra -Wno-error=extra -Wno-unused-parameter -Wno-sign-compare -Wno-enum-conversion -gdwarf-4 -ggdb -Os -freorder-blocks -mno-target-align -fmacro-prefix-map=C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32=. -fmacro-prefix-map=D:/.espressif/v6.0.1/esp-idf=/IDF -fstrict-volatile-bitfields -fno-jump-tables -fno-tree-switch-conversion -std=gnu++26 -fno-exceptions -fuse-cxa-atexit -MD -MT esp-idf/main/CMakeFiles/__idf_main.dir/wifi_manager.cpp.obj -MF esp-idf\main\CMakeFiles\__idf_main.dir\wifi_manager.cpp.obj.d -o esp-idf/main/CMakeFiles/__idf_main.dir/wifi_manager.cpp.obj -c C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/wifi_manager.cpp
+In file included from D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:20,
+                 from C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/wifi_manager.cpp:5:
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/wifi_manager.cpp: In function 'void event_handler(void*, esp_event_base_t, int32_t, void*)':
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/wifi_manager.cpp:42:34: error: expected ')' before 'MACSTR'
+   42 |         ESP_LOGI(TAG, "Station " MACSTR " joined AP, AID=%d",
+      |                                  ^~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log_format.h:15:88: note: in definition of macro 'LOG_FORMAT'
+   15 | #define LOG_FORMAT(letter, format)  LOG_COLOR_ ## letter #letter " (%" PRIu32 ") %s: " format LOG_RESET_COLOR "\n"
+      |                                                                                        ^~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:163:94: note: in expansion of macro 'ESP_LOG_LEVEL'
+  163 | #define ESP_LOG_LEVEL_LOCAL(configs, tag, format, ...) do { if (_ESP_LOG_ENABLED(configs)) { ESP_LOG_LEVEL(configs, tag, format __VA_OPT__(,) __VA_ARGS__); } } while(0)
+      |                                                                                              ^~~~~~~~~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:79:41: note: in expansion of macro 'ESP_LOG_LEVEL_LOCAL'
+   79 | #define ESP_LOGI(tag, format, ...) do { ESP_LOG_LEVEL_LOCAL(ESP_LOG_INFO, tag, format __VA_OPT__(,) __VA_ARGS__); } while(0)
+      |                                         ^~~~~~~~~~~~~~~~~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/wifi_manager.cpp:42:9: note: in expansion of macro 'ESP_LOGI'
+   42 |         ESP_LOGI(TAG, "Station " MACSTR " joined AP, AID=%d",
+      |         ^~~~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:194:72: note: to match this '('
+  194 |         if (ESP_LOG_GET_LEVEL(configs)==ESP_LOG_ERROR)        { esp_log(ESP_LOG_CONFIG_INIT(ESP_LOG_ERROR),   tag, LOG_FORMAT(E, format), esp_log_timestamp(), tag __VA_OPT__(,) __VA_ARGS__); } \
+      |                                                                        ^
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:163:94: note: in expansion of macro 'ESP_LOG_LEVEL'
+  163 | #define ESP_LOG_LEVEL_LOCAL(configs, tag, format, ...) do { if (_ESP_LOG_ENABLED(configs)) { ESP_LOG_LEVEL(configs, tag, format __VA_OPT__(,) __VA_ARGS__); } } while(0)
+      |                                                                                              ^~~~~~~~~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:79:41: note: in expansion of macro 'ESP_LOG_LEVEL_LOCAL'
+   79 | #define ESP_LOGI(tag, format, ...) do { ESP_LOG_LEVEL_LOCAL(ESP_LOG_INFO, tag, format __VA_OPT__(,) __VA_ARGS__); } while(0)
+      |                                         ^~~~~~~~~~~~~~~~~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/wifi_manager.cpp:42:9: note: in expansion of macro 'ESP_LOGI'
+   42 |         ESP_LOGI(TAG, "Station " MACSTR " joined AP, AID=%d",
+      |         ^~~~~~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/wifi_manager.cpp:43:18: error: 'MAC2STR' was not declared in this scope
+   43 |                  MAC2STR(event->mac), event->aid);
+      |                  ^~~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:194:178: note: in definition of macro 'ESP_LOG_LEVEL'
+  194 |         if (ESP_LOG_GET_LEVEL(configs)==ESP_LOG_ERROR)        { esp_log(ESP_LOG_CONFIG_INIT(ESP_LOG_ERROR),   tag, LOG_FORMAT(E, format), esp_log_timestamp(), tag __VA_OPT__(,) __VA_ARGS__); } \
+      |                                                                                                                                                                                  ^~~~~~~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:79:41: note: in expansion of macro 'ESP_LOG_LEVEL_LOCAL'
+   79 | #define ESP_LOGI(tag, format, ...) do { ESP_LOG_LEVEL_LOCAL(ESP_LOG_INFO, tag, format __VA_OPT__(,) __VA_ARGS__); } while(0)
+      |                                         ^~~~~~~~~~~~~~~~~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/wifi_manager.cpp:42:9: note: in expansion of macro 'ESP_LOGI'
+   42 |         ESP_LOGI(TAG, "Station " MACSTR " joined AP, AID=%d",
+      |         ^~~~~~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/wifi_manager.cpp:42:34: error: expected ')' before 'MACSTR'
+   42 |         ESP_LOGI(TAG, "Station " MACSTR " joined AP, AID=%d",
+      |                                  ^~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log_format.h:15:88: note: in definition of macro 'LOG_FORMAT'
+   15 | #define LOG_FORMAT(letter, format)  LOG_COLOR_ ## letter #letter " (%" PRIu32 ") %s: " format LOG_RESET_COLOR "\n"
+      |                                                                                        ^~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:163:94: note: in expansion of macro 'ESP_LOG_LEVEL'
+  163 | #define ESP_LOG_LEVEL_LOCAL(configs, tag, format, ...) do { if (_ESP_LOG_ENABLED(configs)) { ESP_LOG_LEVEL(configs, tag, format __VA_OPT__(,) __VA_ARGS__); } } while(0)
+      |                                                                                              ^~~~~~~~~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:79:41: note: in expansion of macro 'ESP_LOG_LEVEL_LOCAL'
+   79 | #define ESP_LOGI(tag, format, ...) do { ESP_LOG_LEVEL_LOCAL(ESP_LOG_INFO, tag, format __VA_OPT__(,) __VA_ARGS__); } while(0)
+      |                                         ^~~~~~~~~~~~~~~~~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/wifi_manager.cpp:42:9: note: in expansion of macro 'ESP_LOGI'
+   42 |         ESP_LOGI(TAG, "Station " MACSTR " joined AP, AID=%d",
+      |         ^~~~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:195:72: note: to match this '('
+  195 |         else if (ESP_LOG_GET_LEVEL(configs)==ESP_LOG_WARN)    { esp_log(ESP_LOG_CONFIG_INIT(ESP_LOG_WARN),    tag, LOG_FORMAT(W, format), esp_log_timestamp(), tag __VA_OPT__(,) __VA_ARGS__); } \
+      |                                                                        ^
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:163:94: note: in expansion of macro 'ESP_LOG_LEVEL'
+  163 | #define ESP_LOG_LEVEL_LOCAL(configs, tag, format, ...) do { if (_ESP_LOG_ENABLED(configs)) { ESP_LOG_LEVEL(configs, tag, format __VA_OPT__(,) __VA_ARGS__); } } while(0)
+      |                                                                                              ^~~~~~~~~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:79:41: note: in expansion of macro 'ESP_LOG_LEVEL_LOCAL'
+   79 | #define ESP_LOGI(tag, format, ...) do { ESP_LOG_LEVEL_LOCAL(ESP_LOG_INFO, tag, format __VA_OPT__(,) __VA_ARGS__); } while(0)
+      |                                         ^~~~~~~~~~~~~~~~~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/wifi_manager.cpp:42:9: note: in expansion of macro 'ESP_LOGI'
+   42 |         ESP_LOGI(TAG, "Station " MACSTR " joined AP, AID=%d",
+      |         ^~~~~~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/wifi_manager.cpp:43:18: error: 'MAC2STR' was not declared in this scope
+   43 |                  MAC2STR(event->mac), event->aid);
+      |                  ^~~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:195:178: note: in definition of macro 'ESP_LOG_LEVEL'
+  195 |         else if (ESP_LOG_GET_LEVEL(configs)==ESP_LOG_WARN)    { esp_log(ESP_LOG_CONFIG_INIT(ESP_LOG_WARN),    tag, LOG_FORMAT(W, format), esp_log_timestamp(), tag __VA_OPT__(,) __VA_ARGS__); } \
+      |                                                                                                                                                                                  ^~~~~~~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:79:41: note: in expansion of macro 'ESP_LOG_LEVEL_LOCAL'
+   79 | #define ESP_LOGI(tag, format, ...) do { ESP_LOG_LEVEL_LOCAL(ESP_LOG_INFO, tag, format __VA_OPT__(,) __VA_ARGS__); } while(0)
+      |                                         ^~~~~~~~~~~~~~~~~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/wifi_manager.cpp:42:9: note: in expansion of macro 'ESP_LOGI'
+   42 |         ESP_LOGI(TAG, "Station " MACSTR " joined AP, AID=%d",
+      |         ^~~~~~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/wifi_manager.cpp:42:34: error: expected ')' before 'MACSTR'
+   42 |         ESP_LOGI(TAG, "Station " MACSTR " joined AP, AID=%d",
+      |                                  ^~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log_format.h:15:88: note: in definition of macro 'LOG_FORMAT'
+   15 | #define LOG_FORMAT(letter, format)  LOG_COLOR_ ## letter #letter " (%" PRIu32 ") %s: " format LOG_RESET_COLOR "\n"
+      |                                                                                        ^~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:163:94: note: in expansion of macro 'ESP_LOG_LEVEL'
+  163 | #define ESP_LOG_LEVEL_LOCAL(configs, tag, format, ...) do { if (_ESP_LOG_ENABLED(configs)) { ESP_LOG_LEVEL(configs, tag, format __VA_OPT__(,) __VA_ARGS__); } } while(0)
+      |                                                                                              ^~~~~~~~~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:79:41: note: in expansion of macro 'ESP_LOG_LEVEL_LOCAL'
+   79 | #define ESP_LOGI(tag, format, ...) do { ESP_LOG_LEVEL_LOCAL(ESP_LOG_INFO, tag, format __VA_OPT__(,) __VA_ARGS__); } while(0)
+      |                                         ^~~~~~~~~~~~~~~~~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/wifi_manager.cpp:42:9: note: in expansion of macro 'ESP_LOGI'
+   42 |         ESP_LOGI(TAG, "Station " MACSTR " joined AP, AID=%d",
+      |         ^~~~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:196:72: note: to match this '('
+  196 |         else if (ESP_LOG_GET_LEVEL(configs)==ESP_LOG_DEBUG)   { esp_log(ESP_LOG_CONFIG_INIT(ESP_LOG_DEBUG),   tag, LOG_FORMAT(D, format), esp_log_timestamp(), tag __VA_OPT__(,) __VA_ARGS__); } \
+      |                                                                        ^
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:163:94: note: in expansion of macro 'ESP_LOG_LEVEL'
+  163 | #define ESP_LOG_LEVEL_LOCAL(configs, tag, format, ...) do { if (_ESP_LOG_ENABLED(configs)) { ESP_LOG_LEVEL(configs, tag, format __VA_OPT__(,) __VA_ARGS__); } } while(0)
+      |                                                                                              ^~~~~~~~~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:79:41: note: in expansion of macro 'ESP_LOG_LEVEL_LOCAL'
+   79 | #define ESP_LOGI(tag, format, ...) do { ESP_LOG_LEVEL_LOCAL(ESP_LOG_INFO, tag, format __VA_OPT__(,) __VA_ARGS__); } while(0)
+      |                                         ^~~~~~~~~~~~~~~~~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/wifi_manager.cpp:42:9: note: in expansion of macro 'ESP_LOGI'
+   42 |         ESP_LOGI(TAG, "Station " MACSTR " joined AP, AID=%d",
+      |         ^~~~~~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/wifi_manager.cpp:43:18: error: 'MAC2STR' was not declared in this scope
+   43 |                  MAC2STR(event->mac), event->aid);
+      |                  ^~~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:196:178: note: in definition of macro 'ESP_LOG_LEVEL'
+  196 |         else if (ESP_LOG_GET_LEVEL(configs)==ESP_LOG_DEBUG)   { esp_log(ESP_LOG_CONFIG_INIT(ESP_LOG_DEBUG),   tag, LOG_FORMAT(D, format), esp_log_timestamp(), tag __VA_OPT__(,) __VA_ARGS__); } \
+      |                                                                                                                                                                                  ^~~~~~~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:79:41: note: in expansion of macro 'ESP_LOG_LEVEL_LOCAL'
+   79 | #define ESP_LOGI(tag, format, ...) do { ESP_LOG_LEVEL_LOCAL(ESP_LOG_INFO, tag, format __VA_OPT__(,) __VA_ARGS__); } while(0)
+      |                                         ^~~~~~~~~~~~~~~~~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/wifi_manager.cpp:42:9: note: in expansion of macro 'ESP_LOGI'
+   42 |         ESP_LOGI(TAG, "Station " MACSTR " joined AP, AID=%d",
+      |         ^~~~~~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/wifi_manager.cpp:42:34: error: expected ')' before 'MACSTR'
+   42 |         ESP_LOGI(TAG, "Station " MACSTR " joined AP, AID=%d",
+      |                                  ^~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log_format.h:15:88: note: in definition of macro 'LOG_FORMAT'
+   15 | #define LOG_FORMAT(letter, format)  LOG_COLOR_ ## letter #letter " (%" PRIu32 ") %s: " format LOG_RESET_COLOR "\n"
+      |                                                                                        ^~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:163:94: note: in expansion of macro 'ESP_LOG_LEVEL'
+  163 | #define ESP_LOG_LEVEL_LOCAL(configs, tag, format, ...) do { if (_ESP_LOG_ENABLED(configs)) { ESP_LOG_LEVEL(configs, tag, format __VA_OPT__(,) __VA_ARGS__); } } while(0)
+      |                                                                                              ^~~~~~~~~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:79:41: note: in expansion of macro 'ESP_LOG_LEVEL_LOCAL'
+   79 | #define ESP_LOGI(tag, format, ...) do { ESP_LOG_LEVEL_LOCAL(ESP_LOG_INFO, tag, format __VA_OPT__(,) __VA_ARGS__); } while(0)
+      |                                         ^~~~~~~~~~~~~~~~~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/wifi_manager.cpp:42:9: note: in expansion of macro 'ESP_LOGI'
+   42 |         ESP_LOGI(TAG, "Station " MACSTR " joined AP, AID=%d",
+      |         ^~~~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:197:72: note: to match this '('
+  197 |         else if (ESP_LOG_GET_LEVEL(configs)==ESP_LOG_VERBOSE) { esp_log(ESP_LOG_CONFIG_INIT(ESP_LOG_VERBOSE), tag, LOG_FORMAT(V, format), esp_log_timestamp(), tag __VA_OPT__(,) __VA_ARGS__); } \
+      |                                                                        ^
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:163:94: note: in expansion of macro 'ESP_LOG_LEVEL'
+  163 | #define ESP_LOG_LEVEL_LOCAL(configs, tag, format, ...) do { if (_ESP_LOG_ENABLED(configs)) { ESP_LOG_LEVEL(configs, tag, format __VA_OPT__(,) __VA_ARGS__); } } while(0)
+      |                                                                                              ^~~~~~~~~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:79:41: note: in expansion of macro 'ESP_LOG_LEVEL_LOCAL'
+   79 | #define ESP_LOGI(tag, format, ...) do { ESP_LOG_LEVEL_LOCAL(ESP_LOG_INFO, tag, format __VA_OPT__(,) __VA_ARGS__); } while(0)
+      |                                         ^~~~~~~~~~~~~~~~~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/wifi_manager.cpp:42:9: note: in expansion of macro 'ESP_LOGI'
+   42 |         ESP_LOGI(TAG, "Station " MACSTR " joined AP, AID=%d",
+      |         ^~~~~~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/wifi_manager.cpp:43:18: error: 'MAC2STR' was not declared in this scope
+   43 |                  MAC2STR(event->mac), event->aid);
+      |                  ^~~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:197:178: note: in definition of macro 'ESP_LOG_LEVEL'
+  197 |         else if (ESP_LOG_GET_LEVEL(configs)==ESP_LOG_VERBOSE) { esp_log(ESP_LOG_CONFIG_INIT(ESP_LOG_VERBOSE), tag, LOG_FORMAT(V, format), esp_log_timestamp(), tag __VA_OPT__(,) __VA_ARGS__); } \
+      |                                                                                                                                                                                  ^~~~~~~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:79:41: note: in expansion of macro 'ESP_LOG_LEVEL_LOCAL'
+   79 | #define ESP_LOGI(tag, format, ...) do { ESP_LOG_LEVEL_LOCAL(ESP_LOG_INFO, tag, format __VA_OPT__(,) __VA_ARGS__); } while(0)
+      |                                         ^~~~~~~~~~~~~~~~~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/wifi_manager.cpp:42:9: note: in expansion of macro 'ESP_LOGI'
+   42 |         ESP_LOGI(TAG, "Station " MACSTR " joined AP, AID=%d",
+      |         ^~~~~~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/wifi_manager.cpp:42:34: error: expected ')' before 'MACSTR'
+   42 |         ESP_LOGI(TAG, "Station " MACSTR " joined AP, AID=%d",
+      |                                  ^~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log_format.h:15:88: note: in definition of macro 'LOG_FORMAT'
+   15 | #define LOG_FORMAT(letter, format)  LOG_COLOR_ ## letter #letter " (%" PRIu32 ") %s: " format LOG_RESET_COLOR "\n"
+      |                                                                                        ^~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:163:94: note: in expansion of macro 'ESP_LOG_LEVEL'
+  163 | #define ESP_LOG_LEVEL_LOCAL(configs, tag, format, ...) do { if (_ESP_LOG_ENABLED(configs)) { ESP_LOG_LEVEL(configs, tag, format __VA_OPT__(,) __VA_ARGS__); } } while(0)
+      |                                                                                              ^~~~~~~~~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:79:41: note: in expansion of macro 'ESP_LOG_LEVEL_LOCAL'
+   79 | #define ESP_LOGI(tag, format, ...) do { ESP_LOG_LEVEL_LOCAL(ESP_LOG_INFO, tag, format __VA_OPT__(,) __VA_ARGS__); } while(0)
+      |                                         ^~~~~~~~~~~~~~~~~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/wifi_manager.cpp:42:9: note: in expansion of macro 'ESP_LOGI'
+   42 |         ESP_LOGI(TAG, "Station " MACSTR " joined AP, AID=%d",
+      |         ^~~~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:198:72: note: to match this '('
+  198 |         else                                                  { esp_log(ESP_LOG_CONFIG_INIT(ESP_LOG_INFO),    tag, LOG_FORMAT(I, format), esp_log_timestamp(), tag __VA_OPT__(,) __VA_ARGS__); } \
+      |                                                                        ^
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:163:94: note: in expansion of macro 'ESP_LOG_LEVEL'
+  163 | #define ESP_LOG_LEVEL_LOCAL(configs, tag, format, ...) do { if (_ESP_LOG_ENABLED(configs)) { ESP_LOG_LEVEL(configs, tag, format __VA_OPT__(,) __VA_ARGS__); } } while(0)
+      |                                                                                              ^~~~~~~~~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:79:41: note: in expansion of macro 'ESP_LOG_LEVEL_LOCAL'
+   79 | #define ESP_LOGI(tag, format, ...) do { ESP_LOG_LEVEL_LOCAL(ESP_LOG_INFO, tag, format __VA_OPT__(,) __VA_ARGS__); } while(0)
+      |                                         ^~~~~~~~~~~~~~~~~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/wifi_manager.cpp:42:9: note: in expansion of macro 'ESP_LOGI'
+   42 |         ESP_LOGI(TAG, "Station " MACSTR " joined AP, AID=%d",
+      |         ^~~~~~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/wifi_manager.cpp:43:18: error: 'MAC2STR' was not declared in this scope
+   43 |                  MAC2STR(event->mac), event->aid);
+      |                  ^~~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:198:178: note: in definition of macro 'ESP_LOG_LEVEL'
+  198 |         else                                                  { esp_log(ESP_LOG_CONFIG_INIT(ESP_LOG_INFO),    tag, LOG_FORMAT(I, format), esp_log_timestamp(), tag __VA_OPT__(,) __VA_ARGS__); } \
+      |                                                                                                                                                                                  ^~~~~~~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:79:41: note: in expansion of macro 'ESP_LOG_LEVEL_LOCAL'
+   79 | #define ESP_LOGI(tag, format, ...) do { ESP_LOG_LEVEL_LOCAL(ESP_LOG_INFO, tag, format __VA_OPT__(,) __VA_ARGS__); } while(0)
+      |                                         ^~~~~~~~~~~~~~~~~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/wifi_manager.cpp:42:9: note: in expansion of macro 'ESP_LOGI'
+   42 |         ESP_LOGI(TAG, "Station " MACSTR " joined AP, AID=%d",
+      |         ^~~~~~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/wifi_manager.cpp:46:34: error: expected ')' before 'MACSTR'
+   46 |         ESP_LOGI(TAG, "Station " MACSTR " left AP, AID=%d",
+      |                                  ^~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log_format.h:15:88: note: in definition of macro 'LOG_FORMAT'
+   15 | #define LOG_FORMAT(letter, format)  LOG_COLOR_ ## letter #letter " (%" PRIu32 ") %s: " format LOG_RESET_COLOR "\n"
+      |                                                                                        ^~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:163:94: note: in expansion of macro 'ESP_LOG_LEVEL'
+  163 | #define ESP_LOG_LEVEL_LOCAL(configs, tag, format, ...) do { if (_ESP_LOG_ENABLED(configs)) { ESP_LOG_LEVEL(configs, tag, format __VA_OPT__(,) __VA_ARGS__); } } while(0)
+      |                                                                                              ^~~~~~~~~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:79:41: note: in expansion of macro 'ESP_LOG_LEVEL_LOCAL'
+   79 | #define ESP_LOGI(tag, format, ...) do { ESP_LOG_LEVEL_LOCAL(ESP_LOG_INFO, tag, format __VA_OPT__(,) __VA_ARGS__); } while(0)
+      |                                         ^~~~~~~~~~~~~~~~~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/wifi_manager.cpp:46:9: note: in expansion of macro 'ESP_LOGI'
+   46 |         ESP_LOGI(TAG, "Station " MACSTR " left AP, AID=%d",
+      |         ^~~~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:194:72: note: to match this '('
+  194 |         if (ESP_LOG_GET_LEVEL(configs)==ESP_LOG_ERROR)        { esp_log(ESP_LOG_CONFIG_INIT(ESP_LOG_ERROR),   tag, LOG_FORMAT(E, format), esp_log_timestamp(), tag __VA_OPT__(,) __VA_ARGS__); } \
+      |                                                                        ^
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:163:94: note: in expansion of macro 'ESP_LOG_LEVEL'
+  163 | #define ESP_LOG_LEVEL_LOCAL(configs, tag, format, ...) do { if (_ESP_LOG_ENABLED(configs)) { ESP_LOG_LEVEL(configs, tag, format __VA_OPT__(,) __VA_ARGS__); } } while(0)
+      |                                                                                              ^~~~~~~~~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:79:41: note: in expansion of macro 'ESP_LOG_LEVEL_LOCAL'
+   79 | #define ESP_LOGI(tag, format, ...) do { ESP_LOG_LEVEL_LOCAL(ESP_LOG_INFO, tag, format __VA_OPT__(,) __VA_ARGS__); } while(0)
+      |                                         ^~~~~~~~~~~~~~~~~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/wifi_manager.cpp:46:9: note: in expansion of macro 'ESP_LOGI'
+   46 |         ESP_LOGI(TAG, "Station " MACSTR " left AP, AID=%d",
+      |         ^~~~~~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/wifi_manager.cpp:47:18: error: 'MAC2STR' was not declared in this scope
+   47 |                  MAC2STR(event->mac), event->aid);
+      |                  ^~~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:194:178: note: in definition of macro 'ESP_LOG_LEVEL'
+  194 |         if (ESP_LOG_GET_LEVEL(configs)==ESP_LOG_ERROR)        { esp_log(ESP_LOG_CONFIG_INIT(ESP_LOG_ERROR),   tag, LOG_FORMAT(E, format), esp_log_timestamp(), tag __VA_OPT__(,) __VA_ARGS__); } \
+      |                                                                                                                                                                                  ^~~~~~~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:79:41: note: in expansion of macro 'ESP_LOG_LEVEL_LOCAL'
+   79 | #define ESP_LOGI(tag, format, ...) do { ESP_LOG_LEVEL_LOCAL(ESP_LOG_INFO, tag, format __VA_OPT__(,) __VA_ARGS__); } while(0)
+      |                                         ^~~~~~~~~~~~~~~~~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/wifi_manager.cpp:46:9: note: in expansion of macro 'ESP_LOGI'
+   46 |         ESP_LOGI(TAG, "Station " MACSTR " left AP, AID=%d",
+      |         ^~~~~~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/wifi_manager.cpp:46:34: error: expected ')' before 'MACSTR'
+   46 |         ESP_LOGI(TAG, "Station " MACSTR " left AP, AID=%d",
+      |                                  ^~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log_format.h:15:88: note: in definition of macro 'LOG_FORMAT'
+   15 | #define LOG_FORMAT(letter, format)  LOG_COLOR_ ## letter #letter " (%" PRIu32 ") %s: " format LOG_RESET_COLOR "\n"
+      |                                                                                        ^~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:163:94: note: in expansion of macro 'ESP_LOG_LEVEL'
+  163 | #define ESP_LOG_LEVEL_LOCAL(configs, tag, format, ...) do { if (_ESP_LOG_ENABLED(configs)) { ESP_LOG_LEVEL(configs, tag, format __VA_OPT__(,) __VA_ARGS__); } } while(0)
+      |                                                                                              ^~~~~~~~~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:79:41: note: in expansion of macro 'ESP_LOG_LEVEL_LOCAL'
+   79 | #define ESP_LOGI(tag, format, ...) do { ESP_LOG_LEVEL_LOCAL(ESP_LOG_INFO, tag, format __VA_OPT__(,) __VA_ARGS__); } while(0)
+      |                                         ^~~~~~~~~~~~~~~~~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/wifi_manager.cpp:46:9: note: in expansion of macro 'ESP_LOGI'
+   46 |         ESP_LOGI(TAG, "Station " MACSTR " left AP, AID=%d",
+      |         ^~~~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:195:72: note: to match this '('
+  195 |         else if (ESP_LOG_GET_LEVEL(configs)==ESP_LOG_WARN)    { esp_log(ESP_LOG_CONFIG_INIT(ESP_LOG_WARN),    tag, LOG_FORMAT(W, format), esp_log_timestamp(), tag __VA_OPT__(,) __VA_ARGS__); } \
+      |                                                                        ^
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:163:94: note: in expansion of macro 'ESP_LOG_LEVEL'
+  163 | #define ESP_LOG_LEVEL_LOCAL(configs, tag, format, ...) do { if (_ESP_LOG_ENABLED(configs)) { ESP_LOG_LEVEL(configs, tag, format __VA_OPT__(,) __VA_ARGS__); } } while(0)
+      |                                                                                              ^~~~~~~~~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:79:41: note: in expansion of macro 'ESP_LOG_LEVEL_LOCAL'
+   79 | #define ESP_LOGI(tag, format, ...) do { ESP_LOG_LEVEL_LOCAL(ESP_LOG_INFO, tag, format __VA_OPT__(,) __VA_ARGS__); } while(0)
+      |                                         ^~~~~~~~~~~~~~~~~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/wifi_manager.cpp:46:9: note: in expansion of macro 'ESP_LOGI'
+   46 |         ESP_LOGI(TAG, "Station " MACSTR " left AP, AID=%d",
+      |         ^~~~~~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/wifi_manager.cpp:47:18: error: 'MAC2STR' was not declared in this scope
+   47 |                  MAC2STR(event->mac), event->aid);
+      |                  ^~~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:195:178: note: in definition of macro 'ESP_LOG_LEVEL'
+  195 |         else if (ESP_LOG_GET_LEVEL(configs)==ESP_LOG_WARN)    { esp_log(ESP_LOG_CONFIG_INIT(ESP_LOG_WARN),    tag, LOG_FORMAT(W, format), esp_log_timestamp(), tag __VA_OPT__(,) __VA_ARGS__); } \
+      |                                                                                                                                                                                  ^~~~~~~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:79:41: note: in expansion of macro 'ESP_LOG_LEVEL_LOCAL'
+   79 | #define ESP_LOGI(tag, format, ...) do { ESP_LOG_LEVEL_LOCAL(ESP_LOG_INFO, tag, format __VA_OPT__(,) __VA_ARGS__); } while(0)
+      |                                         ^~~~~~~~~~~~~~~~~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/wifi_manager.cpp:46:9: note: in expansion of macro 'ESP_LOGI'
+   46 |         ESP_LOGI(TAG, "Station " MACSTR " left AP, AID=%d",
+      |         ^~~~~~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/wifi_manager.cpp:46:34: error: expected ')' before 'MACSTR'
+   46 |         ESP_LOGI(TAG, "Station " MACSTR " left AP, AID=%d",
+      |                                  ^~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log_format.h:15:88: note: in definition of macro 'LOG_FORMAT'
+   15 | #define LOG_FORMAT(letter, format)  LOG_COLOR_ ## letter #letter " (%" PRIu32 ") %s: " format LOG_RESET_COLOR "\n"
+      |                                                                                        ^~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:163:94: note: in expansion of macro 'ESP_LOG_LEVEL'
+  163 | #define ESP_LOG_LEVEL_LOCAL(configs, tag, format, ...) do { if (_ESP_LOG_ENABLED(configs)) { ESP_LOG_LEVEL(configs, tag, format __VA_OPT__(,) __VA_ARGS__); } } while(0)
+      |                                                                                              ^~~~~~~~~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:79:41: note: in expansion of macro 'ESP_LOG_LEVEL_LOCAL'
+   79 | #define ESP_LOGI(tag, format, ...) do { ESP_LOG_LEVEL_LOCAL(ESP_LOG_INFO, tag, format __VA_OPT__(,) __VA_ARGS__); } while(0)
+      |                                         ^~~~~~~~~~~~~~~~~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/wifi_manager.cpp:46:9: note: in expansion of macro 'ESP_LOGI'
+   46 |         ESP_LOGI(TAG, "Station " MACSTR " left AP, AID=%d",
+      |         ^~~~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:196:72: note: to match this '('
+  196 |         else if (ESP_LOG_GET_LEVEL(configs)==ESP_LOG_DEBUG)   { esp_log(ESP_LOG_CONFIG_INIT(ESP_LOG_DEBUG),   tag, LOG_FORMAT(D, format), esp_log_timestamp(), tag __VA_OPT__(,) __VA_ARGS__); } \
+      |                                                                        ^
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:163:94: note: in expansion of macro 'ESP_LOG_LEVEL'
+  163 | #define ESP_LOG_LEVEL_LOCAL(configs, tag, format, ...) do { if (_ESP_LOG_ENABLED(configs)) { ESP_LOG_LEVEL(configs, tag, format __VA_OPT__(,) __VA_ARGS__); } } while(0)
+      |                                                                                              ^~~~~~~~~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:79:41: note: in expansion of macro 'ESP_LOG_LEVEL_LOCAL'
+   79 | #define ESP_LOGI(tag, format, ...) do { ESP_LOG_LEVEL_LOCAL(ESP_LOG_INFO, tag, format __VA_OPT__(,) __VA_ARGS__); } while(0)
+      |                                         ^~~~~~~~~~~~~~~~~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/wifi_manager.cpp:46:9: note: in expansion of macro 'ESP_LOGI'
+   46 |         ESP_LOGI(TAG, "Station " MACSTR " left AP, AID=%d",
+      |         ^~~~~~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/wifi_manager.cpp:47:18: error: 'MAC2STR' was not declared in this scope
+   47 |                  MAC2STR(event->mac), event->aid);
+      |                  ^~~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:196:178: note: in definition of macro 'ESP_LOG_LEVEL'
+  196 |         else if (ESP_LOG_GET_LEVEL(configs)==ESP_LOG_DEBUG)   { esp_log(ESP_LOG_CONFIG_INIT(ESP_LOG_DEBUG),   tag, LOG_FORMAT(D, format), esp_log_timestamp(), tag __VA_OPT__(,) __VA_ARGS__); } \
+      |                                                                                                                                                                                  ^~~~~~~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:79:41: note: in expansion of macro 'ESP_LOG_LEVEL_LOCAL'
+   79 | #define ESP_LOGI(tag, format, ...) do { ESP_LOG_LEVEL_LOCAL(ESP_LOG_INFO, tag, format __VA_OPT__(,) __VA_ARGS__); } while(0)
+      |                                         ^~~~~~~~~~~~~~~~~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/wifi_manager.cpp:46:9: note: in expansion of macro 'ESP_LOGI'
+   46 |         ESP_LOGI(TAG, "Station " MACSTR " left AP, AID=%d",
+      |         ^~~~~~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/wifi_manager.cpp:46:34: error: expected ')' before 'MACSTR'
+   46 |         ESP_LOGI(TAG, "Station " MACSTR " left AP, AID=%d",
+      |                                  ^~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log_format.h:15:88: note: in definition of macro 'LOG_FORMAT'
+   15 | #define LOG_FORMAT(letter, format)  LOG_COLOR_ ## letter #letter " (%" PRIu32 ") %s: " format LOG_RESET_COLOR "\n"
+      |                                                                                        ^~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:163:94: note: in expansion of macro 'ESP_LOG_LEVEL'
+  163 | #define ESP_LOG_LEVEL_LOCAL(configs, tag, format, ...) do { if (_ESP_LOG_ENABLED(configs)) { ESP_LOG_LEVEL(configs, tag, format __VA_OPT__(,) __VA_ARGS__); } } while(0)
+      |                                                                                              ^~~~~~~~~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:79:41: note: in expansion of macro 'ESP_LOG_LEVEL_LOCAL'
+   79 | #define ESP_LOGI(tag, format, ...) do { ESP_LOG_LEVEL_LOCAL(ESP_LOG_INFO, tag, format __VA_OPT__(,) __VA_ARGS__); } while(0)
+      |                                         ^~~~~~~~~~~~~~~~~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/wifi_manager.cpp:46:9: note: in expansion of macro 'ESP_LOGI'
+   46 |         ESP_LOGI(TAG, "Station " MACSTR " left AP, AID=%d",
+      |         ^~~~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:197:72: note: to match this '('
+  197 |         else if (ESP_LOG_GET_LEVEL(configs)==ESP_LOG_VERBOSE) { esp_log(ESP_LOG_CONFIG_INIT(ESP_LOG_VERBOSE), tag, LOG_FORMAT(V, format), esp_log_timestamp(), tag __VA_OPT__(,) __VA_ARGS__); } \
+      |                                                                        ^
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:163:94: note: in expansion of macro 'ESP_LOG_LEVEL'
+  163 | #define ESP_LOG_LEVEL_LOCAL(configs, tag, format, ...) do { if (_ESP_LOG_ENABLED(configs)) { ESP_LOG_LEVEL(configs, tag, format __VA_OPT__(,) __VA_ARGS__); } } while(0)
+      |                                                                                              ^~~~~~~~~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:79:41: note: in expansion of macro 'ESP_LOG_LEVEL_LOCAL'
+   79 | #define ESP_LOGI(tag, format, ...) do { ESP_LOG_LEVEL_LOCAL(ESP_LOG_INFO, tag, format __VA_OPT__(,) __VA_ARGS__); } while(0)
+      |                                         ^~~~~~~~~~~~~~~~~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/wifi_manager.cpp:46:9: note: in expansion of macro 'ESP_LOGI'
+   46 |         ESP_LOGI(TAG, "Station " MACSTR " left AP, AID=%d",
+      |         ^~~~~~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/wifi_manager.cpp:47:18: error: 'MAC2STR' was not declared in this scope
+   47 |                  MAC2STR(event->mac), event->aid);
+      |                  ^~~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:197:178: note: in definition of macro 'ESP_LOG_LEVEL'
+  197 |         else if (ESP_LOG_GET_LEVEL(configs)==ESP_LOG_VERBOSE) { esp_log(ESP_LOG_CONFIG_INIT(ESP_LOG_VERBOSE), tag, LOG_FORMAT(V, format), esp_log_timestamp(), tag __VA_OPT__(,) __VA_ARGS__); } \
+      |                                                                                                                                                                                  ^~~~~~~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:79:41: note: in expansion of macro 'ESP_LOG_LEVEL_LOCAL'
+   79 | #define ESP_LOGI(tag, format, ...) do { ESP_LOG_LEVEL_LOCAL(ESP_LOG_INFO, tag, format __VA_OPT__(,) __VA_ARGS__); } while(0)
+      |                                         ^~~~~~~~~~~~~~~~~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/wifi_manager.cpp:46:9: note: in expansion of macro 'ESP_LOGI'
+   46 |         ESP_LOGI(TAG, "Station " MACSTR " left AP, AID=%d",
+      |         ^~~~~~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/wifi_manager.cpp:46:34: error: expected ')' before 'MACSTR'
+   46 |         ESP_LOGI(TAG, "Station " MACSTR " left AP, AID=%d",
+      |                                  ^~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log_format.h:15:88: note: in definition of macro 'LOG_FORMAT'
+   15 | #define LOG_FORMAT(letter, format)  LOG_COLOR_ ## letter #letter " (%" PRIu32 ") %s: " format LOG_RESET_COLOR "\n"
+      |                                                                                        ^~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:163:94: note: in expansion of macro 'ESP_LOG_LEVEL'
+  163 | #define ESP_LOG_LEVEL_LOCAL(configs, tag, format, ...) do { if (_ESP_LOG_ENABLED(configs)) { ESP_LOG_LEVEL(configs, tag, format __VA_OPT__(,) __VA_ARGS__); } } while(0)
+      |                                                                                              ^~~~~~~~~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:79:41: note: in expansion of macro 'ESP_LOG_LEVEL_LOCAL'
+   79 | #define ESP_LOGI(tag, format, ...) do { ESP_LOG_LEVEL_LOCAL(ESP_LOG_INFO, tag, format __VA_OPT__(,) __VA_ARGS__); } while(0)
+      |                                         ^~~~~~~~~~~~~~~~~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/wifi_manager.cpp:46:9: note: in expansion of macro 'ESP_LOGI'
+   46 |         ESP_LOGI(TAG, "Station " MACSTR " left AP, AID=%d",
+      |         ^~~~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:198:72: note: to match this '('
+  198 |         else                                                  { esp_log(ESP_LOG_CONFIG_INIT(ESP_LOG_INFO),    tag, LOG_FORMAT(I, format), esp_log_timestamp(), tag __VA_OPT__(,) __VA_ARGS__); } \
+      |                                                                        ^
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:163:94: note: in expansion of macro 'ESP_LOG_LEVEL'
+  163 | #define ESP_LOG_LEVEL_LOCAL(configs, tag, format, ...) do { if (_ESP_LOG_ENABLED(configs)) { ESP_LOG_LEVEL(configs, tag, format __VA_OPT__(,) __VA_ARGS__); } } while(0)
+      |                                                                                              ^~~~~~~~~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:79:41: note: in expansion of macro 'ESP_LOG_LEVEL_LOCAL'
+   79 | #define ESP_LOGI(tag, format, ...) do { ESP_LOG_LEVEL_LOCAL(ESP_LOG_INFO, tag, format __VA_OPT__(,) __VA_ARGS__); } while(0)
+      |                                         ^~~~~~~~~~~~~~~~~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/wifi_manager.cpp:46:9: note: in expansion of macro 'ESP_LOGI'
+   46 |         ESP_LOGI(TAG, "Station " MACSTR " left AP, AID=%d",
+      |         ^~~~~~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/wifi_manager.cpp:47:18: error: 'MAC2STR' was not declared in this scope
+   47 |                  MAC2STR(event->mac), event->aid);
+      |                  ^~~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:198:178: note: in definition of macro 'ESP_LOG_LEVEL'
+  198 |         else                                                  { esp_log(ESP_LOG_CONFIG_INIT(ESP_LOG_INFO),    tag, LOG_FORMAT(I, format), esp_log_timestamp(), tag __VA_OPT__(,) __VA_ARGS__); } \
+      |                                                                                                                                                                                  ^~~~~~~~~~~
+D:/.espressif/v6.0.1/esp-idf/components/log/include/esp_log.h:79:41: note: in expansion of macro 'ESP_LOG_LEVEL_LOCAL'
+   79 | #define ESP_LOGI(tag, format, ...) do { ESP_LOG_LEVEL_LOCAL(ESP_LOG_INFO, tag, format __VA_OPT__(,) __VA_ARGS__); } while(0)
+      |                                         ^~~~~~~~~~~~~~~~~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/wifi_manager.cpp:46:9: note: in expansion of macro 'ESP_LOGI'
+   46 |         ESP_LOGI(TAG, "Station " MACSTR " left AP, AID=%d",
+      |         ^~~~~~~~
+[10/38] Linking C static library esp-idf\esp_driver_sdio\libesp_driver_sdio.a
+[11/38] Linking C static library esp-idf\esp_driver_mcpwm\libesp_driver_mcpwm.a
+[12/38] Linking C static library esp-idf\esp_driver_rmt\libesp_driver_rmt.a
+[13/38] Linking C static library esp-idf\esp_driver_sdm\libesp_driver_sdm.a
+[14/38] Linking C static library esp-idf\esp_driver_touch_sens\libesp_driver_touch_sens.a
+[15/38] Linking C static library esp-idf\esp_driver_twai\libesp_driver_twai.a
+[16/38] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/local_server.cpp.obj
+FAILED: esp-idf/main/CMakeFiles/__idf_main.dir/local_server.cpp.obj 
+C:\Espressif\tools\xtensa-esp-elf\esp-15.2.0_20251204\xtensa-esp-elf\bin\xtensa-esp32-elf-g++.exe -DCJSON_CIRCULAR_LIMIT=10000 -DCJSON_NESTING_LIMIT=1000 -DESP_MDNS_VERSION_NUMBER=\"1.11.1\" -DESP_PLATFORM -DESP_PSA_ITS_AVAILABLE -DIDF_VER=\"v6.0.1\" -DMBEDTLS_CONFIG_FILE=\"mbedtls/esp_config.h\" -DMBEDTLS_MAJOR_VERSION=4 -DSOC_MMU_PAGE_SIZE=CONFIG_MMU_PAGE_SIZE -DSOC_XTAL_FREQ_MHZ=CONFIG_XTAL_FREQ -DTF_PSA_CRYPTO_USER_CONFIG_FILE=\"mbedtls/esp_config.h\" -D_GLIBCXX_HAVE_POSIX_SEMAPHORE -D_GLIBCXX_USE_POSIX_SEMAPHORE -D_GNU_SOURCE -D_POSIX_READER_WRITER_LOCKS -IC:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/build/config -IC:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main -ID:/.espressif/v6.0.1/esp-idf/components/esp_libc/platform_include -ID:/.espressif/v6.0.1/esp-idf/components/freertos/config/include -ID:/.espressif/v6.0.1/esp-idf/components/freertos/config/include/freertos -ID:/.espressif/v6.0.1/esp-idf/components/freertos/config/xtensa/include -ID:/.espressif/v6.0.1/esp-idf/components/freertos/FreeRTOS-Kernel/include -ID:/.espressif/v6.0.1/esp-idf/components/freertos/FreeRTOS-Kernel/portable/xtensa/include -ID:/.espressif/v6.0.1/esp-idf/components/freertos/FreeRTOS-Kernel/portable/xtensa/include/freertos -ID:/.espressif/v6.0.1/esp-idf/components/freertos/esp_additions/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hw_support/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hw_support/include/soc -ID:/.espressif/v6.0.1/esp-idf/components/esp_hw_support/ldo/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hw_support/debug_probe/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hw_support/etm/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hw_support/mspi_timing_tuning/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hw_support/mspi_timing_tuning/tuning_scheme_impl/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hw_support/power_supply/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hw_support/modem/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hw_support/port/esp32/. -ID:/.espressif/v6.0.1/esp-idf/components/esp_hw_support/port/esp32/include -ID:/.espressif/v6.0.1/esp-idf/components/heap/include -ID:/.espressif/v6.0.1/esp-idf/components/heap/tlsf -ID:/.espressif/v6.0.1/esp-idf/components/log/include -ID:/.espressif/v6.0.1/esp-idf/components/soc/include -ID:/.espressif/v6.0.1/esp-idf/components/soc/esp32 -ID:/.espressif/v6.0.1/esp-idf/components/soc/esp32/include -ID:/.espressif/v6.0.1/esp-idf/components/soc/esp32/register -ID:/.espressif/v6.0.1/esp-idf/components/hal/platform_port/include -ID:/.espressif/v6.0.1/esp-idf/components/hal/esp32/include -ID:/.espressif/v6.0.1/esp-idf/components/hal/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_rom/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_rom/esp32/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_rom/esp32/include/esp32 -ID:/.espressif/v6.0.1/esp-idf/components/esp_rom/esp32 -ID:/.espressif/v6.0.1/esp-idf/components/esp_common/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_system/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_system/port/soc -ID:/.espressif/v6.0.1/esp-idf/components/esp_system/port/include/private -ID:/.espressif/v6.0.1/esp-idf/components/esp_stdio/include -ID:/.espressif/v6.0.1/esp-idf/components/xtensa/esp32/include -ID:/.espressif/v6.0.1/esp-idf/components/xtensa/include -ID:/.espressif/v6.0.1/esp-idf/components/xtensa/deprecated_include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hal_gpio/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hal_gpio/esp32/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hal_usb/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hal_pmu/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hal_pmu/esp32/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hal_ana_conv/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hal_ana_conv/esp32/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hal_dma/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hal_i2s/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hal_i2s/esp32/include -ID:/.espressif/v6.0.1/esp-idf/components/lwip/include -ID:/.espressif/v6.0.1/esp-idf/components/lwip/include/apps -ID:/.espressif/v6.0.1/esp-idf/components/lwip/lwip/src/include -ID:/.espressif/v6.0.1/esp-idf/components/lwip/port/include -ID:/.espressif/v6.0.1/esp-idf/components/lwip/port/freertos/include -ID:/.espressif/v6.0.1/esp-idf/components/lwip/port/esp32xx/include -ID:/.espressif/v6.0.1/esp-idf/components/lwip/port/esp32xx/include/arch -ID:/.espressif/v6.0.1/esp-idf/components/lwip/port/esp32xx/include/sys -ID:/.espressif/v6.0.1/esp-idf/components/nvs_flash/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_partition/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_blockdev/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_wifi/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_wifi/include/local -ID:/.espressif/v6.0.1/esp-idf/components/esp_wifi/wifi_apps/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_wifi/wifi_apps/nan_app/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_event/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_phy/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_phy/esp32/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_netif/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_http_server/include -ID:/.espressif/v6.0.1/esp-idf/components/http_parser -ID:/.espressif/v6.0.1/esp-idf/components/esp_driver_gpio/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_driver_tsens/include -IC:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/managed_components/h2zero__esp-nimble-cpp/src -ID:/.espressif/v6.0.1/esp-idf/components/bt/include/esp32/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/common/osi/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/common/api/include/api -ID:/.espressif/v6.0.1/esp-idf/components/bt/common/btc/profile/esp/blufi/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/common/btc/profile/esp/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/common/hci_log/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/common/ble_log/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/common/tinycrypt/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/common/tinycrypt/port -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/ans/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/bas/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/dis/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/gap/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/gatt/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/hr/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/htp/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/ias/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/ipss/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/lls/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/prox/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/cts/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/tps/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/hid/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/sps/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/cte/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/util/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/store/ram/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/store/config/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/ras/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/porting/nimble/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/port/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/transport/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/porting/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/porting/npl/freertos/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/esp-hci/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_timer/include -ID:/.espressif/v6.0.1/esp-idf/components/driver/i2c/include -ID:/.espressif/v6.0.1/esp-idf/components/driver/touch_sensor/include -ID:/.espressif/v6.0.1/esp-idf/components/driver/twai/include -ID:/.espressif/v6.0.1/esp-idf/components/driver/touch_sensor/esp32/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hal_i2c/esp32/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hal_i2c/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hal_twai/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hal_twai/esp32/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hal_touch_sens/esp32/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hal_touch_sens/include -IC:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/managed_components/espressif__cjson/cJSON -IC:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/managed_components/espressif__mdns/include -ID:/.espressif/v6.0.1/esp-idf/components/console -ID:/.espressif/v6.0.1/esp-idf/components/vfs/include -IC:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/managed_components/espressif__mqtt/include -ID:/.espressif/v6.0.1/esp-idf/components/tcp_transport/include -ID:/.espressif/v6.0.1/esp-idf/components/esp-tls -ID:/.espressif/v6.0.1/esp-idf/components/esp-tls/esp-tls-crypto -ID:/.espressif/v6.0.1/esp-idf/components/mbedtls/port/include -ID:/.espressif/v6.0.1/esp-idf/components/mbedtls/mbedtls/include -ID:/.espressif/v6.0.1/esp-idf/components/mbedtls/mbedtls/library -ID:/.espressif/v6.0.1/esp-idf/components/mbedtls/mbedtls/tf-psa-crypto/core -ID:/.espressif/v6.0.1/esp-idf/components/mbedtls/mbedtls/tf-psa-crypto/drivers/builtin/src -ID:/.espressif/v6.0.1/esp-idf/components/mbedtls/esp_crt_bundle/include -ID:/.espressif/v6.0.1/esp-idf/components/mbedtls/port/psa_driver/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_security/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hal_security/esp32/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hal_security/include -ID:/.espressif/v6.0.1/esp-idf/components/mbedtls/mbedtls/tf-psa-crypto/include -ID:/.espressif/v6.0.1/esp-idf/components/mbedtls/mbedtls/tf-psa-crypto/drivers/builtin/include -ID:/.espressif/v6.0.1/esp-idf/components/mbedtls/mbedtls/tf-psa-crypto/drivers/everest/include -ID:/.espressif/v6.0.1/esp-idf/components/mbedtls/mbedtls/tf-psa-crypto/drivers/p256-m @"C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/build/toolchain/cxxflags" -fdiagnostics-color=always -ffunction-sections -fdata-sections -Wall -Werror -Wno-error=unused-function -Wno-error=unused-variable -Wno-error=unused-but-set-variable -Wno-error=deprecated-declarations -Wextra -Wno-error=extra -Wno-unused-parameter -Wno-sign-compare -Wno-enum-conversion -gdwarf-4 -ggdb -Os -freorder-blocks -mno-target-align -fmacro-prefix-map=C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32=. -fmacro-prefix-map=D:/.espressif/v6.0.1/esp-idf=/IDF -fstrict-volatile-bitfields -fno-jump-tables -fno-tree-switch-conversion -std=gnu++26 -fno-exceptions -fuse-cxa-atexit -MD -MT esp-idf/main/CMakeFiles/__idf_main.dir/local_server.cpp.obj -MF esp-idf\main\CMakeFiles\__idf_main.dir\local_server.cpp.obj.d -o esp-idf/main/CMakeFiles/__idf_main.dir/local_server.cpp.obj -c C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/local_server.cpp
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/local_server.cpp: In function 'void local_server_start(command_callback_t)':
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/local_server.cpp:241:12: error: 'httpd_config_t' {aka 'struct httpd_config'} has no member named 'port'
+  241 |     config.port = LOCAL_HTTP_PORT;
+      |            ^~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/local_server.cpp:254:9: error: missing initializer for member 'httpd_uri::handle_ws_control_frames' [-Werror=missing-field-initializers]
+  254 |         };
+      |         ^
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/local_server.cpp:254:9: error: missing initializer for member 'httpd_uri::supported_subprotocol' [-Werror=missing-field-initializers]
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/local_server.cpp:263:9: error: missing initializer for member 'httpd_uri::handle_ws_control_frames' [-Werror=missing-field-initializers]
+  263 |         };
+      |         ^
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/local_server.cpp:263:9: error: missing initializer for member 'httpd_uri::supported_subprotocol' [-Werror=missing-field-initializers]
+cc1plus.exe: all warnings being treated as errors
+[17/38] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/mqtt_manager.cpp.obj
+[18/38] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/ble_provision.cpp.obj
+FAILED: esp-idf/main/CMakeFiles/__idf_main.dir/ble_provision.cpp.obj 
+C:\Espressif\tools\xtensa-esp-elf\esp-15.2.0_20251204\xtensa-esp-elf\bin\xtensa-esp32-elf-g++.exe -DCJSON_CIRCULAR_LIMIT=10000 -DCJSON_NESTING_LIMIT=1000 -DESP_MDNS_VERSION_NUMBER=\"1.11.1\" -DESP_PLATFORM -DESP_PSA_ITS_AVAILABLE -DIDF_VER=\"v6.0.1\" -DMBEDTLS_CONFIG_FILE=\"mbedtls/esp_config.h\" -DMBEDTLS_MAJOR_VERSION=4 -DSOC_MMU_PAGE_SIZE=CONFIG_MMU_PAGE_SIZE -DSOC_XTAL_FREQ_MHZ=CONFIG_XTAL_FREQ -DTF_PSA_CRYPTO_USER_CONFIG_FILE=\"mbedtls/esp_config.h\" -D_GLIBCXX_HAVE_POSIX_SEMAPHORE -D_GLIBCXX_USE_POSIX_SEMAPHORE -D_GNU_SOURCE -D_POSIX_READER_WRITER_LOCKS -IC:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/build/config -IC:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main -ID:/.espressif/v6.0.1/esp-idf/components/esp_libc/platform_include -ID:/.espressif/v6.0.1/esp-idf/components/freertos/config/include -ID:/.espressif/v6.0.1/esp-idf/components/freertos/config/include/freertos -ID:/.espressif/v6.0.1/esp-idf/components/freertos/config/xtensa/include -ID:/.espressif/v6.0.1/esp-idf/components/freertos/FreeRTOS-Kernel/include -ID:/.espressif/v6.0.1/esp-idf/components/freertos/FreeRTOS-Kernel/portable/xtensa/include -ID:/.espressif/v6.0.1/esp-idf/components/freertos/FreeRTOS-Kernel/portable/xtensa/include/freertos -ID:/.espressif/v6.0.1/esp-idf/components/freertos/esp_additions/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hw_support/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hw_support/include/soc -ID:/.espressif/v6.0.1/esp-idf/components/esp_hw_support/ldo/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hw_support/debug_probe/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hw_support/etm/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hw_support/mspi_timing_tuning/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hw_support/mspi_timing_tuning/tuning_scheme_impl/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hw_support/power_supply/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hw_support/modem/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hw_support/port/esp32/. -ID:/.espressif/v6.0.1/esp-idf/components/esp_hw_support/port/esp32/include -ID:/.espressif/v6.0.1/esp-idf/components/heap/include -ID:/.espressif/v6.0.1/esp-idf/components/heap/tlsf -ID:/.espressif/v6.0.1/esp-idf/components/log/include -ID:/.espressif/v6.0.1/esp-idf/components/soc/include -ID:/.espressif/v6.0.1/esp-idf/components/soc/esp32 -ID:/.espressif/v6.0.1/esp-idf/components/soc/esp32/include -ID:/.espressif/v6.0.1/esp-idf/components/soc/esp32/register -ID:/.espressif/v6.0.1/esp-idf/components/hal/platform_port/include -ID:/.espressif/v6.0.1/esp-idf/components/hal/esp32/include -ID:/.espressif/v6.0.1/esp-idf/components/hal/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_rom/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_rom/esp32/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_rom/esp32/include/esp32 -ID:/.espressif/v6.0.1/esp-idf/components/esp_rom/esp32 -ID:/.espressif/v6.0.1/esp-idf/components/esp_common/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_system/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_system/port/soc -ID:/.espressif/v6.0.1/esp-idf/components/esp_system/port/include/private -ID:/.espressif/v6.0.1/esp-idf/components/esp_stdio/include -ID:/.espressif/v6.0.1/esp-idf/components/xtensa/esp32/include -ID:/.espressif/v6.0.1/esp-idf/components/xtensa/include -ID:/.espressif/v6.0.1/esp-idf/components/xtensa/deprecated_include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hal_gpio/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hal_gpio/esp32/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hal_usb/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hal_pmu/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hal_pmu/esp32/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hal_ana_conv/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hal_ana_conv/esp32/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hal_dma/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hal_i2s/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hal_i2s/esp32/include -ID:/.espressif/v6.0.1/esp-idf/components/lwip/include -ID:/.espressif/v6.0.1/esp-idf/components/lwip/include/apps -ID:/.espressif/v6.0.1/esp-idf/components/lwip/lwip/src/include -ID:/.espressif/v6.0.1/esp-idf/components/lwip/port/include -ID:/.espressif/v6.0.1/esp-idf/components/lwip/port/freertos/include -ID:/.espressif/v6.0.1/esp-idf/components/lwip/port/esp32xx/include -ID:/.espressif/v6.0.1/esp-idf/components/lwip/port/esp32xx/include/arch -ID:/.espressif/v6.0.1/esp-idf/components/lwip/port/esp32xx/include/sys -ID:/.espressif/v6.0.1/esp-idf/components/nvs_flash/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_partition/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_blockdev/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_wifi/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_wifi/include/local -ID:/.espressif/v6.0.1/esp-idf/components/esp_wifi/wifi_apps/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_wifi/wifi_apps/nan_app/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_event/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_phy/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_phy/esp32/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_netif/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_http_server/include -ID:/.espressif/v6.0.1/esp-idf/components/http_parser -ID:/.espressif/v6.0.1/esp-idf/components/esp_driver_gpio/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_driver_tsens/include -IC:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/managed_components/h2zero__esp-nimble-cpp/src -ID:/.espressif/v6.0.1/esp-idf/components/bt/include/esp32/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/common/osi/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/common/api/include/api -ID:/.espressif/v6.0.1/esp-idf/components/bt/common/btc/profile/esp/blufi/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/common/btc/profile/esp/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/common/hci_log/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/common/ble_log/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/common/tinycrypt/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/common/tinycrypt/port -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/ans/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/bas/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/dis/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/gap/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/gatt/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/hr/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/htp/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/ias/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/ipss/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/lls/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/prox/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/cts/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/tps/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/hid/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/sps/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/cte/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/util/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/store/ram/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/store/config/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/ras/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/porting/nimble/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/port/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/nimble/transport/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/porting/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/nimble/porting/npl/freertos/include -ID:/.espressif/v6.0.1/esp-idf/components/bt/host/nimble/esp-hci/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_timer/include -ID:/.espressif/v6.0.1/esp-idf/components/driver/i2c/include -ID:/.espressif/v6.0.1/esp-idf/components/driver/touch_sensor/include -ID:/.espressif/v6.0.1/esp-idf/components/driver/twai/include -ID:/.espressif/v6.0.1/esp-idf/components/driver/touch_sensor/esp32/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hal_i2c/esp32/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hal_i2c/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hal_twai/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hal_twai/esp32/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hal_touch_sens/esp32/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hal_touch_sens/include -IC:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/managed_components/espressif__cjson/cJSON -IC:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/managed_components/espressif__mdns/include -ID:/.espressif/v6.0.1/esp-idf/components/console -ID:/.espressif/v6.0.1/esp-idf/components/vfs/include -IC:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/managed_components/espressif__mqtt/include -ID:/.espressif/v6.0.1/esp-idf/components/tcp_transport/include -ID:/.espressif/v6.0.1/esp-idf/components/esp-tls -ID:/.espressif/v6.0.1/esp-idf/components/esp-tls/esp-tls-crypto -ID:/.espressif/v6.0.1/esp-idf/components/mbedtls/port/include -ID:/.espressif/v6.0.1/esp-idf/components/mbedtls/mbedtls/include -ID:/.espressif/v6.0.1/esp-idf/components/mbedtls/mbedtls/library -ID:/.espressif/v6.0.1/esp-idf/components/mbedtls/mbedtls/tf-psa-crypto/core -ID:/.espressif/v6.0.1/esp-idf/components/mbedtls/mbedtls/tf-psa-crypto/drivers/builtin/src -ID:/.espressif/v6.0.1/esp-idf/components/mbedtls/esp_crt_bundle/include -ID:/.espressif/v6.0.1/esp-idf/components/mbedtls/port/psa_driver/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_security/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hal_security/esp32/include -ID:/.espressif/v6.0.1/esp-idf/components/esp_hal_security/include -ID:/.espressif/v6.0.1/esp-idf/components/mbedtls/mbedtls/tf-psa-crypto/include -ID:/.espressif/v6.0.1/esp-idf/components/mbedtls/mbedtls/tf-psa-crypto/drivers/builtin/include -ID:/.espressif/v6.0.1/esp-idf/components/mbedtls/mbedtls/tf-psa-crypto/drivers/everest/include -ID:/.espressif/v6.0.1/esp-idf/components/mbedtls/mbedtls/tf-psa-crypto/drivers/p256-m @"C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/build/toolchain/cxxflags" -fdiagnostics-color=always -ffunction-sections -fdata-sections -Wall -Werror -Wno-error=unused-function -Wno-error=unused-variable -Wno-error=unused-but-set-variable -Wno-error=deprecated-declarations -Wextra -Wno-error=extra -Wno-unused-parameter -Wno-sign-compare -Wno-enum-conversion -gdwarf-4 -ggdb -Os -freorder-blocks -mno-target-align -fmacro-prefix-map=C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32=. -fmacro-prefix-map=D:/.espressif/v6.0.1/esp-idf=/IDF -fstrict-volatile-bitfields -fno-jump-tables -fno-tree-switch-conversion -std=gnu++26 -fno-exceptions -fuse-cxa-atexit -MD -MT esp-idf/main/CMakeFiles/__idf_main.dir/ble_provision.cpp.obj -MF esp-idf\main\CMakeFiles\__idf_main.dir\ble_provision.cpp.obj.d -o esp-idf/main/CMakeFiles/__idf_main.dir/ble_provision.cpp.obj -c C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/ble_provision.cpp
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/ble_provision.cpp:48:10: error: 'void WifiCallbacks::onWrite(NimBLECharacteristic*)' marked 'override', but does not override
+   48 |     void onWrite(NimBLECharacteristic* pChar) override {
+      |          ^~~~~~~
+In file included from C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/managed_components/h2zero__esp-nimble-cpp/src/NimBLEService.h:28,
+                 from C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/managed_components/h2zero__esp-nimble-cpp/src/NimBLEDevice.h:292,
+                 from C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/ble_provision.cpp:6:
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/managed_components/h2zero__esp-nimble-cpp/src/NimBLECharacteristic.h:321:18: error: 'virtual void NimBLECharacteristicCallbacks::onWrite(NimBLECharacteristic*, NimBLEConnInfo&)' was hidden [-Werror=overloaded-virtual=]
+  321 |     virtual void onWrite(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo);
+      |                  ^~~~~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/ble_provision.cpp:48:10: note:   by 'void WifiCallbacks::onWrite(NimBLECharacteristic*)'
+   48 |     void onWrite(NimBLECharacteristic* pChar) override {
+      |          ^~~~~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/ble_provision.cpp:77:10: error: 'void TokenCallbacks::onWrite(NimBLECharacteristic*)' marked 'override', but does not override
+   77 |     void onWrite(NimBLECharacteristic* pChar) override {
+      |          ^~~~~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/managed_components/h2zero__esp-nimble-cpp/src/NimBLECharacteristic.h:321:18: error: 'virtual void NimBLECharacteristicCallbacks::onWrite(NimBLECharacteristic*, NimBLEConnInfo&)' was hidden [-Werror=overloaded-virtual=]
+  321 |     virtual void onWrite(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo);
+      |                  ^~~~~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/ble_provision.cpp:77:10: note:   by 'void TokenCallbacks::onWrite(NimBLECharacteristic*)'
+   77 |     void onWrite(NimBLECharacteristic* pChar) override {
+      |          ^~~~~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/ble_provision.cpp: In function 'void ble_provision_start(const char*)':
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/ble_provision.cpp:163:20: warning: 'bool NimBLEService::start()' is deprecated: NimBLEService::start() has no effect. Services are started when the server is started. [-Wdeprecated-declarations]
+  163 |     pService->start();
+      |     ~~~~~~~~~~~~~~~^~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/managed_components/h2zero__esp-nimble-cpp/src/NimBLEService.h:51:10: note: declared here
+   51 |     bool start() { return true; }
+      |          ^~~~~
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/ble_provision.cpp:167:19: error: 'class NimBLEAdvertising' has no member named 'setScanResponse'; did you mean 'setScanResponseData'?
+  167 |     pAdvertising->setScanResponse(true);
+      |                   ^~~~~~~~~~~~~~~
+      |                   setScanResponseData
+C:/Users/sp799/Documents/iotyk/firmware/iotyk_esp32/main/ble_provision.cpp:168:19: error: 'class NimBLEAdvertising' has no member named 'setMinPreferred'
+  168 |     pAdvertising->setMinPreferred(0x06);
+      |                   ^~~~~~~~~~~~~~~
+cc1plus.exe: all warnings being treated as errors
+ninja: build stopped: subcommand failed.

@@ -4,7 +4,10 @@
 #include "esp_random.h"
 #include "nvs_manager.h"
 #include "config.h"
-#include "mbedtls/md.h"
+#include "psa/crypto.h"
+#include "esp_mac.h"
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 static const char* TAG = "WS_SRV";
@@ -29,14 +32,41 @@ static bool constant_time_compare(const char* a, const char* b, size_t len) {
 
 // Compute HMAC-SHA256(key=local_token, data=nonce)
 static void compute_hmac(const char* token, const char* nonce, char* out_hex) {
+    psa_crypto_init();
+
+    psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_SIGN_MESSAGE);
+    psa_set_key_algorithm(&attributes, PSA_ALG_HMAC(PSA_ALG_SHA_256));
+    psa_set_key_type(&attributes, PSA_KEY_TYPE_HMAC);
+
+    psa_key_id_t key_id = 0;
+    psa_status_t status = psa_import_key(&attributes, 
+                                         (const uint8_t*)token, 
+                                         strlen(token), 
+                                         &key_id);
+    if (status != PSA_SUCCESS) {
+        memset(out_hex, 0, 65);
+        return;
+    }
+
     uint8_t hmac_buf[32];
-    mbedtls_md_context_t md_ctx;
-    mbedtls_md_init(&md_ctx);
-    mbedtls_md_setup(&md_ctx, mbedtls_md_info_from_type(MBEDTLS_MD_SHA256), 1);
-    mbedtls_md_hmac_starts(&md_ctx, (const unsigned char*)token, strlen(token));
-    mbedtls_md_hmac_update(&md_ctx, (const unsigned char*)nonce, 32);
-    mbedtls_md_hmac_finish(&md_ctx, hmac_buf);
-    mbedtls_md_free(&md_ctx);
+    size_t mac_length = 0;
+    status = psa_mac_compute(
+        key_id,
+        PSA_ALG_HMAC(PSA_ALG_SHA_256),
+        (const uint8_t*)nonce,
+        32,
+        hmac_buf,
+        sizeof(hmac_buf),
+        &mac_length
+    );
+
+    psa_destroy_key(key_id);
+
+    if (status != PSA_SUCCESS) {
+        memset(out_hex, 0, 65);
+        return;
+    }
 
     for (int i = 0; i < 32; i++) {
         sprintf(&out_hex[i * 2], "%02x", hmac_buf[i]);
@@ -46,14 +76,13 @@ static void compute_hmac(const char* token, const char* nonce, char* out_hex) {
 
 // GET /info (Public Diagnostic Info)
 static esp_err_t info_get_handler(httpd_req_t *req) {
-    io_tyk_config_t cfg;
     char d_id[64] = {0};
     
-    if (nvs_manager_load_config(&cfg) == ESP_OK && strlen(cfg.r_cnt) > 0) {
-        // Find device ID or load default
-        nvs_manager_get_str(KEY_DEVICE_ID, d_id, sizeof(d_id), "iotyk-unregistered");
-    } else {
-        strcpy(d_id, "iotyk-unregistered");
+    nvs_manager_get_str(KEY_DEVICE_ID, d_id, sizeof(d_id), FACTORY_DEVICE_ID);
+    if (strlen(d_id) == 0) {
+        uint8_t mac[6];
+        esp_efuse_mac_get_default(mac);
+        snprintf(d_id, sizeof(d_id), "iotyk-%02X%02X%02X%02X%02X%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
     }
 
     char resp[256];

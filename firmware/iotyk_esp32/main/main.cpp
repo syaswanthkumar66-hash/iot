@@ -17,8 +17,15 @@
 #include <string.h>
 #include <string>
 
-// Header-only inclusion of ESP32-S3 built-in temperature sensor if available
+#include "esp_idf_version.h"
+
+// Only include driver header on ESP-IDF v5.0+ and newer targets (S3, C3, C6, etc)
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0) && !defined(CONFIG_IDF_TARGET_ESP32)
 #include "driver/temperature_sensor.h"
+#define HAS_TEMP_SENSOR 1
+#else
+#define HAS_TEMP_SENSOR 0
+#endif
 
 static const char* TAG = "APP_ORCH";
 static bool is_serial_authenticated = false;
@@ -217,23 +224,47 @@ std::string handle_command(const std::string& json_str) {
     return std::string(resp_buf);
 }
 
-#include "mbedtls/md.h"
+#include "psa/crypto.h"
 
 // Cryptographic verification of serial AUTH signature using FACTORY_LOCAL_TOKEN and boot nonce
 static bool verify_serial_signature(const std::string& sig_hex) {
     if (sig_hex.length() < 64) return false;
     
-    char expected_hex[65] = {0};
-    uint8_t hmac_buf[32];
-    mbedtls_md_context_t md_ctx;
-    mbedtls_md_init(&md_ctx);
-    mbedtls_md_setup(&md_ctx, mbedtls_md_info_from_type(MBEDTLS_MD_SHA256), 1);
-    
-    mbedtls_md_hmac_starts(&md_ctx, (const unsigned char*)FACTORY_LOCAL_TOKEN, strlen(FACTORY_LOCAL_TOKEN));
-    mbedtls_md_hmac_update(&md_ctx, (const unsigned char*)s_serial_nonce, 32);
-    mbedtls_md_hmac_finish(&md_ctx, hmac_buf);
-    mbedtls_md_free(&md_ctx);
+    psa_crypto_init();
 
+    psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_SIGN_MESSAGE);
+    psa_set_key_algorithm(&attributes, PSA_ALG_HMAC(PSA_ALG_SHA_256));
+    psa_set_key_type(&attributes, PSA_KEY_TYPE_HMAC);
+
+    psa_key_id_t key_id = 0;
+    psa_status_t status = psa_import_key(&attributes, 
+                                         (const uint8_t*)FACTORY_LOCAL_TOKEN, 
+                                         strlen(FACTORY_LOCAL_TOKEN), 
+                                         &key_id);
+    if (status != PSA_SUCCESS) {
+        return false;
+    }
+
+    uint8_t hmac_buf[32];
+    size_t mac_length = 0;
+    status = psa_mac_compute(
+        key_id,
+        PSA_ALG_HMAC(PSA_ALG_SHA_256),
+        (const uint8_t*)s_serial_nonce,
+        32,
+        hmac_buf,
+        sizeof(hmac_buf),
+        &mac_length
+    );
+
+    psa_destroy_key(key_id);
+
+    if (status != PSA_SUCCESS) {
+        return false;
+    }
+
+    char expected_hex[65] = {0};
     for (int i = 0; i < 32; i++) {
         sprintf(&expected_hex[i * 2], "%02x", hmac_buf[i]);
     }
@@ -485,34 +516,39 @@ static void memory_monitor_task(void* pvParameters) {
 
 // Background Monitor checking Internal CPU thermals (3-Tier protection)
 static void thermal_monitor_task(void* pvParameters) {
+#if HAS_TEMP_SENSOR
     temperature_sensor_handle_t temp_sensor = NULL;
     temperature_sensor_config_t temp_sensor_config = TEMPERATURE_SENSOR_CONFIG_DEFAULT(10, 50);
     
     if (temperature_sensor_install(&temp_sensor_config, &temp_sensor) == ESP_OK) {
         temperature_sensor_enable(temp_sensor);
     }
+#endif
 
     while (true) {
-        float tsens_out = 25.0f;
-        if (temp_sensor && temperature_sensor_get_celsius(temp_sensor, &tsens_out) == ESP_OK) {
-            int temp = (int)tsens_out;
-            
-            // Tier 1: Warning (65°C)
-            if (temp >= 65 && temp < 75) {
-                ESP_LOGW("THERMAL", "[WARNING] Chip core temperature elevated: %d C", temp);
-            }
-            // Tier 2: Throttled power-save activation (75°C)
-            else if (temp >= 75 && temp < 85) {
-                ESP_LOGW("THERMAL", "[THROTTLED] Activating Modem Sleep to limit thermal dissipation: %d C", temp);
-                wifi_manager_set_power_save(true);
-            }
-            // Tier 3: High Temperature safe-shutdown / reboot protect (85°C)
-            else if (temp >= 85) {
-                ESP_LOGE("THERMAL", "[CRITICAL ALERT] Temperature exceeds safety threshold (%d C). Safe shutdown triggered!", temp);
-                relay_controller_init(); // Safe lock outputs OFF
-                vTaskDelay(pdMS_TO_TICKS(1000));
-                esp_restart();
-            }
+        float tsens_out = 32.0f; // Safe stable default core temperature
+#if HAS_TEMP_SENSOR
+        if (temp_sensor) {
+            temperature_sensor_get_celsius(temp_sensor, &tsens_out);
+        }
+#endif
+        int temp = (int)tsens_out;
+        
+        // Tier 1: Warning (65°C)
+        if (temp >= 65 && temp < 75) {
+            ESP_LOGW("THERMAL", "[WARNING] Chip core temperature elevated: %d C", temp);
+        }
+        // Tier 2: Throttled power-save activation (75°C)
+        else if (temp >= 75 && temp < 85) {
+            ESP_LOGW("THERMAL", "[THROTTLED] Activating Modem Sleep to limit thermal dissipation: %d C", temp);
+            wifi_manager_set_power_save(true);
+        }
+        // Tier 3: High Temperature safe-shutdown / reboot protect (85°C)
+        else if (temp >= 85) {
+            ESP_LOGE("THERMAL", "[CRITICAL ALERT] Temperature exceeds safety threshold (%d C). Safe shutdown triggered!", temp);
+            relay_controller_init(); // Safe lock outputs OFF
+            vTaskDelay(pdMS_TO_TICKS(1000));
+            esp_restart();
         }
         vTaskDelay(pdMS_TO_TICKS(5000));
     }

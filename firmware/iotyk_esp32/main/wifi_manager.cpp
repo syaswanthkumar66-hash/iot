@@ -3,7 +3,9 @@
 #include "esp_event.h"
 #include "esp_netif.h"
 #include "esp_log.h"
+#include "esp_mac.h"
 #include "mdns.h"
+#include "config.h"
 #include <string.h>
 
 static const char* TAG = "WIFI_MGR";
@@ -152,8 +154,8 @@ void wifi_manager_start_mdns(const char* device_id) {
     mdns_instance_name_set("IoTYK Smart Relay Board");
 
     // Add HTTP and WebSocket services to resolve over mDNS
-    mdns_service_add(NULL, "_http", "_tcp", 80, NULL, 0);
-    mdns_service_add(NULL, "_ws", "_tcp", 8080, NULL, 0);
+    mdns_service_add(NULL, "_http", "_tcp", LOCAL_HTTP_PORT, NULL, 0);
+    mdns_service_add(NULL, "_ws", "_tcp", LOCAL_HTTP_PORT, NULL, 0);
 
     ESP_LOGI(TAG, "mDNS started successfully. Hostname: %s.local", device_id);
 }

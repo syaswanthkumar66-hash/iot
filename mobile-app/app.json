@@ -34,8 +34,20 @@
         "android.permission.BLUETOOTH_SCAN",
         "android.permission.BLUETOOTH_CONNECT",
         "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.BLUETOOTH",
+        "android.permission.BLUETOOTH_ADMIN",
+        "android.permission.BLUETOOTH_SCAN",
+        "android.permission.BLUETOOTH_CONNECT",
+        "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO"
-      ]
+      ],
+      "runtimeVersion": {
+        "policy": "appVersion"
+      }
     },
     "plugins": [
       "expo-secure-store",
@@ -56,6 +68,9 @@
         "projectId": "a242ecd7-6867-42bb-99dd-b57156f44d21"
       }
     },
-    "owner": "ykyash277"
+    "owner": "ykyash277",
+    "updates": {
+      "url": "https://u.expo.dev/a242ecd7-6867-42bb-99dd-b57156f44d21"
+    }
   }
 }
