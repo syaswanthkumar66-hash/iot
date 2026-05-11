@@ -46,7 +46,7 @@ static std::string decode_base64(const std::string& input) {
 
 // Handler for WIFI provisioning characteristic
 class WifiCallbacks : public NimBLECharacteristicCallbacks {
-    void onWrite(NimBLECharacteristic* pChar) override {
+    void onWrite(NimBLECharacteristic* pChar, NimBLEConnInfo& connInfo) override {
         std::string val = pChar->getValue();
         if (val.empty()) return;
 
@@ -75,7 +75,7 @@ class WifiCallbacks : public NimBLECharacteristicCallbacks {
 
 // Handler for pairing tokens & permanent keys
 class TokenCallbacks : public NimBLECharacteristicCallbacks {
-    void onWrite(NimBLECharacteristic* pChar) override {
+    void onWrite(NimBLECharacteristic* pChar, NimBLEConnInfo& connInfo) override {
         std::string val = pChar->getValue();
         if (val.empty()) return;
 
@@ -165,8 +165,8 @@ void ble_provision_start(const char* device_id) {
 
     NimBLEAdvertising* pAdvertising = NimBLEDevice::getAdvertising();
     pAdvertising->addServiceUUID(BLE_SERVICE_UUID);
-    pAdvertising->setScanResponse(true);
-    pAdvertising->setMinPreferred(0x06);
+    pAdvertising->enableScanResponse(true);
+    pAdvertising->setPreferredParams(0x06, 0x12);
     pAdvertising->start();
 
     s_ble_active = true;

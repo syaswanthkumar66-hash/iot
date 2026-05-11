@@ -240,29 +240,27 @@ void local_server_start(command_callback_t on_command) {
     s_on_command = on_command;
 
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-    config.port = LOCAL_HTTP_PORT;
+    config.server_port = LOCAL_HTTP_PORT;
     config.max_open_sockets = 4;
     config.max_uri_handlers = 4;
 
     ESP_LOGI(TAG, "Starting plain WebSocket Server on port %d...", LOCAL_HTTP_PORT);
     esp_err_t ret = httpd_start(&s_server, &config);
     if (ret == ESP_OK) {
-        httpd_uri_t info_uri = {
-            .uri = "/info",
-            .method = HTTP_GET,
-            .handler = info_get_handler,
-            .user_ctx = NULL,
-            .is_websocket = false
-        };
+        httpd_uri_t info_uri = {};
+        info_uri.uri = "/info";
+        info_uri.method = HTTP_GET;
+        info_uri.handler = info_get_handler;
+        info_uri.user_ctx = NULL;
+        info_uri.is_websocket = false;
         httpd_register_uri_handler(s_server, &info_uri);
 
-        httpd_uri_t ws_uri = {
-            .uri = "/ws",
-            .method = HTTP_GET,
-            .handler = ws_handler,
-            .user_ctx = NULL,
-            .is_websocket = true
-        };
+        httpd_uri_t ws_uri = {};
+        ws_uri.uri = "/ws";
+        ws_uri.method = HTTP_GET;
+        ws_uri.handler = ws_handler;
+        ws_uri.user_ctx = NULL;
+        ws_uri.is_websocket = true;
         httpd_register_uri_handler(s_server, &ws_uri);
 
         ESP_LOGI(TAG, "Plain WS server initialized.");

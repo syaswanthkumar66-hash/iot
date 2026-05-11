@@ -135,9 +135,13 @@ bool wifi_manager_has_failed(void) {
 }
 
 void wifi_manager_set_power_save(bool enable) {
-    // Direct power (5V 5W) connected. Keep WiFi transceiver fully active at all times for sub-ms ping times!
-    esp_wifi_set_ps(WIFI_PS_NONE);
-    ESP_LOGI(TAG, "WiFi Power Save forced disabled (Max Performance Mode at all times)");
+    if (enable) {
+        esp_wifi_set_ps(WIFI_PS_MIN_MODEM);
+        ESP_LOGI(TAG, "WiFi Power Save enabled (Modem Sleep activated for thermal cooling)");
+    } else {
+        esp_wifi_set_ps(WIFI_PS_NONE);
+        ESP_LOGI(TAG, "WiFi Power Save disabled (Max Performance Mode forced)");
+    }
 }
 
 void wifi_manager_start_mdns(const char* device_id) {
