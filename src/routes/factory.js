@@ -321,15 +321,38 @@ echo ====================================================================
 echo.
 echo Please connect your ESP32 board via USB.
 echo.
+
+:: 1. Robust Python and PATH check
+where python >nul 2>nul
+if %errorlevel% neq 0 (
+    where py >nul 2>nul
+    if %errorlevel% neq 0 (
+        echo [ERROR] Python is not installed or not on your system PATH!
+        echo.
+        echo Please follow these simple steps to install Python:
+        echo 1. Download Python from: https://www.python.org/downloads/
+        echo 2. Run the installer and check the box at the bottom that says:
+        echo    "[X] Add python.exe to PATH"   (CRITICAL!)
+        echo 3. Complete the installation, restart your Command Prompt, and run this script again.
+        echo.
+        pause
+        exit /b 1
+    ) else (
+        set PYTHON_CMD=py -m
+    )
+) else (
+    set PYTHON_CMD=python -m
+)
+
 set /p COM_PORT="Enter COM Port (e.g., COM5): "
 
 echo.
 echo Installing/upgrading esptool via pip...
-python -m pip install esptool --quiet
+%PYTHON_CMD% pip install esptool --quiet
 
 echo.
 echo Flashing precompiled native ESP-IDF binaries to %COM_PORT%...
-python -m esptool --chip esp32 -p %COM_PORT% -b 460800 --before=default-reset --after=hard-reset write-flash --flash-mode dio --flash-freq 40m --flash-size 4MB 0x1000 bin/bootloader.bin 0x8000 bin/partition-table.bin 0xf000 bin/ota_data_initial.bin 0x20000 bin/iotyk_esp32.bin
+%PYTHON_CMD% esptool --chip esp32 -p %COM_PORT% -b 460800 --before=default-reset --after=hard-reset write-flash --flash-mode dio --flash-freq 40m --flash-size 4MB 0x1000 bin/bootloader.bin 0x8000 bin/partition-table.bin 0xf000 bin/ota_data_initial.bin 0x20000 bin/iotyk_esp32.bin
 
 echo.
 echo ====================================================================
