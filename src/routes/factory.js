@@ -329,7 +329,7 @@ python -m pip install esptool --quiet
 
 echo.
 echo Flashing precompiled native ESP-IDF binaries to %COM_PORT%...
-esptool.py --chip esp32 -p %COM_PORT% -b 460800 --before=default-reset --after=hard-reset write-flash --flash-mode dio --flash-freq 40m --flash-size 4MB 0x1000 bin/bootloader.bin 0x8000 bin/partition-table.bin 0xf000 bin/ota_data_initial.bin 0x20000 bin/iotyk_esp32.bin
+python -m esptool --chip esp32 -p %COM_PORT% -b 460800 --before=default-reset --after=hard-reset write-flash --flash-mode dio --flash-freq 40m --flash-size 4MB 0x1000 bin/bootloader.bin 0x8000 bin/partition-table.bin 0xf000 bin/ota_data_initial.bin 0x20000 bin/iotyk_esp32.bin
 
 echo.
 echo ====================================================================
