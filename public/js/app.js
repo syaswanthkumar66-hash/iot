@@ -439,7 +439,7 @@ document.addEventListener('DOMContentLoaded', () => {
       r_cnt: String(currentDeviceData.relay_count || 1)
     };
 
-    writeSerial(`PROV_PERM:${JSON.stringify(payload)}`);
+    await writeSerial(`PROV_PERM:${JSON.stringify(payload)}`);
     alert("Permanent setup details sent successfully over Serial! The device will store these parameters in NVS and reboot.");
   }
 
@@ -475,7 +475,7 @@ document.addEventListener('DOMContentLoaded', () => {
         l_tok: data.session_token
       };
 
-      writeSerial(`PROV:${JSON.stringify(payload)}`);
+      await writeSerial(`PROV:${JSON.stringify(payload)}`);
       if (btnAuthenticate) btnAuthenticate.disabled = false;
       alert("SSID, Password and secure 24-hour temporary tokens written to ESP32! Device will now reboot and connect.");
     } catch (err) {
