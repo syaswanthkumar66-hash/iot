@@ -281,12 +281,6 @@ router.get('/device/:deviceId/firmware-package', requireFactoryAuth, async (req,
 
     const device = deviceRes.rows[0];
 
-    res.setHeader('Content-Type', 'application/zip');
-    res.setHeader('Content-Disposition', `attachment; filename="${device.device_id}_native_flash_package.zip"`);
-
-    const archive = archiver('zip', { zlib: { level: 9 } });
-    archive.pipe(res);
-
     const buildDir = path.resolve(__dirname, '../../firmware/iotyk_esp32/build');
 
     // 1. Resolve compiled binary paths
@@ -295,12 +289,29 @@ router.get('/device/:deviceId/firmware-package', requireFactoryAuth, async (req,
     const otaDataPath = path.join(buildDir, 'ota_data_initial.bin');
     const appPath = path.join(buildDir, 'iotyk_esp32.bin');
 
-    if (fs.existsSync(bootloaderPath) && fs.existsSync(partitionsPath) && fs.existsSync(otaDataPath) && fs.existsSync(appPath)) {
-      // Append precompiled binary files
-      archive.file(bootloaderPath, { name: 'bin/bootloader.bin' });
-      archive.file(partitionsPath, { name: 'bin/partition-table.bin' });
-      archive.file(otaDataPath, { name: 'bin/ota_data_initial.bin' });
-      archive.file(appPath, { name: 'bin/iotyk_esp32.bin' });
+    const binariesExist = fs.existsSync(bootloaderPath) && 
+                          fs.existsSync(partitionsPath) && 
+                          fs.existsSync(otaDataPath) && 
+                          fs.existsSync(appPath);
+
+    if (!binariesExist) {
+      return res.status(404).json({
+        error: 'Precompiled binaries not found',
+        details: 'Native ESP-IDF build binaries were not found inside the firmware build folder. Please compile the project first in firmware/iotyk_esp32 using "idf.py build".'
+      });
+    }
+
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename="${device.device_id}_native_flash_package.zip"`);
+
+    const archive = archiver('zip', { zlib: { level: 9 } });
+    archive.pipe(res);
+
+    // Append precompiled binary files
+    archive.file(bootloaderPath, { name: 'bin/bootloader.bin' });
+    archive.file(partitionsPath, { name: 'bin/partition-table.bin' });
+    archive.file(otaDataPath, { name: 'bin/ota_data_initial.bin' });
+    archive.file(appPath, { name: 'bin/iotyk_esp32.bin' });
 
       // 2. Generate flash.bat (Windows Utility)
       const batContent = `@echo off
@@ -385,14 +396,7 @@ No source code setup or compilation is required!
 3. Click **Connect USB** to connect Web Serial in the browser.
 4. Click **Perform Factory Setup** to automatically write your MQTT credentials and local access tokens over Web Serial to the board's permanent NVS!
 `;
-      archive.append(readmeContent, { name: 'README.md' });
-
-    } else {
-      return res.status(404).json({
-        error: 'Precompiled binaries not found',
-        details: 'Native ESP-IDF build binaries were not found inside the firmware build folder. Please compile the project first in firmware/iotyk_esp32 using "idf.py build".'
-      });
-    }
+    archive.append(readmeContent, { name: 'README.md' });
 
     // 5. Log the flash event (non-blocking)
     archive.on('end', async () => {
