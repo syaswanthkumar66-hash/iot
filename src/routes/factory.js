@@ -138,10 +138,10 @@ router.get('/device/:deviceId/config.h', requireFactoryAuth, async (req, res) =>
   }
 });
 
-router.post('/device/:deviceId/generate-firmware', requireFactoryAuth, async (req, res) => {
+router.all('/device/:deviceId/generate-firmware', requireFactoryAuth, async (req, res) => {
   try {
     const { deviceId } = req.params;
-    const emqxCaCert = req.body?.emqx_ca_cert || '';
+    const emqxCaCert = req.body?.emqx_ca_cert || req.query?.emqx_ca_cert || '';
     
     await ensureRelayCountColumn();
     const deviceRes = await query(`

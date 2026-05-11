@@ -134,6 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnProvision = document.getElementById('btnProvision');
   const btnRefresh = document.getElementById('btnRefresh');
   const btnDownloadFirmwareZip = document.getElementById('btnDownloadFirmwareZip');
+  const btnDownloadSourceZip = document.getElementById('btnDownloadSourceZip');
   const btnReplaceHardware = document.getElementById('btnReplaceHardware');
   const btnConfirmReplace = document.getElementById('btnConfirmReplace');
   const btnCancelReplace = document.getElementById('btnCancelReplace');
@@ -156,6 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnProvision) btnProvision.onclick = provisionDevice;
   if (btnRefresh) btnRefresh.onclick = window.loadDevices;
   if (btnDownloadFirmwareZip) btnDownloadFirmwareZip.onclick = downloadFirmwareZip;
+  if (btnDownloadSourceZip) btnDownloadSourceZip.onclick = downloadSourceZip;
   if (btnReplaceHardware) btnReplaceHardware.onclick = () => document.getElementById('replacePanel')?.classList.remove('hidden');
   if (btnCancelReplace) btnCancelReplace.onclick = () => document.getElementById('replacePanel')?.classList.add('hidden');
   if (btnConfirmReplace) btnConfirmReplace.onclick = confirmHardwareReplacement;
@@ -223,6 +225,11 @@ document.addEventListener('DOMContentLoaded', () => {
   function downloadFirmwareZip() {
     const key = document.getElementById('factoryKeyInput')?.value;
     window.location.href = `${factoryApiRoot}/device/${currentDeviceData.device_id}/firmware-package?key=${encodeURIComponent(key)}`;
+  }
+
+  function downloadSourceZip() {
+    const key = document.getElementById('factoryKeyInput')?.value;
+    window.location.href = `${factoryApiRoot}/device/${currentDeviceData.device_id}/generate-firmware?key=${encodeURIComponent(key)}`;
   }
 
   async function connectSerial() {
