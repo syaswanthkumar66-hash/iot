@@ -121,6 +121,21 @@ module.exports = async (req, res) => {
           is_active: true
         });
 
+      // Sync to EMQX Access Control List (ACL) so the device has publish & subscribe permissions!
+      const targetTopic = device.custom_topic || `iotyk@${device.device_id}`;
+      const aclEntries = [
+        { username: finalUsername, topic: targetTopic, permission: 'allow', action: 'all' },
+        { username: finalUsername, topic: targetTopic + '/#', permission: 'allow', action: 'all' },
+        { username: finalUsername, topic: targetTopic, permission: 'allow', action: 'pubsub' },
+        { username: finalUsername, topic: targetTopic + '/#', permission: 'allow', action: 'pubsub' }
+      ];
+
+      const { error: aclErr } = await supabase.from('mqtt_acl').insert(aclEntries);
+      if (aclErr) {
+        console.warn("Failed to insert into mqtt_acl, trying acl table:", aclErr.message);
+        await supabase.from('acl').insert(aclEntries);
+      }
+
       finalPassword = plainPass; // Return plain to device!
     } else {
       finalUsername = credentials[0].mqtt_username;
