@@ -54,8 +54,8 @@ module.exports = async (req, res) => {
         port: d.port || 5555,
         protocol: d.protocol || "UDP",
         relayCount: d.relay_count || 1,
-        localToken: d.local_token,
-        token: d.local_token // Map both token keys for full client cross-compatibility
+        localToken: d.local_token || d.token,
+        token: d.local_token || d.token // Map both token keys for full client cross-compatibility
       }));
 
       return res.status(200).json(formatted);
@@ -100,7 +100,8 @@ module.exports = async (req, res) => {
         return res.status(404).json({ error: 'Associated device not found' });
       }
 
-      if (!device.local_token) {
+      const resolvedToken = device.local_token || device.token;
+      if (!resolvedToken) {
         return res.status(400).json({ error: 'Sync failed: Device has no credentials to sync' });
       }
 
@@ -139,8 +140,8 @@ module.exports = async (req, res) => {
           port: device.port,
           protocol: device.protocol,
           relayCount: device.relay_count,
-          localToken: device.local_token,
-          token: device.local_token // Map both token keys for full client cross-compatibility
+          localToken: device.local_token || device.token,
+          token: device.local_token || device.token // Map both token keys for full client cross-compatibility
         }
       });
     } 

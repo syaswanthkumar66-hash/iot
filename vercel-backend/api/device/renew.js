@@ -68,13 +68,14 @@ module.exports = async (req, res) => {
       return res.status(404).json({ error: 'Device not pre-registered' });
     }
 
-    if (!device.local_token) {
+    const resolvedLocalToken = device.local_token || device.token;
+    if (!resolvedLocalToken) {
       return res.status(400).json({ error: 'Sync failed: Device has no credentials to sync' });
     }
 
     // 3. Cryptographically verify the signature
     // Expected = HMAC-SHA256(key = local_token, data = deviceId + timestamp)
-    const hmac = crypto.createHmac('sha256', device.local_token);
+    const hmac = crypto.createHmac('sha256', resolvedLocalToken);
     hmac.update(deviceId + timestamp.toString());
     const expectedSignature = hmac.digest('hex');
 
@@ -124,10 +125,10 @@ module.exports = async (req, res) => {
       // Sync to EMQX Access Control List (ACL) so the device has publish & subscribe permissions!
       const targetTopic = device.custom_topic || `iotyk@${device.device_id}`;
       const aclEntries = [
-        { username: finalUsername, topic: targetTopic, permission: 'allow', action: 'all' },
-        { username: finalUsername, topic: targetTopic + '/#', permission: 'allow', action: 'all' },
-        { username: finalUsername, topic: targetTopic, permission: 'allow', action: 'pubsub' },
-        { username: finalUsername, topic: targetTopic + '/#', permission: 'allow', action: 'pubsub' }
+        { username: finalUsername, topic: targetTopic, access: 'allow', action: 'all' },
+        { username: finalUsername, topic: targetTopic + '/#', access: 'allow', action: 'all' },
+        { username: finalUsername, topic: targetTopic, access: 'allow', action: 'pubsub' },
+        { username: finalUsername, topic: targetTopic + '/#', access: 'allow', action: 'pubsub' }
       ];
 
       const { error: aclErr } = await supabase.from('mqtt_acl').insert(aclEntries);
