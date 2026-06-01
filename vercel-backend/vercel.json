@@ -1,0 +1,30 @@
+{
+  "version": 2,
+  "routes": [
+    {
+      "src": "/api/auth/register",
+      "dest": "/api/auth/register.js"
+    },
+    {
+      "src": "/api/auth/login",
+      "dest": "/api/auth/login.js"
+    },
+    {
+      "src": "/api/device/renew-token",
+      "dest": "/api/device/renew.js"
+    },
+    {
+      "src": "/api/device/renew",
+      "dest": "/api/device/renew.js"
+    },
+    {
+      "src": "/api/(.*)",
+      "headers": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Device-Signature, X-Factory-Key",
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS, DELETE"
+      },
+      "continue": true
+    }
+  ]
+}

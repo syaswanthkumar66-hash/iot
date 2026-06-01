@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IoTYK 🔒 Premium Secure Control Center</title>
+  <!-- Modern sleek typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Background decorative glowing orbs -->
+  <div class="glow-orb orb-1"></div>
+  <div class="glow-orb orb-2"></div>
+  <div class="glow-orb orb-3"></div>
+
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header glass-card">
+      <div class="header-logo">
+        <div class="logo-shield">
+          <svg viewBox="0 0 24 24" class="icon">
+            <path fill="currentColor" d="M12,1L3,5V11C3,16.55 6.84,21.74 12,23C17.16,21.74 21,16.55 21,11V5L12,1M12,7C13.66,7 15,8.34 15,10C15,11.38 14.07,12.54 12.81,12.89L13.85,16.14C13.94,16.4 13.8,16.69 13.54,16.78C13.29,16.87 13,16.73 12.91,16.47L12,13.63L11.09,16.47C11,16.73 10.71,16.87 10.46,16.78C10.2,16.69 10.06,16.4 10.15,16.14L11.19,12.89C9.93,12.54 9,11.38 9,10C9,8.34 10.34,7 12,7M12,8.5A1.5,1.5 0 0,0 10.5,10A1.5,1.5 0 0,0 12,11.5A1.5,1.5 0 0,0 13.5,10A1.5,1.5 0 0,0 12,8.5Z" />
+          </svg>
+        </div>
+        <div class="logo-text">
+          <h1>IoTYK</h1>
+          <span class="sub-title">SECURE CONTROL GATEWAY</span>
+        </div>
+      </div>
+      
+      <div class="header-status">
+        <div class="status-indicator">
+          <span class="indicator-pulse" id="gateway-pulse"></span>
+          <span class="status-label" id="gateway-status">CONNECTING...</span>
+        </div>
+        <div class="system-time" id="live-clock">--:--:--</div>
+      </div>
+    </header>
+
+    <!-- Main Grid Layout -->
+    <main class="dashboard-grid">
+      
+      <!-- LEFT PANEL: Device Provisioning & Network Scan -->
+      <section class="grid-panel left-panel">
+        
+        <!-- Network Scan Card -->
+        <div class="glass-card panel-card scan-card">
+          <h2>Network Discovery</h2>
+          <p class="description">Broadcast UDP discover signals to local subnet to find active controllers.</p>
+          
+          <button id="btn-scan" class="btn-primary scan-btn">
+            <span class="btn-text">SCAN LOCAL SUBNET</span>
+            <span class="spinner hidden"></span>
+          </button>
+
+          <!-- Discovered devices dynamic container -->
+          <div class="discovered-container">
+            <h3>Discovered Controllers <span class="badge" id="discovered-count">0</span></h3>
+            <div class="discovered-list" id="discovered-list">
+              <div class="empty-state">No controllers discovered yet. Run scan.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Manual Device Addition Card -->
+        <div class="glass-card panel-card manual-card">
+          <h2>Add Controller Manually</h2>
+          <form id="form-add-device">
+            <div class="form-group">
+              <label for="input-name">Friendly Name</label>
+              <input type="text" id="input-name" placeholder="Kitchen Lights" required>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label for="input-id">Device ID</label>
+                <input type="text" id="input-id" placeholder="ESP32-TEST-XXXXXX" required>
+              </div>
+              <div class="form-group">
+                <label for="input-ip">IP Address</label>
+                <input type="text" id="input-ip" placeholder="192.168.1.12" required>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="input-port">Port</label>
+                <input type="number" id="input-port" placeholder="5555" required>
+              </div>
+              <div class="form-group">
+                <label for="select-proto">Protocol</label>
+                <select id="select-proto" required>
+                  <option value="UDP" selected>Secure UDP</option>
+                  <option value="WSS">Secure WebSocket</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="input-token">Security Token</label>
+              <input type="password" id="input-token" placeholder="Enter NVS Local Token" required>
+            </div>
+
+            <button type="submit" class="btn-secondary">REGISTER CONTROLLER</button>
+          </form>
+        </div>
+
+        <!-- AI Studio Prompt Generator Card -->
+        <div class="glass-card panel-card prompt-card">
+          <h2>Android App Creator</h2>
+          <p class="description">Generate a custom Kotlin/Compose code prompt tailored to your device configs for Google AI Studio.</p>
+          
+          <button id="btn-open-prompt-gen" class="btn-primary" style="background: var(--grad-magenta-purple); box-shadow: 0 4px 15px rgba(168, 85, 247, 0.25);">
+            CREATE AI STUDIO PROMPT
+          </button>
+        </div>
+
+      </section>
+
+      <!-- CENTER PANEL: Active Controller Grid -->
+      <section class="grid-panel center-panel">
+        <div class="panel-header">
+          <h2>Registered Devices</h2>
+          <span class="sub-label">Control high-security IoT relays in real-time</span>
+        </div>
+        
+        <div class="device-grid" id="device-grid">
+          <!-- Dynamic device cards are injected here -->
+          <div class="grid-empty-state">
+            <div class="empty-icon">🔌</div>
+            <p>No controllers registered. Use discovery scan or manually register a board to get started.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT PANEL: Cryptographic & Security Console -->
+      <section class="grid-panel right-panel">
+        <div class="glass-card panel-card crypto-console-card">
+          <div class="card-header-actions">
+            <h2>Crypto & Security logs</h2>
+            <button class="btn-icon" id="btn-clear-console" title="Clear logs">
+              <svg viewBox="0 0 24 24" class="icon-sm"><path fill="currentColor" d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z"/></svg>
+            </button>
+          </div>
+          
+          <div class="crypto-stats-bar">
+            <div class="crypto-stat">
+              <span class="stat-label">Active Session Keys</span>
+              <span class="stat-value text-cyan" id="stat-sessions">0</span>
+            </div>
+            <div class="crypto-stat">
+              <span class="stat-label">TX Packets</span>
+              <span class="stat-value text-blue" id="stat-tx">0</span>
+            </div>
+            <div class="crypto-stat">
+              <span class="stat-label">RX Packets</span>
+              <span class="stat-value text-purple" id="stat-rx">0</span>
+            </div>
+          </div>
+
+          <div class="terminal-wrapper">
+            <div class="terminal-header">
+              <div class="terminal-dots">
+                <span class="dot red"></span>
+                <span class="dot yellow"></span>
+                <span class="dot green"></span>
+              </div>
+              <span class="terminal-title">packet_sniffer.log</span>
+            </div>
+            <div class="terminal-body" id="crypto-terminal">
+              <div class="terminal-line system">IoTYK Cryptographic Terminal Initialized. Waiting for secure traffic...</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Modal Overlay for AI Studio Prompt Generator -->
+  <div id="prompt-modal" class="modal-overlay hidden">
+    <div class="glass-card modal-content">
+      <div class="modal-header">
+        <h2>AI Studio Prompt Compiler</h2>
+        <span id="btn-close-modal" class="close-btn">&times;</span>
+      </div>
+      <p class="description" style="margin-bottom: 16px;">Customize your Android app settings. We'll compile the complete system instructions for Google AI Studio.</p>
+      
+      <div class="modal-body-layout">
+        <!-- Configurations Form -->
+        <div class="modal-form-side">
+          <div class="form-group">
+            <label for="prompt-pkg">Android Package Name</label>
+            <input type="text" id="prompt-pkg" value="com.iotyk.control" placeholder="com.example.app">
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="prompt-relays">Relay Channels Count</label>
+              <select id="prompt-relays">
+                <option value="1">1 Relay (ESP32-439D16)</option>
+                <option value="2" selected>2 Relays (ESP32-TEST-E0C656)</option>
+                <option value="4">4 Relays</option>
+                <option value="8">8 Relays</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="prompt-proto">Protocol Features</label>
+              <select id="prompt-proto">
+                <option value="Both UDP & WSS" selected>Both UDP & WSS Secure</option>
+                <option value="UDP Only">Secure UDP Only</option>
+                <option value="WSS Only">Secure WSS Only</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="prompt-token">NVS Authentication Token</label>
+            <input type="text" id="prompt-token" value="test_tok_5b08259c97eb798d9664" placeholder="Enter NVS Token">
+          </div>
+
+          <button id="btn-compile-prompt" class="btn-primary" style="margin-top: 8px;">COMPILE PROMPT</button>
+        </div>
+
+        <!-- Compiled Text Result -->
+        <div class="modal-result-side">
+          <label>Compiled System Instructions</label>
+          <div class="prompt-text-wrapper">
+            <textarea id="prompt-textarea" readonly placeholder="Click Compile to generate your custom AI Studio system instructions..."></textarea>
+            <button id="btn-copy-prompt" class="btn-primary copy-floating-btn">COPY PROMPT</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

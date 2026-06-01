@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IoTYK 🔒 Premium Diagnostic & Refurbish Console</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #060813;
+      --bg-secondary: #0c0f24;
+      --glass-bg: rgba(13, 17, 39, 0.55);
+      --glass-border: rgba(255, 255, 255, 0.06);
+      
+      --cyan-neon: #00f2fe;
+      --blue-neon: #3b82f6;
+      --purple-neon: #a855f7;
+      --magenta-neon: #ff2a85;
+      --emerald-neon: #10b981;
+      --rose-neon: #ef4444;
+      --amber-neon: #f59e0b;
+      
+      --text-primary: #f1f3f9;
+      --text-secondary: #8e99b7;
+      --text-muted: #5e6681;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* Soft Glow Background Decorations */
+    .glow-circle-1 {
+      position: absolute;
+      top: -100px;
+      left: -100px;
+      width: 400px;
+      height: 400px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(0, 242, 254, 0.08) 0%, transparent 70%);
+      filter: blur(80px);
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .glow-circle-2 {
+      position: absolute;
+      bottom: -150px;
+      right: -100px;
+      width: 500px;
+      height: 500px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(168, 85, 247, 0.08) 0%, transparent 70%);
+      filter: blur(100px);
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    header {
+      background-color: var(--bg-secondary);
+      border-bottom: 1px solid var(--glass-border);
+      padding: 16px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 10;
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-box {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--cyan-neon), var(--blue-neon));
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 18px;
+      font-weight: bold;
+      color: white;
+      box-shadow: 0 0 15px rgba(0, 242, 254, 0.3);
+    }
+
+    .logo-text-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: 0.5px;
+    }
+
+    .logo-text-subtitle {
+      color: var(--cyan-neon);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      margin-top: -2px;
+    }
+
+    .header-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.04);
+      padding: 6px 16px;
+      border-radius: 20px;
+      border: 1px solid var(--glass-border);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--rose-neon);
+      box-shadow: 0 0 8px var(--rose-neon);
+      transition: all 0.3s ease;
+    }
+
+    .status-dot.connected {
+      background-color: var(--emerald-neon);
+      box-shadow: 0 0 10px var(--emerald-neon);
+    }
+
+    main {
+      flex: 1;
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 40px 20px;
+      display: grid;
+      grid-template-columns: 1fr 1.2fr;
+      gap: 30px;
+      z-index: 10;
+    }
+
+    @media (max-width: 900px) {
+      main {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      padding: 24px;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .card-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .card-description {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      letter-spacing: 0.5px;
+    }
+
+    input, select {
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 12px 14px;
+      color: white;
+      font-size: 13px;
+      outline: none;
+      font-family: inherit;
+      transition: border-color 0.2s ease;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--cyan-neon);
+      box-shadow: 0 0 10px rgba(0, 242, 254, 0.1);
+    }
+
+    .btn {
+      padding: 14px 20px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: bold;
+      cursor: pointer;
+      border: none;
+      transition: all 0.3s ease;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .btn-connect {
+      background: linear-gradient(135deg, var(--cyan-neon), var(--blue-neon));
+      color: var(--bg-primary);
+      box-shadow: 0 4px 15px rgba(0, 242, 254, 0.2);
+    }
+
+    .btn-connect:hover {
+      box-shadow: 0 4px 25px rgba(0, 242, 254, 0.4);
+      transform: translateY(-1px);
+    }
+
+    .btn-revert {
+      background: transparent;
+      border: 1.5px solid var(--rose-neon);
+      color: var(--text-primary);
+      box-shadow: 0 4px 15px rgba(239, 68, 68, 0.1);
+    }
+
+    .btn-revert:hover:not(:disabled) {
+      background: var(--rose-neon);
+      color: white;
+      box-shadow: 0 4px 25px rgba(239, 68, 68, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .btn-revert:disabled {
+      border-color: var(--text-muted);
+      color: var(--text-muted);
+      cursor: not-allowed;
+    }
+
+    /* Cryptographic Sniffer Console */
+    .console-card {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    .console-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .clear-logs-btn {
+      font-size: 10px;
+      font-weight: bold;
+      color: var(--text-muted);
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      transition: color 0.2s ease;
+    }
+
+    .clear-logs-btn:hover {
+      color: var(--text-secondary);
+    }
+
+    .console-stream {
+      flex: 1;
+      background: #02040c;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 12px;
+      padding: 16px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      height: 380px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .console-line {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .console-line-header {
+      display: flex;
+      gap: 8px;
+    }
+
+    .line-time {
+      color: var(--text-muted);
+    }
+
+    .line-type {
+      font-weight: bold;
+    }
+
+    .type-sys { color: var(--text-secondary); }
+    .type-tx { color: var(--cyan-neon); }
+    .type-rx { color: var(--purple-neon); }
+    .type-ok { color: var(--emerald-neon); }
+    .type-err { color: var(--rose-neon); }
+
+    .line-message {
+      word-break: break-all;
+    }
+
+    .line-details {
+      margin-top: 4px;
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: 6px;
+      padding: 8px 12px;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      font-size: 11px;
+    }
+
+    .detail-row {
+      display: flex;
+    }
+
+    .detail-key {
+      width: 100px;
+      color: var(--text-muted);
+    }
+
+    .detail-val {
+      color: var(--text-secondary);
+      flex: 1;
+    }
+
+    .spinner {
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border-left-color: currentColor;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="glow-circle-1"></div>
+  <div class="glow-circle-2"></div>
+
+  <header>
+    <div class="logo-container">
+      <div class="logo-box">🔒</div>
+      <div>
+        <div class="logo-text-title">IoTYK</div>
+        <div class="logo-text-subtitle">DIAGNOSTICS & REFURBISH</div>
+      </div>
+    </div>
+    <div class="header-status">
+      <div class="status-dot" id="statusDot"></div>
+      <span id="statusText">USB CABLE DISCONNECTED</span>
+    </div>
+  </header>
+
+  <main>
+    <!-- Left Column: Settings and Trigger -->
+    <div class="card">
+      <div>
+        <div class="card-title">🔌 Factory Cable Tool</div>
+        <p class="card-description" style="margin-top: 6px;">
+          Plug the ESP32 relay node directly into your PC via a USB cable. This tool communicates with the controller locally to wipe stored parameters and authenticate the cloud un-claim trigger.
+        </p>
+      </div>
+
+      <div class="form-group">
+        <label for="deviceId">Device MAC / Serial ID</label>
+        <input type="text" id="deviceId" placeholder="e.g. ESP32-TEST-E0C656" />
+      </div>
+
+      <div class="form-group">
+        <label for="backendUrl">Diagnostic Cloud Target</label>
+        <select id="backendUrl">
+          <option value="/api/factory/revert">Local/Vercel (Current Server)</option>
+          <option value="https://your-iotyk-backend.vercel.app/api/factory/revert">Production Backend</option>
+        </select>
+      </div>
+
+      <button class="btn btn-connect" id="btnConnect">
+        <span>Connect Device via Cable</span>
+      </button>
+
+      <button class="btn btn-revert" id="btnRevert" disabled>
+        <span>Revert to Factory Mode</span>
+      </button>
+    </div>
+
+    <!-- Right Column: Interactive Diagnostic Output -->
+    <div class="card console-card">
+      <div class="console-header">
+        <div class="card-title">📟 Sniffer Terminal Stream</div>
+        <div class="clear-logs-btn" id="btnClearLogs">Clear Stream</div>
+      </div>
+
+      <div class="console-stream" id="consoleStream">
+        <!-- Logs populated dynamically -->
+      </div>
+    </div>
+  </main>
+
+  <script>
+    let port;
+    let writer;
+    let reader;
+    let isConnected = false;
+    let keepReading = true;
+    let readLoopPromise;
+
+    const btnConnect = document.getElementById('btnConnect');
+    const btnRevert = document.getElementById('btnRevert');
+    const btnClearLogs = document.getElementById('btnClearLogs');
+    const consoleStream = document.getElementById('consoleStream');
+    const statusDot = document.getElementById('statusDot');
+    const statusText = document.getElementById('statusText');
+    const deviceIdInput = document.getElementById('deviceId');
+    const backendUrlSelect = document.getElementById('backendUrl');
+
+    function getCurrentTime() {
+      return new Date().toLocaleTimeString();
+    }
+
+    function addLog(type, message, details = null) {
+      const line = document.createElement('div');
+      line.className = 'console-line';
+
+      let prefix = 'ℹ [SYS] ';
+      let typeClass = 'type-sys';
+      if (type === 'tx') { prefix = '⚡ [TX] '; typeClass = 'type-tx'; }
+      else if (type === 'rx') { prefix = '📥 [RX] '; typeClass = 'type-rx'; }
+      else if (type === 'ok') { prefix = '✓ [OK] '; typeClass = 'type-ok'; }
+      else if (type === 'err') { prefix = '✕ [ERR] '; typeClass = 'type-err'; }
+
+      const header = document.createElement('div');
+      header.className = 'console-line-header';
+      header.innerHTML = `
+        <span class="line-time">[${getCurrentTime()}]</span>
+        <span class="line-type ${typeClass}">${prefix}</span>
+        <span class="line-message">${message}</span>
+      `;
+      line.appendChild(header);
+
+      if (details) {
+        const detailsContainer = document.createElement('div');
+        detailsContainer.className = 'line-details';
+        for (const [key, val] of Object.entries(details)) {
+          const row = document.createElement('div');
+          row.className = 'detail-row';
+          row.innerHTML = `<span class="detail-key">${key}:</span><span class="detail-val">${val}</span>`;
+          detailsContainer.appendChild(row);
+        }
+        line.appendChild(detailsContainer);
+      }
+
+      consoleStream.appendChild(line);
+      consoleStream.scrollTop = consoleStream.scrollHeight;
+    }
+
+    // Initialize Log
+    addLog('sys', 'Refurbish diagnostics console ready.');
+    addLog('sys', 'Awaiting physical serial connection over USB cable...');
+
+    // Browser Web Serial Connect Button
+    btnConnect.addEventListener('click', async () => {
+      if (isConnected) {
+        disconnectPort();
+        return;
+      }
+
+      if (!("serial" in navigator)) {
+        addLog('err', 'Web Serial API is not supported by your browser. Please use Google Chrome or Microsoft Edge.');
+        alert('Web Serial API is not supported. Use Chrome or Edge.');
+        return;
+      }
+
+      try {
+        addLog('sys', 'Requesting serial connection COM port...');
+        port = await navigator.serial.requestPort();
+        await port.open({ baudRate: 115200 });
+
+        const encoder = new TextEncoderStream();
+        encoder.readable.pipeTo(port.writable);
+        writer = encoder.writable.getWriter();
+
+        isConnected = true;
+        keepReading = true;
+        
+        statusDot.className = 'status-dot connected';
+        statusText.innerText = 'USB CABLE CONNECTED';
+        btnConnect.innerHTML = '<span>Disconnect Cable</span>';
+        btnRevert.disabled = false;
+        
+        addLog('ok', 'USB COM port opened at 115200 Baud.');
+        
+        // Start read loop
+        readLoopPromise = readSerialStream();
+      } catch (err) {
+        addLog('err', 'Failed to connect: ' + err.message);
+      }
+    });
+
+    async function disconnectPort() {
+      keepReading = false;
+      if (reader) {
+        await reader.cancel();
+      }
+      if (writer) {
+        writer.releaseLock();
+      }
+      if (readLoopPromise) {
+        await readLoopPromise;
+      }
+      if (port) {
+        await port.close();
+      }
+      
+      isConnected = false;
+      statusDot.className = 'status-dot';
+      statusText.innerText = 'USB CABLE DISCONNECTED';
+      btnConnect.innerHTML = '<span>Connect Device via Cable</span>';
+      btnRevert.disabled = true;
+      addLog('sys', 'USB COM port connection closed.');
+    }
+
+    // Read Serial input continuously
+    async function readSerialStream() {
+      const decoder = new TextDecoderStream();
+      const readableStreamClosed = port.readable.pipeTo(decoder.writable);
+      reader = decoder.readable.getReader();
+
+      let buffer = "";
+
+      try {
+        while (keepReading) {
+          const { value, done } = await reader.read();
+          if (done) {
+            break;
+          }
+          if (value) {
+            buffer += value;
+            let lines = buffer.split('\n');
+            buffer = lines.pop(); // Keep partial line in buffer
+
+            for (let line of lines) {
+              line = line.trim();
+              if (line.length > 0) {
+                // If it starts with a key word, categorize the output
+                if (line.startsWith("SYS:") || line.startsWith("SYS_")) {
+                  addLog('sys', line);
+                } else if (line.startsWith("RESULT:AUTO_TEST_PASSED")) {
+                  addLog('ok', line);
+                  const devIdMatch = line.match(/DEVICE_ID=([A-Za-z0-9\-]+)/);
+                  if (devIdMatch) {
+                    deviceIdInput.value = devIdMatch[1];
+                  }
+                } else if (line.startsWith("RESULT:AUTO_TEST_FAILED")) {
+                  addLog('err', line);
+                } else {
+                  addLog('rx', line);
+                }
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Read serial stream error:", err);
+      } finally {
+        reader.releaseLock();
+      }
+    }
+
+    // Revert Ownership Event (USB Handshake + Cloud API Trigger)
+    btnRevert.addEventListener('click', async () => {
+      const deviceId = deviceIdInput.value.trim();
+      if (!deviceId) {
+        addLog('err', 'Error: Please specify the target Device MAC / Serial ID.');
+        deviceIdInput.focus();
+        return;
+      }
+
+      btnRevert.disabled = true;
+      btnRevert.innerHTML = '<div class="spinner"></div>&nbsp;<span>PROCESSING...</span>';
+
+      try {
+        addLog('tx', 'Sending physical reset instruction: GET_FACTORY_RESET_TOKEN');
+        await writer.write("GET_FACTORY_RESET_TOKEN\n");
+
+        // Read validation key from output stream
+        addLog('sys', 'Waiting for validation token from physical serial chip...');
+        
+        let validationKey = "";
+        let timeoutCounter = 0;
+        
+        // Polling loop waiting for key (simulating UART response timeout)
+        while (timeoutCounter < 50) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+          // Search log contents for RESET_OK: to find parsed token
+          const lines = Array.from(consoleStream.children);
+          for (let line of lines) {
+            const txt = line.textContent || "";
+            if (txt.includes("RESET_OK:")) {
+              validationKey = txt.split("RESET_OK:")[1].trim();
+              break;
+            }
+          }
+          if (validationKey) break;
+          timeoutCounter++;
+        }
+
+        if (!validationKey) {
+          throw new Error("Serial Timeout: Failed to receive RESET_OK verification key over cable.");
+        }
+
+        addLog('ok', 'Validation key extracted from cable: ' + validationKey.substring(0, 8) + '...');
+
+        // Step 2: Trigger backend database reset using validation token
+        addLog('sys', 'Initiating secure database un-claim verification...');
+        const apiTarget = backendUrlSelect.value;
+        
+        const response = await fetch(apiTarget, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            deviceId: deviceId,
+            validationKey: validationKey
+          })
+        });
+
+        const data = await response.json();
+        
+        if (response.ok) {
+          addLog('ok', 'DATABASE SUCCESS: Device successfully un-linked and returned to Factory Mode!', {
+            "Status": data.status,
+            "Message": data.message,
+            "Mode": "Factory Mode (NULL Owner)"
+          });
+          alert("Success! Device returned to Factory Mode.");
+        } else {
+          addLog('err', 'Database rejection: ' + data.error);
+          alert("Database Rejection: " + data.error);
+        }
+
+      } catch (err) {
+        addLog('err', err.message);
+      } finally {
+        btnRevert.disabled = false;
+        btnRevert.innerHTML = '<span>Revert to Factory Mode</span>';
+      }
+    });
+
+    btnClearLogs.addEventListener('click', () => {
+      consoleStream.innerHTML = '';
+      addLog('sys', 'Diagnostics stream clear.');
+    });
+  </script>
+</body>
+</html>

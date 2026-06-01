@@ -1,0 +1,7 @@
+node_modules/
+manufacturing_history.csv
+.DS_Store
+.vscode/
+.idea/
+*.log
+*.tmp

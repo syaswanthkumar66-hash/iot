@@ -1,0 +1,1235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IoTYK 🔒 Standalone Premium Control Center & Prompt Generator</title>
+  <!-- Modern sleek typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  
+  <style>
+    /* --- CSS Design System --- */
+    :root {
+      --font-display: 'Outfit', sans-serif;
+      --font-sans: 'Inter', sans-serif;
+      --font-mono: 'Fira Code', monospace;
+      --bg-primary: #060813;
+      --bg-secondary: #0c0f24;
+      --glass-bg: rgba(13, 17, 39, 0.45);
+      --glass-border: rgba(255, 255, 255, 0.04);
+      --text-primary: #f1f3f9;
+      --text-secondary: #8e99b7;
+      --text-muted: #5e6681;
+      --color-cyan: #00f2fe;
+      --color-blue: #3b82f6;
+      --color-purple: #a855f7;
+      --color-magenta: #ff2a85;
+      --color-emerald: #10b981;
+      --color-rose: #ef4444;
+      --color-amber: #f59e0b;
+      --grad-cyan-blue: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+      --grad-magenta-purple: linear-gradient(135deg, #ff2a85 0%, #a855f7 100%);
+      --grad-emerald-teal: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      --ease-elastic: cubic-bezier(0.68, -0.6, 0.32, 1.6);
+      --ease-smooth: cubic-bezier(0.25, 1, 0.5, 1);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+      background-image: radial-gradient(circle at 50% 50%, #0f1330 0%, #060813 100%);
+    }
+
+    /* Ambient glow background orbs */
+    .glow-orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(140px);
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.75;
+    }
+    .orb-1 { width: 400px; height: 400px; background-color: rgba(0, 242, 254, 0.12); top: 10%; left: 5%; }
+    .orb-2 { width: 500px; height: 500px; background-color: rgba(168, 85, 247, 0.1); bottom: 10%; right: 5%; }
+    .orb-3 { width: 300px; height: 300px; background-color: rgba(255, 42, 133, 0.08); top: 40%; left: 45%; }
+
+    .app-container {
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 24px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .glass-card {
+      background: var(--glass-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--glass-border);
+      box-shadow: 0 12px 40px 0 rgba(2, 4, 12, 0.5);
+      border-radius: 16px;
+      padding: 24px;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+    .glass-card:hover { border-color: rgba(255, 255, 255, 0.08); }
+
+    /* Header */
+    .app-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 32px;
+    }
+    .header-logo { display: flex; align-items: center; gap: 16px; }
+    .logo-shield {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: var(--grad-cyan-blue);
+      color: #020617;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 20px rgba(0, 242, 254, 0.4);
+    }
+    .logo-text h1 {
+      font-family: var(--font-display);
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      background: linear-gradient(to right, #ffffff, #8e99b7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .logo-text .sub-title {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--color-cyan);
+      letter-spacing: 3px;
+      display: block;
+      margin-top: -2px;
+    }
+    .header-status { display: flex; align-items: center; gap: 24px; }
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255, 255, 255, 0.03);
+      padding: 8px 16px;
+      border-radius: 30px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .indicator-pulse {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--color-emerald);
+      box-shadow: 0 0 10px var(--color-emerald);
+      display: inline-block;
+      animation: pulse-glow 2s infinite;
+    }
+    .status-label { font-size: 12px; font-weight: 600; letter-spacing: 1px; color: var(--text-secondary); }
+    .system-time { font-family: var(--font-mono); font-size: 14px; color: var(--color-cyan); opacity: 0.8; }
+
+    /* Dashboard Grid */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 360px 1fr 400px;
+      gap: 24px;
+      flex: 1;
+    }
+
+    @media (max-width: 1400px) {
+      .dashboard-grid { grid-template-columns: 320px 1fr; }
+      .right-panel { grid-column: span 2; }
+    }
+    @media (max-width: 1000px) {
+      .dashboard-grid { grid-template-columns: 1fr; }
+      .left-panel, .center-panel, .right-panel { grid-column: span 1; }
+    }
+
+    .grid-panel { display: flex; flex-direction: column; gap: 24px; }
+    h2 { font-family: var(--font-display); font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 8px; }
+    .description { font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin-bottom: 20px; }
+
+    /* Forms */
+    .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    label { font-size: 11px; font-weight: 600; color: var(--text-secondary); letter-spacing: 0.5px; }
+    input, select {
+      background: rgba(8, 10, 24, 0.6);
+      border: 1px solid var(--glass-border);
+      color: #fff;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      transition: all 0.3s ease;
+      width: 100%;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--color-cyan);
+      box-shadow: 0 0 10px rgba(0, 242, 254, 0.15);
+    }
+
+    .btn-primary {
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      border: none;
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: #020617;
+      background: var(--grad-cyan-blue);
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(0, 242, 254, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: all 0.3s var(--ease-elastic);
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 242, 254, 0.4);
+    }
+    .btn-secondary {
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      font-family: var(--font-display);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: #fff;
+      background: rgba(255, 255, 255, 0.03);
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .btn-secondary:hover { background: rgba(255, 255, 255, 0.07); border-color: rgba(255, 255, 255, 0.15); }
+    .btn-icon { background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 6px; border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+    .btn-icon:hover { color: #fff; background: rgba(255, 255, 255, 0.05); }
+    .icon-sm { width: 18px; height: 18px; }
+
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2px solid rgba(2, 6, 23, 0.2);
+      border-top-color: #020617;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      display: inline-block;
+    }
+    .spinner.hidden { display: none; }
+
+    /* Discovery */
+    .discovered-container { margin-top: 24px; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 20px; }
+    .badge { font-family: var(--font-mono); font-size: 11px; background: rgba(255, 255, 255, 0.06); padding: 2px 8px; border-radius: 12px; color: var(--color-cyan); }
+    .discovered-list { display: flex; flex-direction: column; gap: 12px; max-height: 240px; overflow-y: auto; }
+    .discovered-item {
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.03);
+      padding: 12px;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.3s ease;
+    }
+    .disc-info { display: flex; flex-direction: column; gap: 2px; }
+    .disc-name { font-weight: 600; font-size: 13px; color: #fff; }
+    .disc-ip { font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); }
+    .empty-state { text-align: center; padding: 24px 0; color: var(--text-muted); font-size: 12px; border: 1px dashed rgba(255, 255, 255, 0.04); border-radius: 8px; }
+
+    /* Center Grid */
+    .panel-header { margin-bottom: 8px; }
+    .panel-header h2 { font-family: var(--font-display); font-size: 24px; font-weight: 800; }
+    .sub-label { font-size: 12px; color: var(--text-secondary); }
+    .device-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+
+    /* Device Card */
+    .device-card { position: relative; overflow: hidden; transition: all 0.4s var(--ease-smooth); }
+    .device-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(255, 255, 255, 0.12);
+      box-shadow: 0 20px 40px 0 rgba(2, 4, 12, 0.7);
+    }
+    .card-top { display: flex; justify-content: space-between; align-items: start; margin-bottom: 20px; }
+    .device-meta { display: flex; flex-direction: column; gap: 4px; }
+    .device-name { font-family: var(--font-display); font-weight: 700; font-size: 18px; color: #fff; }
+    .device-id { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); }
+    .proto-badge { font-family: var(--font-display); font-size: 10px; font-weight: 800; padding: 4px 10px; border-radius: 20px; text-transform: uppercase; }
+    .proto-badge.udp { background: rgba(0, 242, 254, 0.1); color: var(--color-cyan); border: 1px solid rgba(0, 242, 254, 0.2); }
+    .proto-badge.wss { background: rgba(255, 42, 133, 0.1); color: var(--color-magenta); border: 1px solid rgba(255, 42, 133, 0.2); }
+    .card-middle { margin-bottom: 24px; }
+    .device-endpoint { display: flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 12px; color: var(--text-secondary); }
+    .icon-endpoint { width: 14px; height: 14px; opacity: 0.5; }
+    .card-bottom { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255, 255, 255, 0.04); padding-top: 16px; }
+    .relay-status { display: flex; align-items: center; gap: 10px; }
+    .led { width: 12px; height: 12px; border-radius: 50%; background: var(--text-muted); transition: all 0.3s ease; }
+    .led.active { background: var(--color-emerald); box-shadow: 0 0 15px var(--color-emerald), 0 0 30px var(--color-emerald); }
+    .led.offline { background: var(--color-rose); box-shadow: 0 0 15px var(--color-rose); }
+    .status-text { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-secondary); }
+    .card-actions { position: absolute; top: 12px; right: 12px; opacity: 0; transition: opacity 0.3s ease; }
+    .device-card:hover .card-actions { opacity: 1; }
+
+    /* Switch */
+    .switch { position: relative; display: inline-block; width: 50px; height: 26px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; inset: 0; background-color: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.08); transition: .4s var(--ease-elastic); border-radius: 34px; }
+    .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: var(--text-muted); transition: .4s var(--ease-elastic); border-radius: 50%; }
+    input:checked + .slider { background-color: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.4); }
+    input:checked + .slider:before { transform: translateX(24px); background-color: var(--color-emerald); box-shadow: 0 0 10px var(--color-emerald); }
+    input:disabled + .slider { opacity: 0.5; cursor: not-allowed; }
+
+    /* Sniffer */
+    .crypto-console-card { display: flex; flex-direction: column; height: calc(100vh - 120px); }
+    .card-header-actions { display: flex; justify-content: space-between; align-items: center; }
+    .crypto-stats-bar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.03); border-radius: 12px; padding: 12px; margin: 16px 0; }
+    .crypto-stat { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border-right: 1px solid rgba(255, 255, 255, 0.04); }
+    .crypto-stat:last-child { border-right: none; }
+    .stat-label { font-size: 9px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; }
+    .stat-value { font-family: var(--font-mono); font-size: 14px; font-weight: 700; }
+    .text-cyan { color: var(--color-cyan); }
+    .text-blue { color: var(--color-blue); }
+    .text-purple { color: var(--color-purple); }
+
+    .terminal-wrapper { flex: 1; display: flex; flex-direction: column; background: #02040c; border: 1px solid rgba(255, 255, 255, 0.04); border-radius: 12px; overflow: hidden; box-shadow: inset 0 4px 20px rgba(0, 0, 0, 0.8); }
+    .terminal-header { display: flex; align-items: center; justify-content: space-between; background: #080a14; padding: 10px 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.04); }
+    .terminal-dots { display: flex; gap: 6px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .dot.red { background-color: var(--color-rose); }
+    .dot.yellow { background-color: var(--color-amber); }
+    .dot.green { background-color: var(--color-emerald); }
+    .terminal-title { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); }
+    .terminal-body { flex: 1; padding: 16px; font-family: var(--font-mono); font-size: 11px; line-height: 1.6; overflow-y: auto; color: #c9d1d9; }
+    
+    .terminal-line { margin-bottom: 12px; word-break: break-all; }
+    .terminal-line.system { color: var(--text-muted); border-bottom: 1px dashed rgba(255, 255, 255, 0.03); padding-bottom: 4px; }
+    .terminal-line.tx { color: var(--color-cyan); }
+    .terminal-line.rx { color: var(--color-purple); }
+    .terminal-line.error { color: var(--color-rose); border-left: 2px solid var(--color-rose); padding-left: 6px; }
+    .terminal-line.success { color: var(--color-emerald); }
+    .terminal-line.crypto { color: var(--color-amber); }
+
+    .console-details { background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.04); border-radius: 6px; padding: 8px 12px; margin-top: 4px; font-size: 10px; color: var(--text-secondary); display: flex; flex-direction: column; gap: 2px; }
+    .console-detail-row { display: flex; }
+    .console-detail-label { min-width: 90px; color: var(--text-muted); }
+
+    @keyframes pulse-glow {
+      0% { box-shadow: 0 0 5px var(--color-emerald), 0 0 10px var(--color-emerald); opacity: 1; }
+      50% { box-shadow: 0 0 15px var(--color-emerald), 0 0 30px var(--color-emerald); opacity: 0.8; }
+      100% { box-shadow: 0 0 5px var(--color-emerald), 0 0 10px var(--color-emerald); opacity: 1; }
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* --- AI Studio Prompt Generator Modal Styles --- */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 4, 12, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 1;
+      transition: opacity 0.3s ease;
+    }
+    .modal-overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .modal-content {
+      width: 90%;
+      max-width: 960px;
+      max-height: 90vh;
+      overflow-y: auto;
+      border-color: rgba(255, 255, 255, 0.08);
+      animation: modal-zoom 0.35s var(--ease-elastic);
+    }
+    @keyframes modal-zoom {
+      from { transform: scale(0.92); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .close-btn {
+      font-size: 28px;
+      color: var(--text-muted);
+      cursor: pointer;
+      line-height: 1;
+      transition: color 0.2s ease;
+    }
+    .close-btn:hover {
+      color: var(--color-rose);
+    }
+    .modal-body-layout {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 24px;
+      margin-top: 16px;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      padding-top: 20px;
+    }
+    @media (max-width: 800px) {
+      .modal-body-layout { grid-template-columns: 1fr; }
+    }
+    .prompt-text-wrapper {
+      position: relative;
+      height: calc(100% - 24px);
+      min-height: 280px;
+    }
+    #prompt-textarea {
+      width: 100%;
+      height: 100%;
+      min-height: 280px;
+      background: #02040c;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      border-radius: 8px;
+      color: var(--text-secondary);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      line-height: 1.6;
+      padding: 16px;
+      resize: none;
+    }
+    #prompt-textarea:focus {
+      outline: none;
+      border-color: var(--color-purple);
+      box-shadow: 0 0 10px rgba(168, 85, 247, 0.15);
+    }
+    .copy-floating-btn {
+      position: absolute;
+      bottom: 12px;
+      right: 12px;
+      width: auto !important;
+      padding: 8px 16px !important;
+      font-size: 11px !important;
+      background: var(--grad-magenta-purple) !important;
+      box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3) !important;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Glowing Background Orbs -->
+  <div class="glow-orb orb-1"></div>
+  <div class="glow-orb orb-2"></div>
+  <div class="glow-orb orb-3"></div>
+
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header glass-card">
+      <div class="header-logo">
+        <div class="logo-shield">
+          <svg viewBox="0 0 24 24" style="width: 28px; height: 28px;">
+            <path fill="currentColor" d="M12,1L3,5V11C3,16.55 6.84,21.74 12,23C17.16,21.74 21,16.55 21,11V5L12,1M12,7C13.66,7 15,8.34 15,10C15,11.38 14.07,12.54 12.81,12.89L13.85,16.14C13.94,16.4 13.8,16.69 13.54,16.78C13.29,16.87 13,16.73 12.91,16.47L12,13.63L11.09,16.47C11,16.73 10.71,16.87 10.46,16.78C10.2,16.69 10.06,16.4 10.15,16.14L11.19,12.89C9.93,12.54 9,11.38 9,10C9,8.34 10.34,7 12,7M12,8.5A1.5,1.5 0 0,0 10.5,10A1.5,1.5 0 0,0 12,11.5A1.5,1.5 0 0,0 13.5,10A1.5,1.5 0 0,0 12,8.5Z" />
+          </svg>
+        </div>
+        <div class="logo-text">
+          <h1>IoTYK</h1>
+          <span class="sub-title">CRYPTO SIMULATOR PREVIEW</span>
+        </div>
+      </div>
+      
+      <div class="header-status">
+        <div class="status-indicator">
+          <span class="indicator-pulse" id="gateway-pulse"></span>
+          <span class="status-label" id="gateway-status">SIMULATOR ACTIVE</span>
+        </div>
+        <div class="system-time" id="live-clock">--:--:--</div>
+      </div>
+    </header>
+
+    <!-- Main Grid -->
+    <main class="dashboard-grid">
+      
+      <!-- LEFT PANEL -->
+      <section class="grid-panel left-panel">
+        
+        <!-- Network Scan -->
+        <div class="glass-card panel-card scan-card">
+          <h2>Network Discovery Scan</h2>
+          <p class="description">Broadcast UDP discover signals to local subnet to find active controllers.</p>
+          
+          <button id="btn-scan" class="btn-primary scan-btn">
+            <span class="btn-text">SCAN LOCAL SUBNET</span>
+            <span class="spinner hidden"></span>
+          </button>
+
+          <div class="discovered-container">
+            <h3>Discovered Controllers <span class="badge" id="discovered-count">0</span></h3>
+            <div class="discovered-list" id="discovered-list">
+              <div class="empty-state">No controllers discovered yet. Run scan.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Add Manual Form -->
+        <div class="glass-card panel-card manual-card">
+          <h2>Add Controller Manually</h2>
+          <form id="form-add-device">
+            <div class="form-group">
+              <label for="input-name">Friendly Name</label>
+              <input type="text" id="input-name" placeholder="Kitchen Lights" required>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label for="input-id">Device ID</label>
+                <input type="text" id="input-id" placeholder="ESP32-TEST-XXXXXX" required>
+              </div>
+              <div class="form-group">
+                <label for="input-ip">IP Address</label>
+                <input type="text" id="input-ip" placeholder="192.168.1.12" required>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="input-port">Port</label>
+                <input type="number" id="input-port" placeholder="5555" required>
+              </div>
+              <div class="form-group">
+                <label for="select-proto">Protocol</label>
+                <select id="select-proto" required>
+                  <option value="UDP" selected>Secure UDP</option>
+                  <option value="WSS">Secure WebSocket</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="input-token">Security Token</label>
+              <input type="password" id="input-token" placeholder="Enter NVS Local Token" required>
+            </div>
+
+            <button type="submit" class="btn-secondary">REGISTER CONTROLLER</button>
+          </form>
+        </div>
+
+        <!-- AI Studio Prompt Generator Card -->
+        <div class="glass-card panel-card prompt-card">
+          <h2>Android App Creator</h2>
+          <p class="description">Generate a custom Kotlin/Compose code prompt tailored to your device configs for Google AI Studio.</p>
+          
+          <button id="btn-open-prompt-gen" class="btn-primary" style="background: var(--grad-magenta-purple); box-shadow: 0 4px 15px rgba(168, 85, 247, 0.25);">
+            CREATE AI STUDIO PROMPT
+          </button>
+        </div>
+
+      </section>
+
+      <!-- CENTER PANEL -->
+      <section class="grid-panel center-panel">
+        <div class="panel-header">
+          <h2>Registered Devices</h2>
+          <span class="sub-label">Control high-security IoT relays in real-time</span>
+        </div>
+        
+        <div class="device-grid" id="device-grid">
+          <!-- Populated dynamically -->
+        </div>
+      </section>
+
+      <!-- RIGHT PANEL: Cryptographic Terminal -->
+      <section class="grid-panel right-panel">
+        <div class="glass-card panel-card crypto-console-card">
+          <div class="card-header-actions">
+            <h2>Crypto & Security logs</h2>
+            <button class="btn-icon" id="btn-clear-console" title="Clear logs">
+              <svg viewBox="0 0 24 24" class="icon-sm"><path fill="currentColor" d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z"/></svg>
+            </button>
+          </div>
+          
+          <div class="crypto-stats-bar">
+            <div class="crypto-stat">
+              <span class="stat-label">Active Session Keys</span>
+              <span class="stat-value text-cyan" id="stat-sessions">0</span>
+            </div>
+            <div class="crypto-stat">
+              <span class="stat-label">TX Packets</span>
+              <span class="stat-value text-blue" id="stat-tx">0</span>
+            </div>
+            <div class="crypto-stat">
+              <span class="stat-label">RX Packets</span>
+              <span class="stat-value text-purple" id="stat-rx">0</span>
+            </div>
+          </div>
+
+          <div class="terminal-wrapper">
+            <div class="terminal-header">
+              <div class="terminal-dots">
+                <span class="dot red"></span>
+                <span class="dot yellow"></span>
+                <span class="dot green"></span>
+              </div>
+              <span class="terminal-title">browser_aes_gcm_sniffer.log</span>
+            </div>
+            <div class="terminal-body" id="crypto-terminal">
+              <div class="terminal-line system">Crypto sniffer ready. Live browser Web Crypto engine active.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Modal Overlay for AI Studio Prompt Generator -->
+  <div id="prompt-modal" class="modal-overlay hidden">
+    <div class="glass-card modal-content">
+      <div class="modal-header">
+        <h2>AI Studio Prompt Compiler</h2>
+        <span id="btn-close-modal" class="close-btn">&times;</span>
+      </div>
+      <p class="description" style="margin-bottom: 16px;">Customize your Android app settings. We'll compile the complete system instructions for Google AI Studio.</p>
+      
+      <div class="modal-body-layout">
+        <!-- Configurations Form -->
+        <div class="modal-form-side">
+          <div class="form-group">
+            <label for="prompt-pkg">Android Package Name</label>
+            <input type="text" id="prompt-pkg" value="com.iotyk.control" placeholder="com.example.app">
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="prompt-relays">Relay Channels Count</label>
+              <select id="prompt-relays">
+                <option value="1">1 Relay (ESP32-439D16)</option>
+                <option value="2" selected>2 Relays (ESP32-TEST-E0C656)</option>
+                <option value="4">4 Relays</option>
+                <option value="8">8 Relays</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="prompt-proto">Protocol Features</label>
+              <select id="prompt-proto">
+                <option value="Both UDP & WSS" selected>Both UDP & WSS Secure</option>
+                <option value="UDP Only">Secure UDP Only</option>
+                <option value="WSS Only">Secure WSS Only</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="prompt-token">NVS Authentication Token</label>
+            <input type="text" id="prompt-token" value="test_tok_5b08259c97eb798d9664" placeholder="Enter NVS Token">
+          </div>
+
+          <button id="btn-compile-prompt" class="btn-primary" style="margin-top: 8px;">COMPILE PROMPT</button>
+        </div>
+
+        <!-- Compiled Text Result -->
+        <div class="modal-result-side">
+          <label>Compiled System Instructions</label>
+          <div class="prompt-text-wrapper">
+            <textarea id="prompt-textarea" readonly placeholder="Click Compile to generate your custom AI Studio system instructions..."></textarea>
+            <button id="btn-copy-prompt" class="btn-primary copy-floating-btn">COPY PROMPT</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Standalone Simulated JavaScript Logic -->
+  <script>
+    // --- State ---
+    let devices = [
+      {
+        id: "ESP32-TEST-E0C656",
+        ip: "192.168.1.100",
+        port: 5555,
+        protocol: "UDP",
+        token: "test_tok_5b08259c97eb798d9664",
+        name: "Living Room (Secure UDP)",
+        state: 0,
+        online: true
+      },
+      {
+        id: "ESP32-439D16",
+        ip: "192.168.1.101",
+        port: 82,
+        protocol: "WSS",
+        token: "f9ab0ffa09911e5606c5fa5757b1367dd75ec88f",
+        name: "Master Bedroom (Secure WSS)",
+        state: 0,
+        online: true
+      }
+    ];
+
+    let txCount = 0;
+    let rxCount = 0;
+    const sessionKeys = {};
+
+    // --- DOM Elements ---
+    const elDeviceGrid = document.getElementById('device-grid');
+    const elCryptoTerminal = document.getElementById('crypto-terminal');
+    const elBtnScan = document.getElementById('btn-scan');
+    const elDiscoveredList = document.getElementById('discovered-list');
+    const elDiscoveredCount = document.getElementById('discovered-count');
+    const elFormAddDevice = document.getElementById('form-add-device');
+    const elLiveClock = document.getElementById('live-clock');
+    
+    const elStatSessions = document.getElementById('stat-sessions');
+    const elStatTx = document.getElementById('stat-tx');
+    const elStatRx = document.getElementById('stat-rx');
+
+    // --- Init ---
+    document.addEventListener('DOMContentLoaded', () => {
+      renderDevices();
+      initClock();
+      initForm();
+      initScan();
+      initPromptCompiler();
+      
+      document.getElementById('btn-clear-console').addEventListener('click', () => {
+        elCryptoTerminal.innerHTML = '<div class="terminal-line system">Console cleared. Sniffer operational.</div>';
+      });
+
+      appendLog("success", "Standalone cryptographic preview environment loaded.");
+      appendLog("info", "Web Crypto API and ESP32 simulators are ready.");
+    });
+
+    function initClock() {
+      setInterval(() => {
+        elLiveClock.textContent = new Date().toLocaleTimeString();
+      }, 1000);
+    }
+
+    // --- Render Cards ---
+    function renderDevices() {
+      if (devices.length === 0) {
+        elDeviceGrid.innerHTML = `
+          <div class="grid-empty-state">
+            <div class="empty-icon">🔌</div>
+            <p>No controllers registered. Use discovery scan or manually register a board to get started.</p>
+          </div>`;
+        return;
+      }
+
+      elDeviceGrid.innerHTML = '';
+      devices.forEach(dev => {
+        const card = document.createElement('div');
+        card.className = `glass-card device-card`;
+        card.id = `card-${dev.id}`;
+        card.innerHTML = `
+          <button class="btn-icon card-actions" onclick="deleteDevice('${dev.id}')" title="Delete controller">
+            <svg viewBox="0 0 24 24" class="icon-sm" style="color: var(--color-rose);"><path fill="currentColor" d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z"/></svg>
+          </button>
+          
+          <div class="card-top">
+            <div class="device-meta">
+              <span class="device-name">${dev.name}</span>
+              <span class="device-id">${dev.id}</span>
+            </div>
+            <span class="proto-badge ${dev.protocol.toLowerCase()}">${dev.protocol} Secure</span>
+          </div>
+
+          <div class="card-middle">
+            <div class="device-endpoint">
+              <svg viewBox="0 0 24 24" class="icon-endpoint"><path fill="currentColor" d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4M12,6A6,6 0 0,0 6,12A6,6 0 0,0 12,18A6,6 0 0,0 18,12A6,6 0 0,0 12,6M12,8A4,4 0 0,1 16,12A4,4 0 0,1 12,16A4,4 0 0,1 8,12A4,4 0 0,1 12,8Z"/></svg>
+              <span>${dev.ip}:${dev.port}</span>
+            </div>
+          </div>
+
+          <div class="card-bottom">
+            <div class="relay-status">
+              <span class="led ${dev.online ? 'active' : ''}" id="led-${dev.id}"></span>
+              <span class="status-text" id="status-text-${dev.id}">${dev.online ? (dev.state === 1 ? 'ACTIVE / ON' : 'ACTIVE / OFF') : 'UNVERIFIED'}</span>
+            </div>
+            
+            <div class="switch-control">
+              <label class="switch">
+                <input type="checkbox" id="toggle-${dev.id}" onchange="toggleDeviceRelay('${dev.id}')" ${dev.state === 1 ? 'checked' : ''} ${!dev.online ? 'disabled' : ''}>
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+        `;
+        elDeviceGrid.appendChild(card);
+        updateCardUI(dev);
+      });
+    }
+
+    function updateCardUI(dev) {
+      const led = document.getElementById(`led-${dev.id}`);
+      const text = document.getElementById(`status-text-${dev.id}`);
+      const checkbox = document.getElementById(`toggle-${dev.id}`);
+      const card = document.getElementById(`card-${dev.id}`);
+
+      if (dev.online) {
+        led.className = "led active";
+        text.textContent = dev.state === 1 ? "ACTIVE / ON" : "ACTIVE / OFF";
+        text.style.color = "var(--color-emerald)";
+        checkbox.checked = dev.state === 1;
+        card.style.boxShadow = dev.state === 1 
+          ? "0 8px 30px rgba(16, 185, 129, 0.15)" 
+          : "0 12px 40px 0 rgba(2, 4, 12, 0.5)";
+      } else {
+        led.className = "led offline";
+        text.textContent = "OFFLINE";
+        text.style.color = "var(--color-rose)";
+        card.style.boxShadow = "0 8px 30px rgba(239, 68, 68, 0.1)";
+      }
+    }
+
+    // --- Action Handler ---
+    window.toggleDeviceRelay = async function(id) {
+      const dev = devices.find(d => d.id === id);
+      if (!dev) return;
+
+      const checkbox = document.getElementById(`toggle-${id}`);
+      const targetState = checkbox.checked ? 1 : 0;
+      
+      checkbox.disabled = true; // disable temporary while crypto executes
+      
+      if (dev.protocol === "UDP") {
+        await executeSimulatedUdpSecureCommand(dev, targetState);
+      } else {
+        await executeSimulatedWssCommand(dev, targetState);
+      }
+
+      checkbox.disabled = false;
+    };
+
+    // --- Cryptographic Simulators ---
+
+    async function executeSimulatedUdpSecureCommand(dev, targetState) {
+      appendLog("info", `Initiating secure UDP command for ${dev.id}...`);
+      
+      // Step 1: Handshake
+      let session = sessionKeys[dev.id];
+      if (!session) {
+        appendLog("info", "No active cryptographic session. Initiating key exchange handshake...");
+        
+        // Client challenge
+        const clientChallenge = generateHexBytes(8);
+        txCount++;
+        appendLog("tx", `Sent Handshake request: [0x00 0x01 (8-byte challenge)]`, {
+          "Packet Type": "Handshake Init (0x00)",
+          "Client Challenge": clientChallenge
+        });
+
+        // Simulating 200ms latency
+        await delay(200);
+
+        // Server reply
+        const serverNonce = generateHexBytes(16);
+        const sessionId = Math.floor(Math.random() * 1000000) + 50000;
+        rxCount++;
+        appendLog("rx", `Received Handshake response from ${dev.id}`, {
+          "Packet Type": "Handshake Reply (0x02)",
+          "Server Nonce": serverNonce,
+          "Session ID": `0x${sessionId.toString(16).toUpperCase()} (${sessionId})`
+        });
+
+        // Key Derivation (HKDF-SHA256 simulation representation)
+        const ikm = dev.token + serverNonce + clientChallenge;
+        const derivedKey = "D6F88E" + generateHexBytes(26) + "0A";
+        
+        sessionKeys[dev.id] = {
+          sessionId,
+          sessionKeyHex: derivedKey,
+          clientCounter: 0,
+          serverCounter: 1000000
+        };
+        session = sessionKeys[dev.id];
+
+        appendLog("crypto", `Derived session key via simulated HKDF-SHA256:`, {
+          "Input Key Material": ikm.substring(0, 32) + "...",
+          "Derived AES-256 Key": derivedKey.substring(0, 8) + "*".repeat(56),
+          "Session TTL": "600 seconds",
+          "Nonce Salt": "32-bytes (0x00)"
+        });
+        
+        elStatSessions.textContent = Object.keys(sessionKeys).length;
+      }
+
+      // Step 2: Encrypt Client command (Actual browser Web Crypto simulated structure)
+      const counter = session.clientCounter++;
+      const iv = session.sessionId.toString(16).padStart(8, '0') + counter.toString(16).padStart(8, '0') + "A1000000";
+      const aad = "01" + session.sessionId.toString(16).padStart(8, '0') + counter.toString(16).padStart(8, '0');
+      
+      const opcode = targetState === 1 ? "01" : "02"; // OPCODE_ON / OPCODE_OFF
+      const relayId = "00";
+      const plaintext = opcode + relayId;
+      const ciphertext = "B8" + generateHexBytes(1);
+      const tag = generateHexBytes(16);
+
+      const packetHex = "01" + aad.substring(2) + iv + ciphertext + tag;
+      txCount++;
+      
+      appendLog("tx", `Sent Secure AES-GCM Encrypted packet to port ${dev.port}`, {
+        "Secure Version": "0x01",
+        "Plaintext Action": targetState === 1 ? "OPCODE_ON (0x01)" : "OPCODE_OFF (0x02)",
+        "Counter": counter,
+        "IV Nonce": iv.toUpperCase(),
+        "AAD Header": aad.toUpperCase(),
+        "Ciphertext": ciphertext.toUpperCase(),
+        "Integrity Tag": tag.toUpperCase(),
+        "Raw Packet Size": `${packetHex.length / 2} bytes`
+      });
+
+      await delay(250);
+
+      // Step 3: Decrypt Server reply
+      const resCounter = session.serverCounter++;
+      const resIv = session.sessionId.toString(16).padStart(8, '0') + resCounter.toString(16).padStart(8, '0') + "A2000000";
+      const resAad = "01" + session.sessionId.toString(16).padStart(8, '0') + resCounter.toString(16).padStart(8, '0');
+      
+      const resPlaintext = "0500" + (targetState === 1 ? "01" : "00"); // ACK, RELAY 0, STATE
+      const resCiphertext = "9F" + generateHexBytes(2);
+      const resTag = generateHexBytes(16);
+      
+      rxCount++;
+      appendLog("rx", `Received & Decrypted Secure response from ${dev.id}`, {
+        "Raw Response": ("01" + resAad.substring(2) + resIv + resCiphertext + resTag).toUpperCase(),
+        "Decrypted Bytes": resPlaintext.toUpperCase(),
+        "Opcode Action": "OPCODE_ACK (0x05)",
+        "Relay Index": "0",
+        "Verified State": targetState === 1 ? "ON (1)" : "OFF (0)",
+        "AEAD Auth Tag": "VALID"
+      });
+
+      // Update UI state
+      dev.state = targetState;
+      updateCardUI(dev);
+      appendLog("success", `Secure UDP toggle execution complete. State: ${targetState === 1 ? 'ON' : 'OFF'}`);
+      updateSecurityCounters();
+    }
+
+    async function executeSimulatedWssCommand(dev, targetState) {
+      appendLog("info", `Opening Secure WSS proxy link to wss://${dev.ip}:${dev.port}...`);
+      
+      await delay(200);
+      
+      const commandPayload = {
+        token: dev.token,
+        action: targetState === 1 ? "RELAY_ON" : "RELAY_OFF"
+      };
+
+      txCount++;
+      appendLog("tx", "Sent WSS Frame (TLS Encrypted JSON)", commandPayload);
+      
+      await delay(150);
+
+      const responsePayload = {
+        status: "ok"
+      };
+      
+      rxCount++;
+      appendLog("rx", "Received WSS Frame response (TLS Encrypted JSON)", responsePayload);
+
+      // Update UI state
+      dev.state = targetState;
+      updateCardUI(dev);
+      appendLog("success", `WSS Command ${commandPayload.action} executed successfully.`);
+      updateSecurityCounters();
+    }
+
+    function updateSecurityCounters() {
+      elStatTx.textContent = txCount;
+      elStatRx.textContent = rxCount;
+    }
+
+    // --- Manual Register Form ---
+    function initForm() {
+      elFormAddDevice.addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        const customName = document.getElementById('input-name').value;
+        const pairingToken = document.getElementById('input-token').value;
+        
+        if (!pairingToken.startsWith('pr_')) {
+          appendLog("error", "Simulated pairing failed: Invalid pairing token format (must start with 'pr_')");
+          return;
+        }
+
+        // Simulate Vercel database lookups
+        let resolvedDevice = null;
+        if (pairingToken.includes("e0c656") || pairingToken === "pr_esp32_test_e0c656") {
+          resolvedDevice = {
+            id: "ESP32-TEST-E0C656",
+            ip: "192.168.1.100",
+            port: 5555,
+            protocol: "UDP",
+            token: "test_tok_5b08259c97eb798d9664",
+            name: customName || "Living Room (Secure UDP)",
+            state: 0,
+            online: true
+          };
+        } else if (pairingToken.includes("439d16") || pairingToken === "pr_esp32_439d16") {
+          resolvedDevice = {
+            id: "ESP32-439D16",
+            ip: "192.168.1.101",
+            port: 82,
+            protocol: "WSS",
+            token: "f9ab0ffa09911e5606c5fa5757b1367dd75ec88f",
+            name: customName || "Master Bedroom (Secure WSS)",
+            state: 0,
+            online: true
+          };
+        } else {
+          // Dynamic mock fallback for custom tokens
+          const mockId = "ESP32-" + generateHexBytes(3);
+          resolvedDevice = {
+            id: mockId,
+            ip: "192.168.1." + (Math.floor(Math.random() * 150) + 10),
+            port: 5555,
+            protocol: "UDP",
+            token: "tok_" + generateHexBytes(10),
+            name: customName || `Smart Node (${mockId.substring(6)})`,
+            state: 0,
+            online: true
+          };
+        }
+
+        devices = devices.filter(d => d.id !== resolvedDevice.id);
+        devices.push(resolvedDevice);
+        renderDevices();
+        elFormAddDevice.reset();
+        
+        appendLog("success", `Simulated secure claim complete! Mapped owner to database UUID.`);
+        appendLog("success", `Registered and initialized simulated device: ${resolvedDevice.name} (${resolvedDevice.ip}:${resolvedDevice.port})`);
+      });
+    }
+
+    // --- Delete Device ---
+    window.deleteDevice = function(id) {
+      devices = devices.filter(d => d.id !== id);
+      renderDevices();
+      appendLog("info", `Removed device node: ${id}`);
+    };
+
+    // --- Subnet Scan ---
+    function initScan() {
+      elBtnScan.addEventListener('click', () => {
+        const text = elBtnScan.querySelector('.btn-text');
+        const spinner = elBtnScan.querySelector('.spinner');
+        
+        text.textContent = "SCANNING NETWORK...";
+        spinner.classList.remove('hidden');
+        elBtnScan.disabled = true;
+        elDiscoveredList.innerHTML = '<div class="empty-state">Sending discovery broadcast signals. Sniffing subnet...</div>';
+
+        setTimeout(() => {
+          text.textContent = "SCAN LOCAL SUBNET";
+          spinner.classList.add('hidden');
+          elBtnScan.disabled = false;
+          
+          const scanResults = [
+            { id: "ESP32-TEST-E0C656", ip: "192.168.1.100", port: 5555, protocol: "UDP" },
+            { id: "ESP32-439D16", ip: "192.168.1.101", port: 82, protocol: "WSS" }
+          ];
+
+          elDiscoveredCount.textContent = scanResults.length;
+          elDiscoveredList.innerHTML = '';
+          
+          scanResults.forEach(dev => {
+            const item = document.createElement('div');
+            item.className = 'discovered-item';
+            item.innerHTML = `
+              <div class="disc-info">
+                <span class="disc-name">${dev.id}</span>
+                <span class="disc-ip">${dev.ip}:${dev.port} (${dev.protocol})</span>
+              </div>
+              <button class="btn-primary" style="width: auto; padding: 6px 12px; font-size: 11px;" onclick='addScannedDevice(${JSON.stringify(dev)})'>ADD</button>
+            `;
+            elDiscoveredList.appendChild(item);
+          });
+
+          appendLog("success", "UDP discovery broadcast scan finished. Found 2 secure targets.");
+        }, 1500);
+      });
+    }
+
+    window.addScannedDevice = function(dev) {
+      document.getElementById('input-name').value = `Room (${dev.id.substring(6)})`;
+      document.getElementById('input-id').value = dev.id;
+      document.getElementById('input-ip').value = dev.ip;
+      document.getElementById('input-port').value = dev.port;
+      document.getElementById('select-proto').value = dev.protocol;
+      document.getElementById('input-token').value = dev.protocol === "UDP" 
+        ? "test_tok_5b08259c97eb798d9664"
+        : "f9ab0ffa09911e5606c5fa5757b1367dd75ec88f";
+        
+      document.getElementById('input-name').focus();
+      appendLog("info", `Imported parameters for ${dev.id}. Click Register to add.`);
+    };
+
+    // --- AI Studio Prompt Generator logic ---
+    function initPromptCompiler() {
+      const elPromptModal = document.getElementById('prompt-modal');
+      const elBtnOpenPromptGen = document.getElementById('btn-open-prompt-gen');
+      const elBtnCloseModal = document.getElementById('btn-close-modal');
+      const elBtnCompilePrompt = document.getElementById('btn-compile-prompt');
+      const elBtnCopyPrompt = document.getElementById('btn-copy-prompt');
+      const elPromptTextarea = document.getElementById('prompt-textarea');
+
+      if (elBtnOpenPromptGen) {
+        elBtnOpenPromptGen.addEventListener('click', () => {
+          elPromptModal.classList.remove('hidden');
+          if (devices.length > 0) {
+            document.getElementById('prompt-token').value = devices[0].token;
+          }
+        });
+
+        elBtnCloseModal.addEventListener('click', () => {
+          elPromptModal.classList.add('hidden');
+        });
+
+        elPromptModal.addEventListener('click', (e) => {
+          if (e.target === elPromptModal) {
+            elPromptModal.classList.add('hidden');
+          }
+        });
+
+        elBtnCompilePrompt.addEventListener('click', () => {
+          const pkg = document.getElementById('prompt-pkg').value || 'com.iotyk.control';
+          const relays = document.getElementById('prompt-relays').value;
+          const proto = document.getElementById('prompt-proto').value;
+          const token = document.getElementById('prompt-token').value || 'test_tok_5b08259c97eb798d9664';
+
+          const promptText = `You are a senior Android software engineer and premium UI designer. Your task is to generate a complete, high-performance Android mobile application using Kotlin and Jetpack Compose that connects natively to IoTYK Secure UDP (port 5555) and Secure WSS (port 82) ESP32 devices.
+
+The package name of the app must be: "${pkg}"
+The target ESP32 hardware layout comprises:
+- Protocol Features: ${proto}
+- Relay Channels Count: ${relays}
+- Default NVS Authentication Token: "${token}"
+
+---
+
+### DESIGN & AESTHETIC REQUIREMENTS
+
+1. **Space Charcoal Palette**: Dark-mode primary background (#060813 to #0c0f24 gradient) with subtle colored glass panels (rgba(13, 17, 39, 0.45) equivalent in Jetpack Compose modifiers with blurred card overlays).
+2. **Rich Typography**: Use elegant custom typography (Outfit and Inter style custom typography definitions).
+3. **Pulsing Toggles & LED Glows**: Relay status lights must have neon glow shadows.
+4. **Log Terminal & Packet Sniffer Console**: A bottom sheet or scrollable terminal panel formatted with a monospace font displaying incoming and outgoing packet byte logs in distinct neon colors (Cyan for TX, Purple for RX, Amber for Crypto Key exchanges).
+
+---
+
+### NATIVE TECHNICAL IMPLEMENTATIONS
+
+#### 1. Cryptographic Client Engine (Pure Kotlin/Java)
+- **HKDF-SHA256 Key Derivation**: Implemented cleanly using Mac.getInstance("HmacSHA256") to derive the 32-byte session key from IKM ("${token}" + serverNonce + clientChallenge), Salt (32-bytes zero), and Info ("IoTYK-Session-Key").
+- **AES-GCM-256 Command Encryption**:
+  - Uses Cipher.getInstance("AES/GCM/NoPadding") and GCMParameterSpec(128, iv).
+  - Binds AAD ([VERSION = 0x01] + [session_id (4)] + [counter (4)]) via cipher.updateAAD(aad).
+  - IV Nonce creation (session_id + counter + 0xA1 + padding).
+  - Verifies and decrypts incoming responses using IV nonces with server direction 0xA2.
+
+#### 2. Local UDP Broadcast Socket Engine (Kotlin Coroutines)
+- Binds a non-blocking DatagramSocket using Dispatchers.IO.
+- Broadcasts [0x00, 0x00] discover bytes to 255.255.255.255 on port 5555 to find controllers.
+- Listens for replies: [0x00] [0x03 (INFO)] [port (2, LE)] [dev_id_len (1)] [device_id].
+- Implements the complete two-way handshake state machine (sending client challenges, receiving server nonces/session IDs, and maintaining active secure sessions).
+
+#### 3. WSS Tunnel Client (OkHttp WebSocket)
+- Connects to WSS endpoint: wss://<esp32-ip>:82/.
+- Configures OkHttpClient to bypass TLS self-signed certificate constraints by using a permissive TrustManager and HostnameVerifier.
+- Sends secure command JSON frames ({"token": "${token}", "action": "RELAY_ON"}) and decodes responses.
+
+---
+
+### SYSTEM CODEBASE TO GENERATE
+
+Please write the complete, compilable codebase including:
+1. **build.gradle.kts**: Standard Compose dependencies, OkHttp, and serialization.
+2. **IoTykCrypto.kt**: High-security Kotlin module performing the HKDF key derivation and AES-GCM encrypt/decrypt operations.
+3. **UdpGateway.kt**: Managed coroutine flow broadcasting discover signals and handling the UDP session key state machine.
+4. **WssGateway.kt**: Permissive WebSocket socket tunnel connecting to WSS controllers on port 82.
+5. **MainActivity.kt / UI components**:
+   - \`ControlCenterTheme\`: Custom Color/Type setups.
+   - \`DashboardScreen\`: Responsive Compose structure.
+   - \`DeviceCard\`: Glowing card item with smooth slide switches.
+   - \`DiscoveryPanel\`: Pulse animation while scanning.
+   - \`ConsoleTerminal\`: Monospace packet sniffer feed.
+
+Do not use placeholders, shorthand omissions, or ellipses. All code must be complete, production-ready, and robust.`;
+
+          elPromptTextarea.value = promptText;
+          appendLog("success", "Simulated Android Compose Prompt compiled successfully!");
+        });
+
+        elBtnCopyPrompt.addEventListener('click', () => {
+          elPromptTextarea.select();
+          document.execCommand('copy');
+          
+          const originalText = elBtnCopyPrompt.textContent;
+          elBtnCopyPrompt.textContent = "COPIED! ✓";
+          elBtnCopyPrompt.style.background = "var(--grad-emerald-teal)";
+          
+          setTimeout(() => {
+            elBtnCopyPrompt.textContent = originalText;
+            elBtnCopyPrompt.style.background = "var(--grad-magenta-purple)";
+          }, 2000);
+          
+          appendLog("success", "AI Studio system prompt copied to clipboard!");
+        });
+      }
+    }
+
+    // --- Helpers ---
+    function delay(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+    function generateHexBytes(count) {
+      const arr = new Uint8Array(count);
+      window.crypto.getRandomValues(arr);
+      return Array.from(arr, byte => byte.toString(16).padStart(2, '0')).join('').toUpperCase();
+    }
+
+    function appendLog(type, message, details = null) {
+      const line = document.createElement('div');
+      line.className = `terminal-line ${type}`;
+      
+      let content = `[${new Date().toLocaleTimeString()}] `;
+      if (type === "tx") content += `⚡ [TX] `;
+      else if (type === "rx") content += `📥 [RX] `;
+      else if (type === "crypto") content += `🔑 [CRYPTO] `;
+      else if (type === "error") content += `❌ [ERR] `;
+      else if (type === "success") content += `✓ [OK] `;
+      else content += `ℹ [INFO] `;
+
+      content += message;
+      line.textContent = content;
+
+      if (details) {
+        const detailsContainer = document.createElement('div');
+        detailsContainer.className = 'console-details';
+        
+        Object.entries(details).forEach(([key, val]) => {
+          const row = document.createElement('div');
+          row.className = 'console-detail-row';
+          row.innerHTML = `<span class="console-detail-label">${key}:</span> <span class="console-detail-value">${typeof val === 'object' ? JSON.stringify(val) : val}</span>`;
+          detailsContainer.appendChild(row);
+        });
+        line.appendChild(detailsContainer);
+      }
+
+      elCryptoTerminal.appendChild(line);
+      elCryptoTerminal.scrollTop = elCryptoTerminal.scrollHeight;
+    }
+  </script>
+</body>
+</html>
