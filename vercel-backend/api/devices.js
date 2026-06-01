@@ -102,7 +102,7 @@ module.exports = async (req, res) => {
 
       const resolvedToken = device.local_token || device.token;
       if (!resolvedToken) {
-        return res.status(400).json({ error: 'Sync failed: Device has no credentials to sync' });
+        return res.status(400).json({ error: `Sync failed: Device ${device.device_id} has no credentials to sync. local_token value is: '${device.local_token}', token value is: '${device.token}'` });
       }
 
       if (device.owner_id) {
