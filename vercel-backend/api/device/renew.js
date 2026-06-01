@@ -68,7 +68,7 @@ module.exports = async (req, res) => {
       return res.status(404).json({ error: 'Device not pre-registered' });
     }
 
-    const resolvedLocalToken = device.local_token || device.token;
+    const resolvedLocalToken = device.local_token || device.token || device.device_root_secret;
     if (!resolvedLocalToken) {
       return res.status(400).json({ error: `Sync failed: Device ${device.device_id} has no credentials to sync. local_token value is: '${device.local_token}', token value is: '${device.token}'` });
     }
