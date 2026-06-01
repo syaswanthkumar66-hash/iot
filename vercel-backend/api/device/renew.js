@@ -116,6 +116,7 @@ module.exports = async (req, res) => {
           cred_type: 'temporary',
           mqtt_username: finalUsername,
           mqtt_password_enc: encText,
+          mqtt_password: plainPass, // Sync plaintext password for EMQX authentication!
           expires_at: expiresAt,
           is_active: true
         });
