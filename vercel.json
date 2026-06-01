@@ -1,23 +1,32 @@
 {
   "version": 2,
-  "outputDirectory": "public",
-  "rewrites": [
-    { "source": "/api/auth/register", "destination": "/api/auth/register.js" },
-    { "source": "/api/auth/login", "destination": "/api/auth/login.js" },
-    { "source": "/api/device/renew-token", "destination": "/api/device/renew.js" },
-    { "source": "/api/device/renew", "destination": "/api/device/renew.js" },
-    { "source": "/api/devices", "destination": "/api/devices.js" },
-    { "source": "/api/factory/register", "destination": "/api/factory/register.js" },
-    { "source": "/api/factory/revert", "destination": "/api/factory/revert.js" }
-  ],
-  "headers": [
+  "builds": [
     {
-      "source": "/api/(.*)",
-      "headers": [
-        { "key": "Access-Control-Allow-Origin", "value": "*" },
-        { "key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization, X-Device-Signature, X-Factory-Key" },
-        { "key": "Access-Control-Allow-Methods", "value": "GET, POST, OPTIONS, DELETE" }
-      ]
+      "src": "public/**",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "api/**/*.js",
+      "use": "@vercel/node"
     }
+  ],
+  "routes": [
+    { "src": "/api/auth/register", "dest": "/api/auth/register.js" },
+    { "src": "/api/auth/login", "dest": "/api/auth/login.js" },
+    { "src": "/api/device/renew-token", "dest": "/api/device/renew.js" },
+    { "src": "/api/device/renew", "dest": "/api/device/renew.js" },
+    { "src": "/api/devices", "dest": "/api/devices.js" },
+    { "src": "/api/factory/register", "dest": "/api/factory/register.js" },
+    { "src": "/api/factory/revert", "dest": "/api/factory/revert.js" },
+    {
+      "src": "/api/(.*)",
+      "headers": {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Device-Signature, X-Factory-Key",
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS, DELETE"
+      },
+      "continue": true
+    },
+    { "src": "/(.*)", "dest": "/public/$1" }
   ]
 }

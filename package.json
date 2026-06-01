@@ -8,10 +8,6 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.106.2"
   },
-  "devDependencies": {
-    "express": "^4.19.2",
-    "ws": "^8.17.0"
-  },
   "author": "Antigravity",
   "license": "MIT"
 }
