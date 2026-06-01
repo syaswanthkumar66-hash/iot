@@ -100,6 +100,10 @@ module.exports = async (req, res) => {
         return res.status(404).json({ error: 'Associated device not found' });
       }
 
+      if (!device.local_token) {
+        return res.status(400).json({ error: 'Sync failed: Device has no credentials to sync' });
+      }
+
       if (device.owner_id) {
         return res.status(400).json({ error: 'Device is already claimed by another user' });
       }

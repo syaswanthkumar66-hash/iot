@@ -68,6 +68,10 @@ module.exports = async (req, res) => {
       return res.status(404).json({ error: 'Device not pre-registered' });
     }
 
+    if (!device.local_token) {
+      return res.status(400).json({ error: 'Sync failed: Device has no credentials to sync' });
+    }
+
     // 3. Cryptographically verify the signature
     // Expected = HMAC-SHA256(key = local_token, data = deviceId + timestamp)
     const hmac = crypto.createHmac('sha256', device.local_token);
