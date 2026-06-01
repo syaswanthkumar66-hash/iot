@@ -110,17 +110,20 @@ module.exports = async (req, res) => {
 
       const expiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(); // 2-hour credential expiry
 
-      await supabase
+      const { error: credInsertErr } = await supabase
         .from('mqtt_credentials')
         .insert({
           device_id: device.id,
           cred_type: 'temporary',
           mqtt_username: finalUsername,
           mqtt_password_enc: encText,
-          mqtt_password: plainPass, // Sync plaintext password for EMQX authentication!
           expires_at: expiresAt,
           is_active: true
         });
+
+      if (credInsertErr) {
+        return res.status(500).json({ error: "Database error storing credentials: " + credInsertErr.message });
+      }
 
       // Sync to EMQX Access Control List (ACL) so the device has publish & subscribe permissions!
       const targetTopic = device.custom_topic || `iotyk@${device.device_id}`;
@@ -134,7 +137,10 @@ module.exports = async (req, res) => {
       const { error: aclErr } = await supabase.from('mqtt_acl').insert(aclEntries);
       if (aclErr) {
         console.warn("Failed to insert into mqtt_acl, trying acl table:", aclErr.message);
-        await supabase.from('acl').insert(aclEntries);
+        const { error: aclFallbackErr } = await supabase.from('acl').insert(aclEntries);
+        if (aclFallbackErr) {
+          return res.status(500).json({ error: "Database error storing ACL rules: " + aclErr.message + " | Fallback: " + aclFallbackErr.message });
+        }
       }
 
       finalPassword = plainPass; // Return plain to device!
